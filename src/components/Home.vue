@@ -65,6 +65,20 @@
                     </v-card>
                 </v-col>
 
+                <v-col cols="12" md="4">
+                    <v-card class="pa-3" outlined tile>
+                        <v-card-title class="justify-center">Convex Function</v-card-title>
+                        <v-card-text class="text-center">
+                            See how convex functions are composed of frequencies.
+                        </v-card-text>
+                        <v-card-actions class="justify-center">
+                            <v-btn color="primary" @click="navigateTo('/convex-function')">
+                                Go to Convex Function
+                            </v-btn>
+                        </v-card-actions>
+                    </v-card>
+                </v-col>
+                
                 <v-col cols="12" md="4" v-if="false"> {/* v-if="false"는 아직 준비 안된 링크를 숨깁니다 */}
                     <v-card class="pa-3" outlined tile>
                         <v-card-title class="justify-center">Fourier Transform</v-card-title>

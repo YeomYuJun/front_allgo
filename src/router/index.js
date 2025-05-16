@@ -3,6 +3,7 @@ import { createRouter, createWebHistory } from 'vue-router';
 import Home from '../components/Home.vue'; // Home 컴포넌트 경로
 // GraDesc.vue 또는 SurfaceVisualizer.vue 등 시각화 컴포넌트 임포트
 import GraDesc from '../components/GraDesc.vue'; // GraDesc.vue 경로 (이전에 만든 SurfaceVisualizer.vue를 사용한다면 해당 경로로)
+import ConvexFunction from '../components/ConvexFunction.vue';
 // 필요하다면 다른 컴포넌트들도 임포트
 // import FourierTransformVisualizer from '../components/FourierTransformVisualizer.vue';
 // import SortingVisualizer from '../components/SortingVisualizer.vue';
@@ -19,6 +20,11 @@ const routes = [
     component: GraDesc, // 여기에 3D 시각화 컴포넌트를 연결합니다.
                        // (예: 이전 단계에서 만든 SurfaceVisualizer.vue)
   },
+  {
+    path: '/convex-function',
+    name: 'ConvexFunction',
+    component: ConvexFunction,
+  }
   // {
   //   path: '/fourier-transform',
   //   name: 'FourierTransform',

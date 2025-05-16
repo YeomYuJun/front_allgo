@@ -244,8 +244,7 @@ export default {
                     const index = i * numGridPoints + j;
                     if (index < points.length) {
                         const p = points[index];
-                        // API (x,y,z) -> Three.js (x, z_api, y_api) 매핑은 여기서 고민
-                        // 현재 질문자님의 코드는 API의 z값을 Three.js의 y(높이)로 사용
+                        // API (x,y,z) -> Three.js (x, z_api, y_api) 매핑은 
                         // vertices.push(p.x, p.z, p.y); // 기존 방식 유지
                         // 만약 API의 y가 수평축, z가 수직축(높이)이라면:
                         vertices.push(p.x, p.z,  p.y); // API의 x,y를 수평면, z를 높이로 가정하고 수정 (세로로 길게 나오는 현상 관련)
