@@ -82,8 +82,6 @@
 import { onMounted, onBeforeUnmount, ref, watch, computed } from 'vue';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-// 만약 apiClient를 사용한다면 import 해주세요. 여기서는 fetch를 직접 사용합니다.
-// import apiClient from '@/services/api'; 
 
 export default {
     setup() {
