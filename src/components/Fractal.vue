@@ -92,7 +92,13 @@
 import { onMounted, onBeforeUnmount, ref, watch, computed } from 'vue';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-
+/*
+TODO
+1. 휠이 아닌 드래그 re render 필요한가? 제한 필요
+2. 줌에 따른 resolution 변경이 -> iterations 변동시킴(zoom과 다르게 value를 잡아야하나..?) -> 해상도 오류 발생. Back에서 문제 있는 것 같음.
+3. 드래그 이동 미끌림 현상. 아마도 매 변화에 이벤트 걸리나, 디바운스에서 타임아웃 걸려서 지속적으로 문제 발생하는 것 같음.
+4. 과한 연산으로 추후 캐싱 전략 필요해보임
+*/
 export default {
   setup() {
     // 상태 변수들
