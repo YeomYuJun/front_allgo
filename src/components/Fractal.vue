@@ -94,10 +94,10 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 /*
 TODO
-1. 휠이 아닌 드래그 re render 필요한가? 제한 필요
-2. 줌에 따른 resolution 변경이 -> iterations 변동시킴(zoom과 다르게 value를 잡아야하나..?) -> 해상도 오류 발생. Back에서 문제 있는 것 같음.
-3. 드래그 이동 미끌림 현상. 아마도 매 변화에 이벤트 걸리나, 디바운스에서 타임아웃 걸려서 지속적으로 문제 발생하는 것 같음.
-4. 과한 연산으로 추후 캐싱 전략 필요해보임
+1. 복소평면 좌표계와 OrbitControls 좌표계 간의 불일치, 줌 레벨이 높을수록 좌표계 간 미세한 차이???가 발생 -> 재 랜더링하면서 위치 뒤틀림?
+  1-1. OrbitControls의 내부 상태가 서버에 전달되는 상태 불일치..? 계산상의 이유로 부동소수점 반올림 오차 발생일 수도
+2. 드래그 이동 미끌림 현상을 디바운스에서 제외했지만 1번 상의 이유로 드래그 미흡.
+3. 과한 연산으로 추후 캐싱 전략 필요해보임
 */
 export default {
   setup() {
@@ -142,9 +142,19 @@ export default {
     // API 호출 함수들
     const fetchFractalData = async () => {
       try {
-
+        // 줄 레벨과 해상도 계산
         const dynamicResolution = getResolutionForZoom(zoomLevel.value);
         const dynamicIterations = getIterationsForZoom(zoomLevel.value);
+
+        // 실제 디버깅을 위한 파라미터 로깅
+        console.log('Fetching fractal data with:', {
+          type: selectedFractalType.value,
+          iterations: dynamicIterations,
+          resolution: dynamicResolution,
+          zoom: zoomLevel.value,
+          centerX: centerX.value,
+          centerY: centerY.value
+        });
 
         const params = new URLSearchParams({
           type: selectedFractalType.value,
@@ -152,19 +162,24 @@ export default {
           resolution: dynamicResolution,
           colorScheme: colorScheme.value,
           smooth: smoothShading.value,
-          centerX: centerX.value,
-          centerY: centerY.value,
-          zoom: zoomLevel.value
+          centerX: centerX.value.toString(), // 부동소수점 정밀도 보장을 위해 명시적 문자열 변환
+          centerY: centerY.value.toString(),
+          zoom: zoomLevel.value.toString()
         });
         
         if (selectedFractalType.value === 'julia') {
-          params.append('juliaReal', juliaReal.value);
-          params.append('juliaImag', juliaImag.value);
+          params.append('juliaReal', juliaReal.value.toString()); // 명시적 문자열 변환
+          params.append('juliaImag', juliaImag.value.toString());
         }
+        
+        console.log('API URL:', `${API_BASE_URL}/generate?${params}`);
         
         const response = await fetch(`${API_BASE_URL}/generate?${params}`);
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         const data = await response.json();
+        
+        // 응답 데이터 길이 확인 (디버깅)
+        console.log(`Response received: pixels data length=${data.pixels ? data.pixels.length : 'undefined'}`);
         
         fractalInfo.value = data.info;
         updateVisualization(data.pixels);
@@ -172,39 +187,47 @@ export default {
         console.error('Error fetching fractal data:', error);
       }
     };
-    // 줌 레벨에 따른 해상도 조정 함수
+    // 줌 레벨에 따른 해상도 조정 함수 개선
     const getResolutionForZoom = (zoom) => {
       // 기본 해상도
-      const baseResolution = 500; // 기본값
+      const baseResolution = resolution.value; // 사용자 설정값 사용
       
-      // 줌 레벨에 따라 해상도 스케일링
+      // 줌 레벨에 따라 해상도를 보다 부드럽게 조정
+      let scaledResolution;
+      
       if (zoom <= 1.0) {
-        return baseResolution; // 기본 해상도
-      } else if (zoom <= 2.0) {
-        return Math.min(800, baseResolution * 1.5); // 50% 증가
-      } else if (zoom <= 5.0) {
-        return Math.min(1000, baseResolution * 2.0); // 100% 증가
-      } else if (zoom <= 10.0) {
-        return Math.min(1500, baseResolution * 3.0); // 200% 증가
+        scaledResolution = baseResolution; // 기본 해상도
       } else {
-        return Math.min(2000, baseResolution * 4.0); // 300% 증가
+        // 로그 스케일을 사용하여 점진적으로 증가
+        const scaleFactor = 1 + 0.4 * Math.log10(zoom + 0.1);
+        scaledResolution = Math.floor(baseResolution * scaleFactor);
       }
       
-      // 참고: 브라우저 성능을 고려하여 최대값 제한
+      // 짝수 해상도로 맞추기 (텍스처 매핑 문제 방지)
+      scaledResolution = Math.floor(scaledResolution / 2) * 2;
+      
+      // 성능 이슈를 방지하기 위해 최대값 제한
+      return Math.min(1200, scaledResolution);
     };
 
+    // 줌 레벨에 따른 반복 횟수 조정 함수 개선
     const getIterationsForZoom = (zoom) => {
       const baseIterations = iterations.value; // 사용자가 설정한 기본 반복 횟수
       
+      // 줌 레벨에 따라 반복 횟수 계산
+      let scaledIterations;
+      
       if (zoom <= 1.0) {
-        return baseIterations;
-      } else if (zoom <= 3.0) {
-        return Math.min(200, baseIterations * 1.5);
-      } else if (zoom <= 10.0) {
-        return Math.min(500, baseIterations * 2.0);
+        // 기본 줌 레벨에서는 기본 반복 횟수 사용
+        scaledIterations = baseIterations;
       } else {
-        return Math.min(1000, baseIterations * 3.0);
+        // 로그 함수를 사용하여 부드럽게 증가
+        const scaleFactor = 1 + Math.log10(zoom) * 0.8;
+        scaledIterations = Math.floor(baseIterations * scaleFactor);
       }
+      
+      // 최대 반복 횟수 제한 (성능 고려)
+      return Math.min(500, scaledIterations);
     };
 
 
@@ -218,54 +241,97 @@ export default {
       renderer.setSize(fractalContainer.value.clientWidth, fractalContainer.value.clientHeight);
       fractalContainer.value.appendChild(renderer.domElement);
       
-      // 컨트롤 초기화
+      // 컨트롤 초기화 - 성능 및 사용성 개선
       controls = new OrbitControls(camera, renderer.domElement);
       controls.enableRotate = false;
       controls.enablePan = true;
       controls.enableZoom = true;
-      // 왼쪽 마우스 버튼으로 팬/이동하도록 변경
+      
+      // 관성 설정 조정
+      controls.enableDamping = false;  // 관성 비활성화
+      //controls.dampingFactor = 0.05;  // 관성 값 낮게 설정
+      controls.panSpeed = 0.5;         // 이동 속도 낮게 조정
+      controls.zoomSpeed = 0.5;        // 줌 속도 낮게 조정
+      
+      // 마우스 이벤트 추가 - 직접 이벤트 핸들링
+      renderer.domElement.addEventListener('mouseup', () => {
+        // 센터 좌표 업데이트
+        centerX.value = controls.target.x;
+        centerY.value = controls.target.y;
+        console.log("centerX.value:", centerX.value);
+        console.log("centerY.value:", centerY.value);
+        
+        // 즉시 렌더링
+        renderer.render(scene, camera);
+        
+        // 마우스 업 직후 즉시 데이터 업데이트
+        fetchFractalData();
+      }, { passive: true });
+      
+      // mousedown 이벤트도 추가
+      renderer.domElement.addEventListener('mousedown', () => {
+        // 마우스 다운 시 초기 상태 저장
+        renderer.render(scene, camera);
+      }, { passive: true });
+      
+      // 왼쪽 마우스 버튼으로 팬/이동하도록 설정
       controls.mouseButtons = {
         LEFT: THREE.MOUSE.PAN,
         MIDDLE: THREE.MOUSE.DOLLY,
         RIGHT: THREE.MOUSE.ROTATE
       };
-
-      controls.addEventListener('change', () => {
-        updateZoomAndCenter();
-        fetchFractalData();
-      });
       
       // 카메라 위치 설정
       camera.position.z = 5;
-      // 기존 'change' 이벤트 핸들러 수정
+      
+      // 'change' 이벤트 핸들러 - 간소화
       controls.addEventListener('change', () => {
         // 센터 좌표 업데이트
         centerX.value = controls.target.x;
         centerY.value = controls.target.y;
         
-        // 현재 카메라 줌 가져오기
-        let currentZoom = camera.zoom;
-        
-        // 0.1 단위로 반올림
-        let roundedZoom = Math.round(currentZoom * 10) / 10;
+        // 현재 카메라 줌 가져오기 (소수점 제한)
+        let currentZoom = Math.floor(camera.zoom * 10) / 10; // 0.1 단위 반올림
         
         // 상태 변수가 변경된 경우에만 업데이트
-        if (zoomLevel.value !== roundedZoom) {
-          zoomLevel.value = roundedZoom;
+        if (zoomLevel.value !== currentZoom) {
+          zoomLevel.value = currentZoom;
           console.log("Zoom level updated to:", zoomLevel.value);
         }
         
-        // 화면 업데이트
+        // 즉시 렌더링 (디바운스 제거)
         renderer.render(scene, camera);
       });
-
-      // 줌이 완료된 후에만 서버에 요청하기 위한 디바운스 처리
+      
+      // 디바운스된 API 호출 함수 - 줌을 위해 유지
       const debouncedFetchData = debounce(() => {
         fetchFractalData();
-      }, 300);
-
-      // 'end' 이벤트에 디바운스된 함수 연결
-      controls.addEventListener('end', debouncedFetchData);
+      }, 100); // 디바운스 시간 단축
+      
+      // 영구적인 렌더링을 위한 애니메이션 루프 제거
+      // 관성을 사용하지 않기 때문에 불필요
+      // function animate() {
+      //   requestAnimationFrame(animate);
+      //   controls.update(); // 관성 적용을 위해 반드시 필요
+      //   renderer.render(scene, camera);
+      // }
+      // animate();
+      
+      // 줌 이벤트를 위한 특정 처리
+      renderer.domElement.addEventListener('wheel', () => {
+        // 줌 레벨 업데이트
+        let currentZoom = Math.floor(camera.zoom * 10) / 10;
+        if (zoomLevel.value !== currentZoom) {
+          zoomLevel.value = currentZoom;
+          // 줌 후 즉시 데이터 갱신
+          setTimeout(() => {
+            fetchFractalData();
+          }, 50); // 짧은 지연 후 실행
+        }
+      }, { passive: true });
+      
+      // 'end' 이벤트에는 추가 처리 없음 (마우스업과 휠 이벤트에서 처리함)
+      // controls.addEventListener('end', debouncedFetchData);
       // 좌표축 추가 (if enabled)
       updateAxisVisibility();
     };
@@ -290,36 +356,70 @@ export default {
         console.error('No pixel data received'); 
         return;
       }
-      // 1. Base64 문자열을 디코딩하여 바이너리 데이터 얻기
-    const binaryString = atob(pixelData);
-    
-      // 2. 바이너리 문자열을 Uint8Array로 변환
-      const bytes = new Uint8Array(binaryString.length);
-      for (let i = 0; i < binaryString.length; i++) {
-        bytes[i] = binaryString.charCodeAt(i);
-      }
+      
+      try {
+        // 1. Base64 문자열을 디코딩하여 바이너리 데이터 얻기
+        const binaryString = atob(pixelData);
+        
+        // 2. 바이너리 문자열을 Uint8Array로 변환
+        const bytes = new Uint8Array(binaryString.length);
+        for (let i = 0; i < binaryString.length; i++) {
+          bytes[i] = binaryString.charCodeAt(i);
+        }
 
-      // 텍스처 생성
-      const texture = new THREE.DataTexture(
-        bytes,
-        resolution.value,
-        resolution.value,
-        THREE.RGBAFormat
-      );
-      texture.needsUpdate = true;
-      
-      // 메시 생성 또는 업데이트
-      if (!fractalMesh) {
-        const geometry = new THREE.PlaneGeometry(2, 2);
-        const material = new THREE.MeshBasicMaterial({ map: texture });
-        fractalMesh = new THREE.Mesh(geometry, material);
-        scene.add(fractalMesh);
-      } else {
-        fractalMesh.material.map = texture;
-        fractalMesh.material.needsUpdate = true;
+        // 디버깅: 바이트 데이터 확인
+        console.log(`Received pixel data: ${bytes.length} bytes, resolution: ${getResolutionForZoom(zoomLevel.value)}`);
+        
+        // 3. 실제 동적 해상도 값 확인 (API 호출 시 사용된 값)
+        const actualResolution = getResolutionForZoom(zoomLevel.value);
+
+        // 텍스처 생성 - 정확한 해상도와 타입 명시
+        // 픽셀 데이터 포맷 확인
+        console.log(`Texture dimensions: ${actualResolution}x${actualResolution}, Bytes length: ${bytes.length}`);
+        
+        // 필요한 바이트 수 확인 (RGBA 포맷은 픽셀당 4바이트)
+        const expectedBytes = actualResolution * actualResolution * 4;
+        if (bytes.length !== expectedBytes) {
+          console.warn(`Bytes length mismatch! Expected: ${expectedBytes}, Got: ${bytes.length}`);
+        }
+        
+        // 텍스처 생성
+        const texture = new THREE.DataTexture(
+          bytes,
+          actualResolution,
+          actualResolution,
+          THREE.RGBAFormat,
+          THREE.UnsignedByteType // 명시적으로 unsigned byte 타입 지정
+        );
+        
+        // 추가 텍스처 설정
+        texture.flipY = false; // Y축 뒤집지 않음
+        texture.wrapS = THREE.ClampToEdgeWrapping; // 텍스처 매핑 방식 설정
+        texture.wrapT = THREE.ClampToEdgeWrapping;
+        texture.magFilter = THREE.LinearFilter; // 확대/축소 필터 설정
+        texture.minFilter = THREE.LinearFilter;
+        texture.needsUpdate = true;
+        
+        // 메시 생성 또는 업데이트
+        if (!fractalMesh) {
+          const geometry = new THREE.PlaneGeometry(2, 2);
+          const material = new THREE.MeshBasicMaterial({ 
+            map: texture,
+            // 텍스처가 정확히 매핑되도록 설정
+            side: THREE.DoubleSide
+          });
+          fractalMesh = new THREE.Mesh(geometry, material);
+          scene.add(fractalMesh);
+        } else {
+          fractalMesh.material.map = texture;
+          fractalMesh.material.needsUpdate = true;
+        }
+        
+        // 렌더링
+        renderer.render(scene, camera);
+      } catch (error) {
+        console.error('Error processing fractal texture:', error);
       }
-      
-      renderer.render(scene, camera);
     };
 
     const updateAxisVisibility = () => {
