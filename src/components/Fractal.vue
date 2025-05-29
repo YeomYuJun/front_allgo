@@ -16,7 +16,11 @@
       
       <div class="control-group">
         <label>반복 횟수: {{ iterations }}</label>
-        <input type="range" v-model.number="iterations" min="1" max="100" step="1" />
+        <input type="range" 
+               v-model.number="iterations" 
+               :min="getMinIterations" 
+               :max="getMaxIterations" 
+               :step="getIterationStep" />
       </div>
       
       <div class="control-group">
@@ -136,11 +140,58 @@ export default {
       return (fractalInfo.value.convergenceRatio * 100).toFixed(2);
     });
 
+    // 프랙탈 타입별 최적화된 반복 횟수 설정
+    const getMinIterations = computed(() => {
+      switch (selectedFractalType.value) {
+        case 'koch':
+          return 1;
+        case 'sierpinski':
+          return 1;
+        default:
+          return 10;
+      }
+    });
+
+    const getMaxIterations = computed(() => {
+      switch (selectedFractalType.value) {
+        case 'koch':
+          return 7; // 코흐 눈송이는 7회로 제한
+        case 'sierpinski':
+          return 10;
+        case 'mandelbrot':
+        case 'julia':
+          return 100;
+        case 'barnsley':
+          return 100000;
+        default:
+          return 100;
+      }
+    });
+
+    const getIterationStep = computed(() => {
+      switch (selectedFractalType.value) {
+        case 'koch':
+        case 'sierpinski':
+          return 1;
+        default:
+          return 5;
+      }
+    });
+
+    // 성능 모니터링
+    const performanceMetrics = ref({
+      lastRenderTime: 0,
+      averageRenderTime: 0,
+      renderCount: 0
+    });
+
     // API URL
     const API_BASE_URL = 'http://localhost:8080/api/fractal';
 
     // API 호출 함수들
     const fetchFractalData = async () => {
+      const startTime = performance.now();
+      
       try {
         // 줄 레벨과 해상도 계산
         const dynamicResolution = getResolutionForZoom(zoomLevel.value);
@@ -162,27 +213,37 @@ export default {
           resolution: dynamicResolution,
           colorScheme: colorScheme.value,
           smooth: smoothShading.value,
-          centerX: centerX.value.toString(), // 부동소수점 정밀도 보장을 위해 명시적 문자열 변환
+          centerX: centerX.value.toString(),
           centerY: centerY.value.toString(),
           zoom: zoomLevel.value.toString()
         });
         
         if (selectedFractalType.value === 'julia') {
-          params.append('juliaReal', juliaReal.value.toString()); // 명시적 문자열 변환
+          params.append('juliaReal', juliaReal.value.toString());
           params.append('juliaImag', juliaImag.value.toString());
         }
-        
-        console.log('API URL:', `${API_BASE_URL}/generate?${params}`);
         
         const response = await fetch(`${API_BASE_URL}/generate?${params}`);
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         const data = await response.json();
         
-        // 응답 데이터 길이 확인 (디버깅)
-        console.log(`Response received: pixels data length=${data.pixels ? data.pixels.length : 'undefined'}`);
-        
         fractalInfo.value = data.info;
         updateVisualization(data.pixels);
+
+        // 성능 메트릭 업데이트
+        const endTime = performance.now();
+        const renderTime = endTime - startTime;
+        performanceMetrics.value.renderCount++;
+        performanceMetrics.value.lastRenderTime = renderTime;
+        performanceMetrics.value.averageRenderTime = 
+          (performanceMetrics.value.averageRenderTime * (performanceMetrics.value.renderCount - 1) + renderTime) 
+          / performanceMetrics.value.renderCount;
+
+        // 성능 경고 표시
+        if (renderTime > 1000) { // 1초 이상 걸리는 경우
+          console.warn(`프랙탈 렌더링이 ${renderTime.toFixed(0)}ms 걸렸습니다. 성능 최적화가 필요할 수 있습니다.`);
+        }
+
       } catch (error) {
         console.error('Error fetching fractal data:', error);
       }
@@ -229,8 +290,6 @@ export default {
       // 최대 반복 횟수 제한 (성능 고려)
       return Math.min(500, scaledIterations);
     };
-
-
 
     // Three.js 시각화 함수들
     const initThreeScene = () => {
@@ -505,7 +564,11 @@ export default {
       centerY,
       fractalInfo,
       fractalDimension,
-      convergenceRatio
+      convergenceRatio,
+      getMinIterations,
+      getMaxIterations,
+      getIterationStep,
+      performanceMetrics
     };
   }
 };
@@ -638,5 +701,11 @@ select {
   .info-panel {
     height: auto;
   }
+}
+
+.performance-warning {
+  color: #ff4444;
+  font-size: 0.9em;
+  margin-top: 5px;
 }
 </style> 
