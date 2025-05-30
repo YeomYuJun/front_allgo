@@ -9,7 +9,6 @@
           <option value="mandelbrot">만델브로트 집합</option>
           <option value="julia">줄리아 집합</option>
           <option value="sierpinski">시에르핀스키 삼각형</option>
-          <option value="koch">코흐 눈송이</option>
           <option value="barnsley">반슬리 고사리</option>
         </select>
       </div>
@@ -143,8 +142,6 @@ export default {
     // 프랙탈 타입별 최적화된 반복 횟수 설정
     const getMinIterations = computed(() => {
       switch (selectedFractalType.value) {
-        case 'koch':
-          return 1;
         case 'sierpinski':
           return 1;
         default:
@@ -154,8 +151,6 @@ export default {
 
     const getMaxIterations = computed(() => {
       switch (selectedFractalType.value) {
-        case 'koch':
-          return 7; // 코흐 눈송이는 7회로 제한
         case 'sierpinski':
           return 10;
         case 'mandelbrot':
@@ -170,7 +165,6 @@ export default {
 
     const getIterationStep = computed(() => {
       switch (selectedFractalType.value) {
-        case 'koch':
         case 'sierpinski':
           return 1;
         default:
