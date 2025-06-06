@@ -289,9 +289,14 @@ export default {
     const initThreeScene = () => {
       scene = new THREE.Scene();
       camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 10);
-      renderer = new THREE.WebGLRenderer({ antialias: true });
+      renderer = new THREE.WebGLRenderer({ 
+        antialias: true,
+        powerPreference: 'high-performance',
+        preserveDrawingBuffer: true
+      });
       
       renderer.setSize(fractalContainer.value.clientWidth, fractalContainer.value.clientHeight);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // 성능 최적화
       fractalContainer.value.appendChild(renderer.domElement);
       
       // 컨트롤 초기화 - 성능 및 사용성 개선
@@ -301,108 +306,62 @@ export default {
       controls.enableZoom = true;
       
       // 관성 설정 조정
-      controls.enableDamping = false;  // 관성 비활성화
-      //controls.dampingFactor = 0.05;  // 관성 값 낮게 설정
-      controls.panSpeed = 0.5;         // 이동 속도 낮게 조정
-      controls.zoomSpeed = 0.5;        // 줌 속도 낮게 조정
+      controls.enableDamping = false;
+      controls.panSpeed = 0.5;
+      controls.zoomSpeed = 0.5;
       
-      // 마우스 이벤트 추가 - 직접 이벤트 핸들링
-      renderer.domElement.addEventListener('mouseup', () => {
-        // 센터 좌표 업데이트
-        centerX.value = controls.target.x;
-        centerY.value = controls.target.y;
-        console.log("centerX.value:", centerX.value);
-        console.log("centerY.value:", centerY.value);
-        
-        // 즉시 렌더링
-        renderer.render(scene, camera);
-        
-        // 마우스 업 직후 즉시 데이터 업데이트
-        fetchFractalData();
-      }, { passive: true });
+      // 마우스 이벤트 최적화
+      let isDragging = false;
+      let lastUpdateTime = 0;
+      const UPDATE_THRESHOLD = 100; // 100ms마다 업데이트
       
-      // mousedown 이벤트도 추가
       renderer.domElement.addEventListener('mousedown', () => {
-        // 마우스 다운 시 초기 상태 저장
-        renderer.render(scene, camera);
+        isDragging = true;
       }, { passive: true });
       
-      // 왼쪽 마우스 버튼으로 팬/이동하도록 설정
-      controls.mouseButtons = {
-        LEFT: THREE.MOUSE.PAN,
-        MIDDLE: THREE.MOUSE.DOLLY,
-        RIGHT: THREE.MOUSE.ROTATE
-      };
+      renderer.domElement.addEventListener('mouseup', () => {
+        isDragging = false;
+        const currentTime = performance.now();
+        if (currentTime - lastUpdateTime > UPDATE_THRESHOLD) {
+          centerX.value = controls.target.x;
+          centerY.value = controls.target.y;
+          fetchFractalData();
+          lastUpdateTime = currentTime;
+        }
+      }, { passive: true });
+      
+      // 줌 이벤트 최적화
+      let zoomTimeout;
+      renderer.domElement.addEventListener('wheel', () => {
+        clearTimeout(zoomTimeout);
+        zoomTimeout = setTimeout(() => {
+          let currentZoom = Math.floor(camera.zoom * 10) / 10;
+          if (zoomLevel.value !== currentZoom) {
+            zoomLevel.value = currentZoom;
+            fetchFractalData();
+          }
+        }, 150);
+      }, { passive: true });
       
       // 카메라 위치 설정
       camera.position.z = 5;
       
-      // 'change' 이벤트 핸들러 - 간소화
+      // 'change' 이벤트 핸들러 최적화
       controls.addEventListener('change', () => {
-        // 센터 좌표 업데이트
-        centerX.value = controls.target.x;
-        centerY.value = controls.target.y;
-        
-        // 현재 카메라 줌 가져오기 (소수점 제한)
-        let currentZoom = Math.floor(camera.zoom * 10) / 10; // 0.1 단위 반올림
-        
-        // 상태 변수가 변경된 경우에만 업데이트
-        if (zoomLevel.value !== currentZoom) {
-          zoomLevel.value = currentZoom;
-          console.log("Zoom level updated to:", zoomLevel.value);
+        if (!isDragging) {
+          centerX.value = controls.target.x;
+          centerY.value = controls.target.y;
+          let currentZoom = Math.floor(camera.zoom * 10) / 10;
+          if (zoomLevel.value !== currentZoom) {
+            zoomLevel.value = currentZoom;
+          }
+          renderer.render(scene, camera);
         }
-        
-        // 즉시 렌더링 (디바운스 제거)
-        renderer.render(scene, camera);
       });
       
-      // 디바운스된 API 호출 함수 - 줌을 위해 유지
-      const debouncedFetchData = debounce(() => {
-        fetchFractalData();
-      }, 100); // 디바운스 시간 단축
-      
-      // 영구적인 렌더링을 위한 애니메이션 루프 제거
-      // 관성을 사용하지 않기 때문에 불필요
-      // function animate() {
-      //   requestAnimationFrame(animate);
-      //   controls.update(); // 관성 적용을 위해 반드시 필요
-      //   renderer.render(scene, camera);
-      // }
-      // animate();
-      
-      // 줌 이벤트를 위한 특정 처리
-      renderer.domElement.addEventListener('wheel', () => {
-        // 줌 레벨 업데이트
-        let currentZoom = Math.floor(camera.zoom * 10) / 10;
-        if (zoomLevel.value !== currentZoom) {
-          zoomLevel.value = currentZoom;
-          // 줌 후 즉시 데이터 갱신
-          setTimeout(() => {
-            fetchFractalData();
-          }, 50); // 짧은 지연 후 실행
-        }
-      }, { passive: true });
-      
-      // 'end' 이벤트에는 추가 처리 없음 (마우스업과 휠 이벤트에서 처리함)
-      // controls.addEventListener('end', debouncedFetchData);
       // 좌표축 추가 (if enabled)
       updateAxisVisibility();
     };
-
-    //디바운스 추가
-    const debounce = (func, wait) => {
-      let timeout;
-      return function executedFunction(...args) {
-        const later = () => {
-          clearTimeout(timeout);
-          func(...args);
-        };
-        clearTimeout(timeout);
-        timeout = setTimeout(later, wait);
-      };
-    };
-    
-
 
     const updateVisualization = (pixelData) => {
       if(!pixelData){
@@ -420,45 +379,36 @@ export default {
           bytes[i] = binaryString.charCodeAt(i);
         }
 
-        // 디버깅: 바이트 데이터 확인
-        console.log(`Received pixel data: ${bytes.length} bytes, resolution: ${getResolutionForZoom(zoomLevel.value)}`);
-        
-        // 3. 실제 동적 해상도 값 확인 (API 호출 시 사용된 값)
+        // 3. 실제 동적 해상도 값 확인
         const actualResolution = getResolutionForZoom(zoomLevel.value);
-
-        // 텍스처 생성 - 정확한 해상도와 타입 명시
-        // 픽셀 데이터 포맷 확인
-        console.log(`Texture dimensions: ${actualResolution}x${actualResolution}, Bytes length: ${bytes.length}`);
         
-        // 필요한 바이트 수 확인 (RGBA 포맷은 픽셀당 4바이트)
-        const expectedBytes = actualResolution * actualResolution * 4;
-        if (bytes.length !== expectedBytes) {
-          console.warn(`Bytes length mismatch! Expected: ${expectedBytes}, Got: ${bytes.length}`);
+        // 4. 메모리 관리: 이전 텍스처 해제
+        if (fractalMesh && fractalMesh.material.map) {
+          fractalMesh.material.map.dispose();
         }
-        
-        // 텍스처 생성
+
+        // 5. 텍스처 생성 - 정확한 해상도와 타입 명시
         const texture = new THREE.DataTexture(
           bytes,
           actualResolution,
           actualResolution,
           THREE.RGBAFormat,
-          THREE.UnsignedByteType // 명시적으로 unsigned byte 타입 지정
+          THREE.UnsignedByteType
         );
         
-        // 추가 텍스처 설정
-        texture.flipY = false; // Y축 뒤집지 않음
-        texture.wrapS = THREE.ClampToEdgeWrapping; // 텍스처 매핑 방식 설정
+        // 6. 텍스처 설정 개선
+        texture.flipY = false;
+        texture.wrapS = THREE.ClampToEdgeWrapping;
         texture.wrapT = THREE.ClampToEdgeWrapping;
-        texture.magFilter = THREE.LinearFilter; // 확대/축소 필터 설정
+        texture.magFilter = THREE.LinearFilter;
         texture.minFilter = THREE.LinearFilter;
         texture.needsUpdate = true;
         
-        // 메시 생성 또는 업데이트
+        // 7. 메시 생성 또는 업데이트
         if (!fractalMesh) {
           const geometry = new THREE.PlaneGeometry(2, 2);
           const material = new THREE.MeshBasicMaterial({ 
             map: texture,
-            // 텍스처가 정확히 매핑되도록 설정
             side: THREE.DoubleSide
           });
           fractalMesh = new THREE.Mesh(geometry, material);
@@ -468,7 +418,15 @@ export default {
           fractalMesh.material.needsUpdate = true;
         }
         
-        // 렌더링
+        // 8. 좌표계 변환 보정
+        const aspectRatio = actualResolution / actualResolution;
+        camera.left = -aspectRatio;
+        camera.right = aspectRatio;
+        camera.top = 1;
+        camera.bottom = -1;
+        camera.updateProjectionMatrix();
+        
+        // 9. 렌더링
         renderer.render(scene, camera);
       } catch (error) {
         console.error('Error processing fractal texture:', error);
@@ -507,6 +465,24 @@ export default {
       renderer.render(scene, camera);
     };
 
+    // 메모리 정리 함수 추가
+    const cleanup = () => {
+      if (fractalMesh) {
+        if (fractalMesh.material.map) {
+          fractalMesh.material.map.dispose();
+        }
+        fractalMesh.material.dispose();
+        fractalMesh.geometry.dispose();
+        scene.remove(fractalMesh);
+      }
+      if (renderer) {
+        renderer.dispose();
+      }
+      if (controls) {
+        controls.dispose();
+      }
+    };
+
     // 라이프사이클 훅
     onMounted(() => {
       initThreeScene();
@@ -515,13 +491,8 @@ export default {
     });
 
     onBeforeUnmount(() => {
+      cleanup();
       window.removeEventListener('resize', handleResize);
-      if (renderer) {
-        renderer.dispose();
-      }
-      if (controls) {
-        controls.dispose();
-      }
     });
 
     // 감시자
