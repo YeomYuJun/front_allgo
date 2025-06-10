@@ -151,13 +151,17 @@ export default {
     let fractalMesh, axisMesh;
     let renderRequested = false;
     let lastFetchParams = null;
+
+    // IFS 렌더링용 추가 변수
+    let pointsGeometry, pointsMaterial, pointsMesh;
+    const isIFSFractal = ref(false);
     
     // 프랙탈 타입별 기본 범위 설정
     const fractalDefaultRanges = {
       mandelbrot: { xMin: -2.5, xMax: 1.0, yMin: -1.25, yMax: 1.25 },
       julia: { xMin: -2.0, xMax: 2.0, yMin: -2.0, yMax: 2.0 },
-      sierpinski: { xMin: -3.0, xMax: 3.0, yMin: -2.0, yMax: 4.0 },
-      barnsley: { xMin: -3.0, xMax: 3.0, yMin: 0.0, yMax: 10.0 }
+      sierpinski: { xMin: -1.5, xMax: 1.5, yMin: -1.0, yMax: 2.0 },
+      barnsley: { xMin: -2.5, xMax: 2.5, yMin: -0.5, yMax: 9.5 }
     };
     
     // 계산된 속성들
@@ -175,8 +179,8 @@ export default {
 
     const getMinIterations = computed(() => {
       switch (selectedFractalType.value) {
-        case 'sierpinski': return 1000;
-        case 'barnsley': return 10000;
+        case 'sierpinski': return 10000;
+        case 'barnsley': return 50000;
         default: return 10;
       }
     });
@@ -206,16 +210,19 @@ export default {
         return baseResolution.value;
       }
       
-      // 줌 레벨에 따라 해상도를 조정
+      // IFS 프랙탈은 줌과 무관하게 고정 해상도
+      if (selectedFractalType.value === 'sierpinski' || 
+          selectedFractalType.value === 'barnsley') {
+        return baseResolution.value;
+      }
+      
       let resolution = baseResolution.value;
       
       if (zoomLevel.value > 1) {
-        // 로그 스케일로 해상도 증가
         const scaleFactor = 1 + Math.log10(zoomLevel.value) * 0.5;
         resolution = Math.floor(resolution * scaleFactor);
       }
       
-      // 최대값 제한
       return Math.min(1200, Math.max(100, resolution));
     };
 
@@ -225,10 +232,11 @@ export default {
         return iterations.value;
       }
       
-      // 이터레이션 타입의 프랙탈은 줌에 영향받지 않음
+      // IFS 프랙탈도 줌 레벨에 따라 반복 횟수 증가
       if (selectedFractalType.value === 'sierpinski' || 
           selectedFractalType.value === 'barnsley') {
-        return iterations.value;
+        // 줌 인 시 더 많은 점이 필요
+        return Math.floor(iterations.value * Math.max(1, Math.sqrt(zoomLevel.value)));
       }
       
       let dynamicIterations = iterations.value;
@@ -282,12 +290,19 @@ export default {
           params.append('juliaReal', juliaReal.value.toString());
           params.append('juliaImag', juliaImag.value.toString());
         }
+
+        if (isIFSFractal) {
+          params.append('xMin', viewBounds.value.xMin.toString());
+          params.append('xMax', viewBounds.value.xMax.toString());
+          params.append('yMin', viewBounds.value.yMin.toString());
+          params.append('yMax', viewBounds.value.yMax.toString());
+        }
         
         const response = await fetch(`${API_BASE_URL}/generate?${params}`);
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         const data = await response.json();
         
-        fractalInfo.value = data.info;
+        fractalInfo.value = data.info || {};  // null 체크 추가
         updateVisualization(data);
         
         lastRenderTime.value = Math.round(performance.now() - startTime);
@@ -328,26 +343,44 @@ export default {
 
     // 시각화 업데이트
     const updateVisualization = (data) => {
+      // 프랙탈 타입 확인
+      isIFSFractal.value = selectedFractalType.value === 'sierpinski' || 
+                      selectedFractalType.value === 'barnsley';
+      
+      if (isIFSFractal.value) {
+        renderIFSFractal(data);
+      } else {
+        renderComplexFractal(data);
+      }
+    }
+
+    const renderComplexFractal = (data) => {
       if (!data.pixels) {
         console.error('No pixel data received');
         return;
       }
       
+      // 기존 IFS 메시 제거
+      if (pointsMesh) {
+        scene.remove(pointsMesh);
+        pointsGeometry.dispose();
+        pointsMaterial.dispose();
+        pointsMesh = null;
+      }
+      
       try {
-        // Base64 디코딩
+        // 기존 텍스처 렌더링 코드 그대로
         const binaryString = atob(data.pixels);
         const bytes = new Uint8Array(binaryString.length);
         for (let i = 0; i < binaryString.length; i++) {
           bytes[i] = binaryString.charCodeAt(i);
         }
         
-        // 이전 텍스처 정리
         if (fractalMesh?.material?.map) {
           fractalMesh.material.map.dispose();
           fractalMesh.material.dispose();
         }
         
-        // 텍스처 생성
         const texture = new THREE.DataTexture(
           bytes,
           currentResolution.value,
@@ -360,7 +393,6 @@ export default {
         texture.magFilter = THREE.LinearFilter;
         texture.minFilter = THREE.LinearFilter;
         
-        // 메시 생성 또는 업데이트
         if (!fractalMesh) {
           const geometry = new THREE.PlaneGeometry(2, 2);
           const material = new THREE.MeshBasicMaterial({ 
@@ -377,6 +409,111 @@ export default {
         render();
       } catch (error) {
         console.error('Error processing fractal texture:', error);
+      }
+    };
+
+    const renderIFSFractal = (data) => {
+      if (!data.pixels) {
+        console.error('No pixel data received');
+        return;
+      }
+      
+      // 기존 텍스처 메시 제거
+      if (fractalMesh) {
+        scene.remove(fractalMesh);
+        if (fractalMesh.material.map) {
+          fractalMesh.material.map.dispose();
+        }
+        fractalMesh.material.dispose();
+        fractalMesh.geometry.dispose();
+        fractalMesh = null;
+      }
+      
+      try {
+        // Base64 디코딩
+        const binaryString = atob(data.pixels);
+        const bytes = new Uint8Array(binaryString.length);
+        for (let i = 0; i < binaryString.length; i++) {
+          bytes[i] = binaryString.charCodeAt(i);
+        }
+        
+        // 히트맵에서 점 추출
+        const positions = [];
+        const colors = [];
+        const size = currentResolution.value;
+        
+        // 현재 뷰 범위 가져오기
+        const xRange = viewBounds.value.xMax - viewBounds.value.xMin;
+        const yRange = viewBounds.value.yMax - viewBounds.value.yMin;
+        
+        for (let y = 0; y < size; y++) {
+          for (let x = 0; x < size; x++) {
+            const idx = (y * size + x) * 4;
+            const intensity = bytes[idx] / 255;
+            
+            if (intensity > 0.01) {
+              // 픽셀 좌표를 현재 뷰 범위에 맞게 변환
+              const worldX = viewBounds.value.xMin + (x / size) * xRange;
+              const worldY = viewBounds.value.yMax - (y / size) * yRange;
+              
+              // 월드 좌표를 화면 좌표(-1 ~ 1)로 변환
+              const screenX = ((worldX - viewCenter.value.x) / (xRange / 2));
+              const screenY = ((worldY - viewCenter.value.y) / (yRange / 2));
+              
+              positions.push(screenX, screenY, 0);
+              
+              // 색상 설정 (강도에 따라)
+              const color = getIFSColor(intensity);
+              colors.push(color.r, color.g, color.b);
+            }
+          }
+        }
+        
+        // 포인트 클라우드 생성
+        pointsGeometry = new THREE.BufferGeometry();
+        pointsGeometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+        pointsGeometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+        
+        // 줌 레벨에 따른 포인트 크기 조정
+        const pointSize = Math.max(0.001, 0.01 / Math.sqrt(zoomLevel.value));
+        
+        pointsMaterial = new THREE.PointsMaterial({
+          size: pointSize,
+          vertexColors: true,
+          sizeAttenuation: false
+        });
+        
+        pointsMesh = new THREE.Points(pointsGeometry, pointsMaterial);
+        scene.add(pointsMesh);
+        
+
+        // 디버깅을 위한 로그 추가
+        console.log('IFS Rendering - View bounds:', viewBounds.value);
+        console.log('IFS Rendering - Center:', viewCenter.value);
+        console.log('IFS Rendering - Zoom:', zoomLevel.value);
+        console.log('Points found:', positions.length / 3);
+        render();
+      } catch (error) {
+        console.error('Error processing IFS fractal:', error);
+      }
+    };
+
+    const getIFSColor = (intensity) => {
+      // 로그 스케일로 강도 조정 (세부 사항 더 잘 보이게)
+      const adjustedIntensity = Math.pow(intensity, 0.5);
+      
+      switch (colorScheme.value) {
+        case 'fire':
+          return new THREE.Color(adjustedIntensity, adjustedIntensity * 0.5, 0);
+        case 'ocean':
+          return new THREE.Color(0, adjustedIntensity * 0.5, adjustedIntensity);
+        case 'rainbow':
+          const hue = adjustedIntensity * 360;
+          return new THREE.Color().setHSL(hue / 360, 0.8, 0.5 + adjustedIntensity * 0.3);
+        case 'grayscale':
+          return new THREE.Color(adjustedIntensity, adjustedIntensity, adjustedIntensity);
+        default:
+          return new THREE.Color(0, adjustedIntensity, 0); // 녹색 계열
       }
     };
 
@@ -448,11 +585,11 @@ export default {
         lastMouseX = e.clientX;
         lastMouseY = e.clientY;
         
-        // 디바운스 업데이트
+        // IFS 프랙탈도 드래그 시 업데이트
         clearTimeout(updateTimeout);
         updateTimeout = setTimeout(() => {
           fetchFractalData();
-        }, 200);
+        }, isIFSFractal.value ? 100 : 200); // IFS는 더 빠르게 업데이트
       });
       
       // 마우스 업
@@ -462,41 +599,41 @@ export default {
       
       // 마우스 휠 (줌)
       renderer.domElement.addEventListener('wheel', (e) => {
-        e.preventDefault();
+      e.preventDefault();
+      
+      const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1;
+      const newZoom = Math.max(0.1, Math.min(1000000, zoomLevel.value * zoomFactor));
+      
+      if (newZoom !== zoomLevel.value) {
+        // 마우스 위치를 중심으로 줌
+        const rect = renderer.domElement.getBoundingClientRect();
+        const mouseX = (e.clientX - rect.left) / rect.width * 2 - 1;
+        const mouseY = -(e.clientY - rect.top) / rect.height * 2 + 1;
         
-        const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1;
-        const newZoom = Math.max(0.1, Math.min(1000000, zoomLevel.value * zoomFactor));
+        const rangeX = viewBounds.value.xMax - viewBounds.value.xMin;
+        const rangeY = viewBounds.value.yMax - viewBounds.value.yMin;
         
-        if (newZoom !== zoomLevel.value) {
-          // 마우스 위치를 중심으로 줌
-          const rect = renderer.domElement.getBoundingClientRect();
-          const mouseX = (e.clientX - rect.left) / rect.width * 2 - 1;
-          const mouseY = -(e.clientY - rect.top) / rect.height * 2 + 1;
-          
-          const rangeX = viewBounds.value.xMax - viewBounds.value.xMin;
-          const rangeY = viewBounds.value.yMax - viewBounds.value.yMin;
-          
-          const worldX = viewCenter.value.x + mouseX * rangeX / 2;
-          const worldY = viewCenter.value.y + mouseY * rangeY / 2;
-          
-          // 새로운 중심 계산 (마우스 위치 기준 줌)
-          const t = 1 - 1 / zoomFactor;
-          viewCenter.value.x = viewCenter.value.x + t * (worldX - viewCenter.value.x);
-          viewCenter.value.y = viewCenter.value.y + t * (worldY - viewCenter.value.y);
-          
-          zoomLevel.value = newZoom;
-          updateViewBounds();
-          
-          // 줌 레벨에 따른 품질 조정
-          currentResolution.value = calculateDynamicResolution();
-          currentIterations.value = calculateDynamicIterations();
-          
-          clearTimeout(updateTimeout);
-          updateTimeout = setTimeout(() => {
-            fetchFractalData();
-          }, 150);
-        }
-      });
+        const worldX = viewCenter.value.x + mouseX * rangeX / 2;
+        const worldY = viewCenter.value.y + mouseY * rangeY / 2;
+        
+        // 새로운 중심 계산 (마우스 위치 기준 줌)
+        const t = 1 - 1 / zoomFactor;
+        viewCenter.value.x = viewCenter.value.x + t * (worldX - viewCenter.value.x);
+        viewCenter.value.y = viewCenter.value.y + t * (worldY - viewCenter.value.y);
+        
+        zoomLevel.value = newZoom;
+        updateViewBounds();
+        
+        // 줌 레벨에 따른 품질 조정
+        currentResolution.value = calculateDynamicResolution();
+        currentIterations.value = calculateDynamicIterations();
+        
+        clearTimeout(updateTimeout);
+        updateTimeout = setTimeout(() => {
+          fetchFractalData();
+        }, isIFSFractal ? 100 : 150); // IFS는 더 빠르게 업데이트
+      }
+    });
       
       // 더블 클릭 (확대)
       renderer.domElement.addEventListener('dblclick', (e) => {
@@ -590,6 +727,13 @@ export default {
       currentResolution.value = baseResolution.value;
       currentIterations.value = iterations.value;
       
+      // IFS 프랙탈의 경우 기본 반복 횟수 조정
+      if (selectedFractalType.value === 'sierpinski') {
+        iterations.value = 50000;
+      } else if (selectedFractalType.value === 'barnsley') {
+        iterations.value = 100000;
+      }
+      
       fetchFractalData(true);
     };
 
@@ -610,6 +754,7 @@ export default {
     };
 
     // 정리 함수
+    /*
     const cleanup = () => {
       if (fractalMesh) {
         if (fractalMesh.material.map) {
@@ -631,6 +776,51 @@ export default {
         }
       }
     };
+    */
+
+    const cleanup = () => {
+      if (fractalMesh) {
+        if (fractalMesh.material.map) {
+          fractalMesh.material.map.dispose();
+        }
+        fractalMesh.material.dispose();
+        fractalMesh.geometry.dispose();
+      }
+      
+      /*
+      if (pointsMesh) {
+        pointsGeometry.dispose();
+        pointsMaterial.dispose();
+        scene.remove(pointsMesh);
+      }
+      */
+      if (pointsMesh) {
+        scene.remove(pointsMesh);
+        pointsMesh = null;
+      }
+      if (pointsGeometry) {
+        pointsGeometry.dispose();
+        pointsGeometry = null;
+      }
+      if (pointsMaterial) {
+        pointsMaterial.dispose();
+        pointsMaterial = null;
+      }
+      
+      if (axisMesh) {
+        axisMesh.material.dispose();
+        axisMesh.geometry.dispose();
+      }
+      
+      if (renderer) {
+        renderer.dispose();
+        if (fractalContainer.value && renderer.domElement) {
+          fractalContainer.value.removeChild(renderer.domElement);
+        }
+      }
+    };
+
+
 
     // 라이프사이클 훅
     onMounted(() => {
