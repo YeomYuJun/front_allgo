@@ -1,60 +1,124 @@
 <template>
   <section class="fft-container container">
-    <h1>푸리에 변환 시각화</h1>
+    <h1>푸리에 변환 시각화 - 3Blue1Brown 스타일</h1>
 
-    <div class="controls">
-      <div class="control-group">
-        <label>신호 타입:</label>
-        <select v-model="selectedSignalType">
-          <option value="sine">사인파</option>
-          <option value="square">사각파</option>
-          <option value="triangle">삼각파</option>
-          <option value="sawtooth">톱니파</option>
-          <option value="custom">사용자 정의</option>
-        </select>
+    <!-- 신호 생성 컨트롤 -->
+    <div class="controls signal-controls">
+      <h3>1. 신호 생성</h3>
+      <div class="signal-builder">
+        <div v-for="(component, index) in signalComponents" :key="index" class="signal-component">
+          <label>주파수 {{ index + 1 }}: {{ component.frequency }}Hz</label>
+          <input type="range" v-model.number="component.frequency" min="0.5" max="20" step="0.1" />
+          
+          <label>진폭 {{ index + 1 }}: {{ component.amplitude }}</label>
+          <input type="range" v-model.number="component.amplitude" min="0" max="2" step="0.1" />
+          
+          <button @click="removeSignalComponent(index)" v-if="signalComponents.length > 1">제거</button>
+        </div>
+        <button @click="addSignalComponent">주파수 성분 추가</button>
       </div>
-      <div class="control-group">
-        <label>주파수: {{ frequency }}Hz</label>
-        <input type="range" v-model.number="frequency" min="1" max="20" step="1" />
-      </div>
-      <div class="control-group">
-        <label>진폭: {{ amplitude }}</label>
-        <input type="range" v-model.number="amplitude" min="0.1" max="2" step="0.1" />
-      </div>
-      <div class="control-group">
-        <label>샘플링 포인트: {{ samplingPoints }}</label>
-        <input type="range" v-model.number="samplingPoints" min="32" max="1024" step="32" />
-      </div>
-      <div class="control-group display-options">
-        <label><input type="checkbox" v-model="showOriginalSignal" /> 원본 신호</label>
-        <label><input type="checkbox" v-model="showFFTResult" /> FFT 결과</label>
-        <label><input type="checkbox" v-model="showPhaseSpectrum" /> 위상 스펙트럼</label>
+      
+      <div class="signal-params">
+        <label>샘플링 레이트: {{ samplingRate }}Hz</label>
+        <input type="range" v-model.number="samplingRate" min="50" max="1000" step="50" />
+        
+        <label>신호 지속시간: {{ duration }}초</label>
+        <input type="range" v-model.number="duration" min="1" max="5" step="0.5" />
       </div>
     </div>
 
-    <div class="visualization-container">
-      <div ref="signalContainer" class="plot-container">
-        <h3>시간 도메인</h3>
-      </div>
-      <div ref="fftContainer" class="plot-container">
-        <h3>주파수 도메인</h3>
-      </div>
-      <div v-if="showPhaseSpectrum" ref="phaseContainer" class="plot-container">
-        <h3>위상 스펙트럼</h3>
+    <!-- 신호 감기 컨트롤 -->
+    <div class="controls winding-controls">
+      <h3>2. 신호 감기 (Winding)</h3>
+      <div class="winding-params">
+        <label>감는 주파수: {{ windingFrequency.toFixed(2) }}Hz</label>
+        <input type="range" 
+               v-model.number="windingFrequency" 
+               :min="0" 
+               :max="maxDisplayFrequency" 
+               :step="0.1" 
+               @input="updateWindingVisualization" />
+        
+        <div class="winding-controls-buttons">
+          <button @click="startFrequencySweep" :disabled="isSweeeping">
+            {{ isSweeeping ? '스위핑 중...' : '주파수 스윕 시작' }}
+          </button>
+          <button @click="resetVisualization">리셋</button>
+        </div>
       </div>
     </div>
 
-    <div class="info-panel">
-      <h3>FFT 분석 정보</h3>
-      <div v-if="fftAnalysis">
-        <p><strong>주요 주파수 성분:</strong> {{ dominantFrequencies.join(', ') }}Hz</p>
-        <p><strong>신호 에너지:</strong> {{ signalEnergy.toFixed(2) }}</p>
-        <p><strong>평균 진폭:</strong> {{ averageAmplitude.toFixed(2) }}</p>
+    <!-- 메인 시각화 영역 -->
+    <div class="visualization-grid">
+      <!-- 시간 도메인 (원본 신호) -->
+      <div class="viz-panel time-domain">
+        <h4>시간 도메인 신호</h4>
+        <div ref="timeDomainContainer" class="viz-container"></div>
+        <div class="signal-equation">
+          {{ signalEquation }}
+        </div>
       </div>
-      <div v-if="selectedSignalType === 'custom'" class="custom-signal-editor">
-        <h4>사용자 정의 신호 편집</h4>
-        <textarea v-model="customSignalEquation" placeholder="수식을 입력하세요 (예: Math.sin(2*Math.PI*x) + 0.5*Math.sin(4*Math.PI*x))"></textarea>
-        <button @click="updateCustomSignal">적용</button>
+
+      <!-- 복소평면 (신호 감기) -->
+      <div class="viz-panel complex-plane">
+        <h4>복소평면 - 신호 감기 ({{ windingFrequency.toFixed(2) }}Hz)</h4>
+        <div ref="complexPlaneContainer" class="viz-container"></div>
+        <div class="center-of-mass-info">
+          <div v-if="currentWindingResult">
+            <p><strong>질량 중심:</strong></p>
+            <p>실수부: {{ currentWindingResult.centerOfMass.real.toFixed(3) }}</p>
+            <p>허수부: {{ currentWindingResult.centerOfMass.imaginary.toFixed(3) }}</p>
+            <p>크기: {{ currentWindingResult.centerOfMass.magnitude.toFixed(3) }}</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 주파수 도메인 (FFT 결과) -->
+      <div class="viz-panel frequency-domain">
+        <h4>주파수 도메인 (푸리에 변환)</h4>
+        <div ref="frequencyDomainContainer" class="viz-container"></div>
+        <div class="frequency-peaks">
+          <p><strong>주요 주파수 성분:</strong></p>
+          <div v-for="peak in detectedPeaks" :key="peak.frequency">
+            {{ peak.frequency.toFixed(1) }}Hz (크기: {{ peak.magnitude.toFixed(2) }})
+          </div>
+        </div>
+      </div>
+
+      <!-- 애니메이션 컨트롤 -->
+      <div class="viz-panel animation-controls">
+        <h4>애니메이션 컨트롤</h4>
+        <div class="animation-buttons">
+          <button @click="toggleAnimation">
+            {{ isAnimating ? '일시정지' : '애니메이션 시작' }}
+          </button>
+          <button @click="stepAnimation">단계별 진행</button>
+        </div>
+        
+        <div class="animation-speed">
+          <label>애니메이션 속도: {{ animationSpeed }}x</label>
+          <input type="range" v-model.number="animationSpeed" min="0.1" max="3" step="0.1" />
+        </div>
+        
+        <div class="current-time">
+          현재 시간: {{ currentAnimationTime.toFixed(2) }}초
+        </div>
+      </div>
+    </div>
+
+    <!-- 인사이트 패널 -->
+    <div class="insights-panel">
+      <h3>인사이트</h3>
+      <div class="insight-content">
+        <div v-if="insights.length > 0">
+          <div v-for="insight in insights" :key="insight.id" class="insight-item">
+            <h4>{{ insight.title }}</h4>
+            <p>{{ insight.description }}</p>
+          </div>
+        </div>
+        <div v-else>
+          <p>주파수를 조절하여 신호가 어떻게 감기는지 관찰해보세요!</p>
+        </div>
       </div>
     </div>
   </section>
@@ -66,231 +130,601 @@ import * as THREE from 'three';
 
 export default {
   setup() {
-    // 상태 변수들
-    const signalContainer = ref(null);
-    const fftContainer = ref(null);
-    const phaseContainer = ref(null);
+    // 기본 상태 변수들
+    const timeDomainContainer = ref(null);
+    const complexPlaneContainer = ref(null);
+    const frequencyDomainContainer = ref(null);
     
-    const selectedSignalType = ref('sine');
-    const frequency = ref(5);
-    const amplitude = ref(1);
-    const samplingPoints = ref(256);
-    const showOriginalSignal = ref(true);
-    const showFFTResult = ref(true);
-    const showPhaseSpectrum = ref(false);
+    // 신호 생성 파라미터
+    const signalComponents = ref([
+      { frequency: 3, amplitude: 1 },
+      { frequency: 7, amplitude: 0.5 }
+    ]);
+    const samplingRate = ref(100);
+    const duration = ref(2);
     
-    const customSignalEquation = ref('');
-    const fftAnalysis = ref(null);
+    // 신호 감기 파라미터
+    const windingFrequency = ref(3);
+    const maxDisplayFrequency = ref(20);
     
-    // Three.js 관련 변수
-    let signalScene, signalCamera, signalRenderer;
-    let fftScene, fftCamera, fftRenderer;
-    let phaseScene, phaseCamera, phaseRenderer;
+    // 시각화 상태
+    const currentWindingResult = ref(null);
+    const sweepResults = ref([]);
+    const detectedPeaks = ref([]);
+    const isSweeeping = ref(false);
+    const isAnimating = ref(false);
+    const animationSpeed = ref(1);
+    const currentAnimationTime = ref(0);
+    const insights = ref([]);
+    
+    // Three.js 객체들
+    let timeDomainScene, timeDomainCamera, timeDomainRenderer;
+    let complexPlaneScene, complexPlaneCamera, complexPlaneRenderer;
+    let frequencyDomainScene, frequencyDomainCamera, frequencyDomainRenderer;
+    
+    // 애니메이션 관련
+    let animationFrameId;
+    let windingPathMesh, centerOfMassMesh, currentSignalPoint;
+    
+    // API 기본 URL
+    const API_BASE_URL = 'http://localhost:8080/api/fft';
     
     // 계산된 속성들
-    const dominantFrequencies = computed(() => {
-      if (!fftAnalysis.value) return [];
-      return fftAnalysis.value.dominantFrequencies || [];
+    const signalEquation = computed(() => {
+      let equation = 'f(t) = ';
+      const terms = signalComponents.value
+        .filter(comp => comp.amplitude > 0)
+        .map(comp => `${comp.amplitude}sin(2π·${comp.frequency}·t)`)
+        .join(' + ');
+      return equation + (terms || '0');
     });
     
-    const signalEnergy = computed(() => {
-      if (!fftAnalysis.value) return 0;
-      return fftAnalysis.value.energy || 0;
-    });
-    
-    const averageAmplitude = computed(() => {
-      if (!fftAnalysis.value) return 0;
-      return fftAnalysis.value.averageAmplitude || 0;
-    });
-
-    // API URL
-    const API_BASE_URL = 'http://localhost:8080/api/fft';
-
-    // API 호출 함수들
-    const fetchFFTData = async () => {
-      try {
-        const response = await fetch(
-          `${API_BASE_URL}/analyze?signalType=${selectedSignalType.value}&frequency=${frequency.value}&amplitude=${amplitude.value}&samplingPoints=${samplingPoints.value}`
-        );
-        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-        const data = await response.json();
-        fftAnalysis.value = data;
-        updateVisualization(data);
-      } catch (error) {
-        console.error('Error fetching FFT data:', error);
-      }
+    // 신호 생성 및 관리
+    const addSignalComponent = () => {
+      signalComponents.value.push({ frequency: 5, amplitude: 1 });
+      updateSignal();
     };
-
-    const updateCustomSignal = async () => {
+    
+    const removeSignalComponent = (index) => {
+      signalComponents.value.splice(index, 1);
+      updateSignal();
+    };
+    
+    const updateSignal = async () => {
       try {
-        const response = await fetch(`${API_BASE_URL}/custom`, {
+        const response = await fetch(`${API_BASE_URL}/generate-signal`, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            equation: customSignalEquation.value,
-            samplingPoints: samplingPoints.value
+            components: signalComponents.value,
+            samplingRate: samplingRate.value,
+            duration: duration.value
           })
         });
-        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-        const data = await response.json();
-        fftAnalysis.value = data;
-        updateVisualization(data);
+        
+        const signalData = await response.json();
+        updateTimeDomainVisualization(signalData);
+        updateWindingVisualization();
       } catch (error) {
-        console.error('Error updating custom signal:', error);
+        console.error('Error updating signal:', error);
       }
     };
-
-    // Three.js 시각화 함수들
-    const initThreeScenes = () => {
-      // 시간 도메인 씬 초기화
-      signalScene = new THREE.Scene();
-      signalCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 1000);
-      signalRenderer = new THREE.WebGLRenderer({ antialias: true });
-      signalRenderer.setSize(signalContainer.value.clientWidth, signalContainer.value.clientHeight);
-      signalContainer.value.appendChild(signalRenderer.domElement);
-
-      // 주파수 도메인 씬 초기화
-      fftScene = new THREE.Scene();
-      fftCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 1000);
-      fftRenderer = new THREE.WebGLRenderer({ antialias: true });
-      fftRenderer.setSize(fftContainer.value.clientWidth, fftContainer.value.clientHeight);
-      fftContainer.value.appendChild(fftRenderer.domElement);
-
-      // 위상 스펙트럼 씬 초기화
-      if (showPhaseSpectrum.value) {
-        phaseScene = new THREE.Scene();
-        phaseCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 1000);
-        phaseRenderer = new THREE.WebGLRenderer({ antialias: true });
-        phaseRenderer.setSize(phaseContainer.value.clientWidth, phaseContainer.value.clientHeight);
-        phaseContainer.value.appendChild(phaseRenderer.domElement);
+    
+    // 신호 감기 시각화 업데이트
+    const updateWindingVisualization = async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/winding-visualization`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            signal: getCurrentSignalData(),
+            samplingRate: samplingRate.value,
+            windingFrequency: windingFrequency.value,
+            duration: duration.value
+          })
+        });
+        
+        const windingData = await response.json();
+        currentWindingResult.value = windingData;
+        updateComplexPlaneVisualization(windingData);
+        generateInsights();
+      } catch (error) {
+        console.error('Error updating winding visualization:', error);
       }
     };
-
-    const updateVisualization = (data) => {
-      // 시간 도메인 그래프 업데이트
-      updateSignalPlot(data.timeData);
+    
+    // 주파수 스윕 수행
+    const startFrequencySweep = async () => {
+      isSweeeping.value = true;
+      sweepResults.value = [];
       
-      // 주파수 도메인 그래프 업데이트
-      updateFFTPlot(data.frequencyData);
-      
-      // 위상 스펙트럼 업데이트
-      if (showPhaseSpectrum.value) {
-        updatePhasePlot(data.phaseData);
+      try {
+        const response = await fetch(`${API_BASE_URL}/frequency-sweep`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            signal: getCurrentSignalData(),
+            samplingRate: samplingRate.value,
+            minFrequency: 0,
+            maxFrequency: maxDisplayFrequency.value,
+            steps: 100
+          })
+        });
+        
+        const sweepData = await response.json();
+        sweepResults.value = sweepData.sweepResults;
+        updateFrequencyDomainVisualization(sweepData);
+        detectFrequencyPeaks(sweepData);
+      } catch (error) {
+        console.error('Error performing frequency sweep:', error);
+      } finally {
+        isSweeeping.value = false;
       }
     };
-
-    const updateSignalPlot = (timeData) => {
-      // 시간 도메인 그래프 구현
-      const geometry = new THREE.BufferGeometry();
-      const positions = new Float32Array(timeData.length * 3);
+    
+    // Three.js 시각화 초기화
+    const initTimedomainVisualization = () => {
+      const container = timeDomainContainer.value;
+      if (!container) return;
       
-      timeData.forEach((value, i) => {
-        positions[i * 3] = (i / timeData.length) * 2 - 1; // X
-        positions[i * 3 + 1] = value * 0.8; // Y
-        positions[i * 3 + 2] = 0; // Z
+      timeDomainScene = new THREE.Scene();
+      timeDomainCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 1000);
+      timeDomainRenderer = new THREE.WebGLRenderer({ antialias: true });
+      timeDomainRenderer.setSize(container.clientWidth, container.clientHeight);
+      timeDomainRenderer.setClearColor(0xffffff);
+      container.appendChild(timeDomainRenderer.domElement);
+      
+      // 격자 추가
+      addGridToScene(timeDomainScene, 'time');
+    };
+    
+    const initComplexPlaneVisualization = () => {
+      const container = complexPlaneContainer.value;
+      if (!container) return;
+      
+      complexPlaneScene = new THREE.Scene();
+      complexPlaneCamera = new THREE.OrthographicCamera(-2, 2, 2, -2, 0.1, 1000);
+      complexPlaneRenderer = new THREE.WebGLRenderer({ antialias: true });
+      complexPlaneRenderer.setSize(container.clientWidth, container.clientHeight);
+      complexPlaneRenderer.setClearColor(0xf8f8f8);
+      container.appendChild(complexPlaneRenderer.domElement);
+      
+      // 복소평면 축 추가
+      addComplexPlaneAxes();
+      addGridToScene(complexPlaneScene, 'complex');
+    };
+    
+    const initFrequencyDomainVisualization = () => {
+      const container = frequencyDomainContainer.value;
+      if (!container) return;
+      
+      frequencyDomainScene = new THREE.Scene();
+      frequencyDomainCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 1000);
+      frequencyDomainRenderer = new THREE.WebGLRenderer({ antialias: true });
+      frequencyDomainRenderer.setSize(container.clientWidth, container.clientHeight);
+      frequencyDomainRenderer.setClearColor(0xffffff);
+      container.appendChild(frequencyDomainRenderer.domElement);
+      
+      // 격자 추가
+      addGridToScene(frequencyDomainScene, 'frequency');
+    };
+    
+    // 복소평면 축 추가
+    const addComplexPlaneAxes = () => {
+      // 실수축 (가로)
+      const realAxisGeometry = new THREE.BufferGeometry().setFromPoints([
+        new THREE.Vector3(-2, 0, 0),
+        new THREE.Vector3(2, 0, 0)
+      ]);
+      const realAxisMaterial = new THREE.LineBasicMaterial({ color: 0x333333 });
+      const realAxis = new THREE.Line(realAxisGeometry, realAxisMaterial);
+      complexPlaneScene.add(realAxis);
+      
+      // 허수축 (세로)
+      const imagAxisGeometry = new THREE.BufferGeometry().setFromPoints([
+        new THREE.Vector3(0, -2, 0),
+        new THREE.Vector3(0, 2, 0)
+      ]);
+      const imagAxisMaterial = new THREE.LineBasicMaterial({ color: 0x333333 });
+      const imagAxis = new THREE.Line(imagAxisGeometry, imagAxisMaterial);
+      complexPlaneScene.add(imagAxis);
+      
+      // 원점 표시
+      const originGeometry = new THREE.CircleGeometry(0.05, 16);
+      const originMaterial = new THREE.MeshBasicMaterial({ color: 0x000000 });
+      const origin = new THREE.Mesh(originGeometry, originMaterial);
+      complexPlaneScene.add(origin);
+    };
+    
+    // 격자 추가
+    const addGridToScene = (scene, type) => {
+      const gridHelper = new THREE.GridHelper(4, 20, 0xcccccc, 0xeeeeee);
+      if (type === 'complex') {
+        gridHelper.rotateX(Math.PI / 2);
+      }
+      scene.add(gridHelper);
+    };
+    
+    // 시간 도메인 시각화 업데이트
+    const updateTimeDomainVisualization = (signalData) => {
+      if (!timeDomainScene) return;
+      
+      // 기존 신호 라인 제거
+      const oldSignal = timeDomainScene.getObjectByName('timeSignal');
+      if (oldSignal) {
+        timeDomainScene.remove(oldSignal);
+        oldSignal.geometry.dispose();
+        oldSignal.material.dispose();
+      }
+      
+      // 새 신호 라인 생성
+      const points = signalData.timePoints.map((time, i) => {
+        const x = (time / duration.value) * 2 - 1; // -1 ~ 1로 정규화
+        const y = signalData.amplitudes[i] * 0.8; // 진폭 조정
+        return new THREE.Vector3(x, y, 0);
       });
       
-      geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+      const signalGeometry = new THREE.BufferGeometry().setFromPoints(points);
+      const signalMaterial = new THREE.LineBasicMaterial({ 
+        color: 0x2196f3, 
+        linewidth: 2 
+      });
+      const signalLine = new THREE.Line(signalGeometry, signalMaterial);
+      signalLine.name = 'timeSignal';
+      timeDomainScene.add(signalLine);
       
-      const material = new THREE.LineBasicMaterial({ color: 0x00ff00 });
-      const line = new THREE.Line(geometry, material);
-      
-      signalScene.clear();
-      signalScene.add(line);
-      signalRenderer.render(signalScene, signalCamera);
+      timeDomainRenderer.render(timeDomainScene, timeDomainCamera);
     };
-
-    const updateFFTPlot = (frequencyData) => {
-      // 주파수 도메인 그래프 구현
-      const geometry = new THREE.BufferGeometry();
-      const positions = new Float32Array(frequencyData.length * 3);
+    
+    // 복소평면 시각화 업데이트
+    const updateComplexPlaneVisualization = (windingData) => {
+      if (!complexPlaneScene) return;
       
-      frequencyData.forEach((value, i) => {
-        positions[i * 3] = (i / frequencyData.length) * 2 - 1; // X
-        positions[i * 3 + 1] = value * 0.8; // Y
-        positions[i * 3 + 2] = 0; // Z
+      // 기존 객체들 제거
+      clearComplexPlaneObjects();
+      
+      // 감긴 경로 그리기
+      const pathPoints = windingData.windingPath.map(point => 
+        new THREE.Vector3(point.real, point.imaginary, 0)
+      );
+      
+      const pathGeometry = new THREE.BufferGeometry().setFromPoints(pathPoints);
+      const pathMaterial = new THREE.LineBasicMaterial({ 
+        color: 0x4caf50, 
+        linewidth: 2,
+        transparent: true,
+        opacity: 0.8
+      });
+      const pathLine = new THREE.Line(pathGeometry, pathMaterial);
+      pathLine.name = 'windingPath';
+      complexPlaneScene.add(pathLine);
+      
+      // 질량 중심 표시
+      const centerOfMass = windingData.centerOfMass;
+      const centerGeometry = new THREE.CircleGeometry(0.08, 16);
+      const centerMaterial = new THREE.MeshBasicMaterial({ color: 0xff5722 });
+      centerOfMassMesh = new THREE.Mesh(centerGeometry, centerMaterial);
+      centerOfMassMesh.position.set(centerOfMass.real, centerOfMass.imaginary, 0);
+      centerOfMassMesh.name = 'centerOfMass';
+      complexPlaneScene.add(centerOfMassMesh);
+      
+      // 질량 중심까지의 벡터 표시
+      const vectorGeometry = new THREE.BufferGeometry().setFromPoints([
+        new THREE.Vector3(0, 0, 0),
+        new THREE.Vector3(centerOfMass.real, centerOfMass.imaginary, 0)
+      ]);
+      const vectorMaterial = new THREE.LineBasicMaterial({ 
+        color: 0xff5722, 
+        linewidth: 3 
+      });
+      const vectorLine = new THREE.Line(vectorGeometry, vectorMaterial);
+      vectorLine.name = 'centerVector';
+      complexPlaneScene.add(vectorLine);
+      
+      complexPlaneRenderer.render(complexPlaneScene, complexPlaneCamera);
+    };
+    
+    // 주파수 도메인 시각화 업데이트
+    const updateFrequencyDomainVisualization = (sweepData) => {
+      if (!frequencyDomainScene) return;
+      
+      // 기존 스펙트럼 제거
+      const oldSpectrum = frequencyDomainScene.getObjectByName('frequencySpectrum');
+      if (oldSpectrum) {
+        frequencyDomainScene.remove(oldSpectrum);
+        oldSpectrum.geometry.dispose();
+        oldSpectrum.material.dispose();
+      }
+      
+      // FFT 스펙트럼 그리기
+      const points = sweepData.frequencies.map((freq, i) => {
+        const x = (freq / maxDisplayFrequency.value) * 2 - 1;
+        const y = sweepData.magnitudes[i] * 0.8; // 크기 조정
+        return new THREE.Vector3(x, y, 0);
       });
       
-      geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+      const spectrumGeometry = new THREE.BufferGeometry().setFromPoints(points);
+      const spectrumMaterial = new THREE.LineBasicMaterial({ 
+        color: 0xe91e63, 
+        linewidth: 2 
+      });
+      const spectrumLine = new THREE.Line(spectrumGeometry, spectrumMaterial);
+      spectrumLine.name = 'frequencySpectrum';
+      frequencyDomainScene.add(spectrumLine);
       
-      const material = new THREE.LineBasicMaterial({ color: 0xff0000 });
-      const line = new THREE.Line(geometry, material);
+      // 현재 감는 주파수 표시
+      const currentFreqX = (windingFrequency.value / maxDisplayFrequency.value) * 2 - 1;
+      const markerGeometry = new THREE.BufferGeometry().setFromPoints([
+        new THREE.Vector3(currentFreqX, -1, 0),
+        new THREE.Vector3(currentFreqX, 1, 0)
+      ]);
+      const markerMaterial = new THREE.LineBasicMaterial({ 
+        color: 0xff9800, 
+        linewidth: 2 
+      });
+      const markerLine = new THREE.Line(markerGeometry, markerMaterial);
+      markerLine.name = 'currentFreqMarker';
+      frequencyDomainScene.add(markerLine);
       
-      fftScene.clear();
-      fftScene.add(line);
-      fftRenderer.render(fftScene, fftCamera);
+      frequencyDomainRenderer.render(frequencyDomainScene, frequencyDomainCamera);
     };
-
-    const updatePhasePlot = (phaseData) => {
-      if (!showPhaseSpectrum.value) return;
+    
+    // 복소평면 객체 정리
+    const clearComplexPlaneObjects = () => {
+      const objectsToRemove = ['windingPath', 'centerOfMass', 'centerVector', 'currentPoint'];
+      objectsToRemove.forEach(name => {
+        const obj = complexPlaneScene.getObjectByName(name);
+        if (obj) {
+          complexPlaneScene.remove(obj);
+          if (obj.geometry) obj.geometry.dispose();
+          if (obj.material) obj.material.dispose();
+        }
+      });
+    };
+    
+    // 주파수 피크 검출
+    const detectFrequencyPeaks = (sweepData) => {
+      const peaks = [];
+      const magnitudes = sweepData.magnitudes;
+      const frequencies = sweepData.frequencies;
+      const threshold = Math.max(...magnitudes) * 0.1; // 최대값의 10% 이상
       
-      // 위상 스펙트럼 그래프 구현
-      const geometry = new THREE.BufferGeometry();
-      const positions = new Float32Array(phaseData.length * 3);
+      for (let i = 1; i < magnitudes.length - 1; i++) {
+        if (magnitudes[i] > magnitudes[i-1] && 
+            magnitudes[i] > magnitudes[i+1] && 
+            magnitudes[i] > threshold) {
+          peaks.push({
+            frequency: frequencies[i],
+            magnitude: magnitudes[i]
+          });
+        }
+      }
       
-      phaseData.forEach((value, i) => {
-        positions[i * 3] = (i / phaseData.length) * 2 - 1; // X
-        positions[i * 3 + 1] = value * 0.8; // Y
-        positions[i * 3 + 2] = 0; // Z
+      detectedPeaks.value = peaks.sort((a, b) => b.magnitude - a.magnitude).slice(0, 5);
+    };
+    
+    // 인사이트 생성
+    const generateInsights = () => {
+      const newInsights = [];
+      
+      if (currentWindingResult.value) {
+        const magnitude = currentWindingResult.value.centerOfMass.magnitude;
+        
+        // 공명 상태 확인
+        if (magnitude > 0.5) {
+          newInsights.push({
+            id: 'resonance',
+            title: '공명 발견!',
+            description: `${windingFrequency.value.toFixed(1)}Hz에서 강한 공명이 발생했습니다. 이는 원본 신호에 이 주파수 성분이 포함되어 있음을 의미합니다.`
+          });
+        }
+        
+        // 질량 중심 위치 분석
+        if (Math.abs(currentWindingResult.value.centerOfMass.real) > 0.3) {
+          newInsights.push({
+            id: 'phase',
+            title: '위상 정보',
+            description: '질량 중심이 실수축에서 떨어져 있어 해당 주파수 성분의 위상 정보를 나타냅니다.'
+          });
+        }
+      }
+      
+      // 다중 주파수 분석
+      if (signalComponents.value.length > 1) {
+        newInsights.push({
+          id: 'multifreq',
+          title: '다중 주파수 신호',
+          description: '여러 주파수가 섞인 신호입니다. 각 주파수에서 감기 속도를 조절하여 개별 성분을 분리할 수 있습니다.'
+        });
+      }
+      
+      insights.value = newInsights;
+    };
+    
+    // 애니메이션 컨트롤
+    const toggleAnimation = () => {
+      isAnimating.value = !isAnimating.value;
+      if (isAnimating.value) {
+        startWindingAnimation();
+      } else {
+        stopWindingAnimation();
+      }
+    };
+    
+    const startWindingAnimation = () => {
+      const animate = () => {
+        if (!isAnimating.value) return;
+        
+        currentAnimationTime.value += 0.016 * animationSpeed.value; // ~60fps
+        if (currentAnimationTime.value >= duration.value) {
+          currentAnimationTime.value = 0;
+        }
+        
+        // 현재 시간에서의 신호 점 표시
+        updateCurrentSignalPoint();
+        
+        animationFrameId = requestAnimationFrame(animate);
+      };
+      animate();
+    };
+    
+    const stopWindingAnimation = () => {
+      if (animationFrameId) {
+        cancelAnimationFrame(animationFrameId);
+        animationFrameId = null;
+      }
+    };
+    
+    const stepAnimation = () => {
+      currentAnimationTime.value += 0.1;
+      if (currentAnimationTime.value >= duration.value) {
+        currentAnimationTime.value = 0;
+      }
+      updateCurrentSignalPoint();
+    };
+    
+    const updateCurrentSignalPoint = () => {
+      if (!complexPlaneScene || !currentWindingResult.value) return;
+      
+      // 현재 시간에 해당하는 신호 값 계산
+      let amplitude = 0;
+      signalComponents.value.forEach(comp => {
+        amplitude += comp.amplitude * Math.sin(2 * Math.PI * comp.frequency * currentAnimationTime.value);
       });
       
-      geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+      // 복소평면에서의 위치 계산
+      const theta = -2 * Math.PI * windingFrequency.value * currentAnimationTime.value;
+      const real = amplitude * Math.cos(theta);
+      const imaginary = amplitude * Math.sin(theta);
       
-      const material = new THREE.LineBasicMaterial({ color: 0x0000ff });
-      const line = new THREE.Line(geometry, material);
+      // 기존 점 제거
+      const oldPoint = complexPlaneScene.getObjectByName('currentPoint');
+      if (oldPoint) {
+        complexPlaneScene.remove(oldPoint);
+        oldPoint.geometry.dispose();
+        oldPoint.material.dispose();
+      }
       
-      phaseScene.clear();
-      phaseScene.add(line);
-      phaseRenderer.render(phaseScene, phaseCamera);
+      // 새 점 추가
+      const pointGeometry = new THREE.CircleGeometry(0.06, 16);
+      const pointMaterial = new THREE.MeshBasicMaterial({ color: 0xffc107 });
+      currentSignalPoint = new THREE.Mesh(pointGeometry, pointMaterial);
+      currentSignalPoint.position.set(real, imaginary, 0.01);
+      currentSignalPoint.name = 'currentPoint';
+      complexPlaneScene.add(currentSignalPoint);
+      
+      complexPlaneRenderer.render(complexPlaneScene, complexPlaneCamera);
     };
-
-    // 이벤트 핸들러 및 라이프사이클 훅
+    
+    // 유틸리티 함수들
+    const getCurrentSignalData = () => {
+      // 현재 신호 컴포넌트로부터 시간 도메인 데이터 생성
+      const numSamples = samplingRate.value * duration.value;
+      const signal = [];
+      
+      for (let i = 0; i < numSamples; i++) {
+        const t = i / samplingRate.value;
+        let amplitude = 0;
+        signalComponents.value.forEach(comp => {
+          amplitude += comp.amplitude * Math.sin(2 * Math.PI * comp.frequency * t);
+        });
+        signal.push(amplitude);
+      }
+      
+      return signal;
+    };
+    
+    const resetVisualization = () => {
+      windingFrequency.value = 0;
+      currentAnimationTime.value = 0;
+      isAnimating.value = false;
+      sweepResults.value = [];
+      detectedPeaks.value = [];
+      insights.value = [];
+      
+      if (complexPlaneScene) {
+        clearComplexPlaneObjects();
+        complexPlaneRenderer.render(complexPlaneScene, complexPlaneCamera);
+      }
+    };
+    
+    // 리사이즈 핸들러
+    const handleResize = () => {
+      [
+        { renderer: timeDomainRenderer, container: timeDomainContainer.value, camera: timeDomainCamera, scene: timeDomainScene },
+        { renderer: complexPlaneRenderer, container: complexPlaneContainer.value, camera: complexPlaneCamera, scene: complexPlaneScene },
+        { renderer: frequencyDomainRenderer, container: frequencyDomainContainer.value, camera: frequencyDomainCamera, scene: frequencyDomainScene }
+      ].forEach(({ renderer, container, camera, scene }) => {
+        if (renderer && container && camera && scene) {
+          const width = container.clientWidth;
+          const height = container.clientHeight;
+          renderer.setSize(width, height);
+          renderer.render(scene, camera);
+        }
+      });
+    };
+    
+    // 정리 함수
+    const cleanup = () => {
+      stopWindingAnimation();
+      
+      [timeDomainRenderer, complexPlaneRenderer, frequencyDomainRenderer].forEach(renderer => {
+        if (renderer) {
+          renderer.dispose();
+        }
+      });
+      
+      window.removeEventListener('resize', handleResize);
+    };
+    
+    // 라이프사이클 훅
     onMounted(() => {
-      initThreeScenes();
-      fetchFFTData();
+      setTimeout(() => {
+        initTimedomainVisualization();
+        initComplexPlaneVisualization();
+        initFrequencyDomainVisualization();
+        updateSignal();
+        window.addEventListener('resize', handleResize);
+      }, 100);
     });
-
-    onBeforeUnmount(() => {
-      // 정리 작업
-      if (signalRenderer) signalRenderer.dispose();
-      if (fftRenderer) fftRenderer.dispose();
-      if (phaseRenderer) phaseRenderer.dispose();
-    });
-
-    // 감시자
-    watch([selectedSignalType, frequency, amplitude, samplingPoints], () => {
-      fetchFFTData();
-    });
-
-    watch(showPhaseSpectrum, (newValue) => {
-      if (newValue && !phaseRenderer) {
-        // 위상 스펙트럼 시각화 초기화
-        initPhaseVisualization();
-      }
-      if (fftAnalysis.value) {
-        updateVisualization(fftAnalysis.value);
-      }
-    });
-
+    
+    onBeforeUnmount(cleanup);
+    
+    // 와처들
+    watch([signalComponents, samplingRate, duration], updateSignal, { deep: true });
+    watch(windingFrequency, updateWindingVisualization);
+    
     return {
-      signalContainer,
-      fftContainer,
-      phaseContainer,
-      selectedSignalType,
-      frequency,
-      amplitude,
-      samplingPoints,
-      showOriginalSignal,
-      showFFTResult,
-      showPhaseSpectrum,
-      customSignalEquation,
-      fftAnalysis,
-      dominantFrequencies,
-      signalEnergy,
-      averageAmplitude,
-      updateCustomSignal
+      // 템플릿 참조
+      timeDomainContainer,
+      complexPlaneContainer,
+      frequencyDomainContainer,
+      
+      // 상태 변수들
+      signalComponents,
+      samplingRate,
+      duration,
+      windingFrequency,
+      maxDisplayFrequency,
+      currentWindingResult,
+      detectedPeaks,
+      isSweeeping,
+      isAnimating,
+      animationSpeed,
+      currentAnimationTime,
+      insights,
+      
+      // 계산된 속성
+      signalEquation,
+      
+      // 메서드들
+      addSignalComponent,
+      removeSignalComponent,
+      updateWindingVisualization,
+      startFrequencySweep,
+      toggleAnimation,
+      stepAnimation,
+      resetVisualization
     };
   }
 };
@@ -299,7 +733,7 @@ export default {
 <style scoped>
 .fft-container {
   padding: 20px;
-  max-width: 1200px;
+  max-width: 1400px;
   margin: 0 auto;
 }
 
@@ -310,89 +744,143 @@ export default {
   border-radius: 8px;
 }
 
-.control-group {
-  margin-bottom: 15px;
+.signal-controls h3,
+.winding-controls h3 {
+  margin-top: 0;
+  color: #1976d2;
 }
 
-.control-group label {
+.signal-builder {
+  display: grid;
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+.signal-component {
+  padding: 10px;
+  background-color: white;
+  border-radius: 4px;
+  border-left: 4px solid #4caf50;
+}
+
+.signal-component label {
   display: block;
   margin-bottom: 5px;
   font-weight: bold;
 }
 
-.display-options {
-  display: flex;
+.signal-params {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 15px;
+}
+
+.winding-params {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
   gap: 20px;
-}
-
-.display-options label {
-  display: flex;
   align-items: center;
-  gap: 5px;
 }
 
-.visualization-container {
+.winding-controls-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+.visualization-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
   gap: 20px;
   margin-bottom: 20px;
+  min-height: 600px;
 }
 
-.visualization-container.with-phase {
-  grid-template-columns: 1fr 1fr 1fr;
-}
-
-.plot-container {
-  height: 300px;
-  background-color: #f0f0f0;
+.viz-panel {
+  background-color: white;
   border-radius: 8px;
-  overflow: hidden;
-  position: relative;
-}
-
-.plot-container h3 {
-  position: absolute;
-  top: 10px;
-  left: 10px;
-  margin: 0;
-  color: #333;
-  z-index: 1;
-  background-color: rgba(255, 255, 255, 0.7);
-  padding: 5px 10px;
-  border-radius: 4px;
-}
-
-.info-panel {
-  margin-top: 20px;
   padding: 15px;
-  background-color: #f5f5f5;
-  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
-.custom-signal-editor {
-  margin-top: 15px;
-  padding-top: 15px;
-  border-top: 1px solid #ddd;
+.viz-panel h4 {
+  margin-top: 0;
+  color: #333;
+  border-bottom: 2px solid #2196f3;
+  padding-bottom: 8px;
 }
 
-.custom-signal-editor textarea {
-  width: 100%;
-  height: 100px;
-  margin: 10px 0;
+.viz-container {
+  height: 200px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  margin-bottom: 10px;
+}
+
+.signal-equation {
+  font-family: 'Courier New', monospace;
+  background-color: #f8f8f8;
   padding: 8px;
   border-radius: 4px;
-  border: 1px solid #ddd;
-  resize: vertical;
+  font-size: 14px;
+}
+
+.center-of-mass-info,
+.frequency-peaks {
+  font-size: 14px;
+  background-color: #f8f8f8;
+  padding: 10px;
+  border-radius: 4px;
+}
+
+.animation-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.animation-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+.insights-panel {
+  background-color: #e3f2fd;
+  padding: 20px;
+  border-radius: 8px;
+  border-left: 4px solid #2196f3;
+}
+
+.insights-panel h3 {
+  margin-top: 0;
+  color: #1976d2;
+}
+
+.insight-item {
+  margin-bottom: 15px;
+  padding: 10px;
+  background-color: white;
+  border-radius: 4px;
+}
+
+.insight-item h4 {
+  margin-top: 0;
+  color: #1976d2;
 }
 
 button {
   padding: 8px 16px;
-  background-color: #4CAF50;
+  background-color: #2196f3;
   color: white;
   border: none;
   border-radius: 4px;
   cursor: pointer;
   font-size: 14px;
+  transition: background-color 0.3s;
+}
+
+button:hover:not(:disabled) {
+  background-color: #1976d2;
 }
 
 button:disabled {
@@ -402,12 +890,28 @@ button:disabled {
 
 input[type="range"] {
   width: 100%;
-  max-width: 300px;
+  margin: 5px 0;
 }
 
-select {
-  padding: 5px;
-  border-radius: 4px;
-  border: 1px solid #ddd;
+label {
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 5px;
+  display: block;
 }
-</style> 
+
+@media (max-width: 768px) {
+  .visualization-grid {
+    grid-template-columns: 1fr;
+    grid-template-rows: repeat(4, auto);
+  }
+  
+  .winding-params {
+    grid-template-columns: 1fr;
+  }
+  
+  .signal-params {
+    grid-template-columns: 1fr;
+  }
+}
+</style>
