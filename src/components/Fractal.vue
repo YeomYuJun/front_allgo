@@ -8,8 +8,10 @@
         <select v-model="selectedFractalType">
           <option value="mandelbrot">만델브로트 집합</option>
           <option value="julia">줄리아 집합</option>
+          <!-- IFS 프랙탈 옵션 주석 처리
           <option value="sierpinski">시에르핀스키 삼각형</option>
           <option value="barnsley">반슬리 고사리</option>
+          -->
         </select>
       </div>
       
@@ -159,9 +161,11 @@ export default {
     // 프랙탈 타입별 기본 범위 설정
     const fractalDefaultRanges = {
       mandelbrot: { xMin: -2.5, xMax: 1.0, yMin: -1.25, yMax: 1.25 },
-      julia: { xMin: -2.0, xMax: 2.0, yMin: -2.0, yMax: 2.0 },
+      julia: { xMin: -2.0, xMax: 2.0, yMin: -2.0, yMax: 2.0 }
+      /* IFS 프랙탈 범위 주석 처리
       sierpinski: { xMin: -1.5, xMax: 1.5, yMin: -1.0, yMax: 2.0 },
       barnsley: { xMin: -2.5, xMax: 2.5, yMin: -0.5, yMax: 9.5 }
+      */
     };
     
     // 계산된 속성들
@@ -178,27 +182,36 @@ export default {
     });
 
     const getMinIterations = computed(() => {
+      /* IFS 프랙탈 반복 횟수 주석 처리
       switch (selectedFractalType.value) {
         case 'sierpinski': return 10000;
         case 'barnsley': return 50000;
         default: return 10;
       }
+      */
+      return 10;
     });
 
     const getMaxIterations = computed(() => {
+      /* IFS 프랙탈 반복 횟수 주석 처리
       switch (selectedFractalType.value) {
         case 'sierpinski': return 100000;
         case 'barnsley': return 1000000;
         default: return 500;
       }
+      */
+      return 500;
     });
 
     const getIterationStep = computed(() => {
+      /* IFS 프랙탈 반복 횟수 주석 처리
       switch (selectedFractalType.value) {
         case 'sierpinski': return 1000;
         case 'barnsley': return 10000;
         default: return 10;
       }
+      */
+      return 10;
     });
 
     // API URL
@@ -210,11 +223,12 @@ export default {
         return baseResolution.value;
       }
       
-      // IFS 프랙탈은 줌과 무관하게 고정 해상도
+      /* IFS 프랙탈 해상도 계산 주석 처리
       if (selectedFractalType.value === 'sierpinski' || 
           selectedFractalType.value === 'barnsley') {
         return baseResolution.value;
       }
+      */
       
       let resolution = baseResolution.value;
       
@@ -232,12 +246,12 @@ export default {
         return iterations.value;
       }
       
-      // IFS 프랙탈도 줌 레벨에 따라 반복 횟수 증가
+      /* IFS 프랙탈 반복 횟수 계산 주석 처리
       if (selectedFractalType.value === 'sierpinski' || 
           selectedFractalType.value === 'barnsley') {
-        // 줌 인 시 더 많은 점이 필요
         return Math.floor(iterations.value * Math.max(1, Math.sqrt(zoomLevel.value)));
       }
+      */
       
       let dynamicIterations = iterations.value;
       
@@ -344,14 +358,8 @@ export default {
     // 시각화 업데이트
     const updateVisualization = (data) => {
       // 프랙탈 타입 확인
-      isIFSFractal.value = selectedFractalType.value === 'sierpinski' || 
-                      selectedFractalType.value === 'barnsley';
-      
-      if (isIFSFractal.value) {
-        renderIFSFractal(data);
-      } else {
-        renderComplexFractal(data);
-      }
+      isIFSFractal.value = false; // IFS 프랙탈 비활성화
+      renderComplexFractal(data);
     }
 
     const renderComplexFractal = (data) => {
@@ -360,16 +368,8 @@ export default {
         return;
       }
       
-      // 기존 IFS 메시 제거
-      if (pointsMesh) {
-        scene.remove(pointsMesh);
-        pointsGeometry.dispose();
-        pointsMaterial.dispose();
-        pointsMesh = null;
-      }
-      
       try {
-        // 기존 텍스처 렌더링 코드 그대로
+        // Base64 디코딩
         const binaryString = atob(data.pixels);
         const bytes = new Uint8Array(binaryString.length);
         for (let i = 0; i < binaryString.length; i++) {
@@ -412,110 +412,17 @@ export default {
       }
     };
 
+    /*
     const renderIFSFractal = (data) => {
-      if (!data.pixels) {
-        console.error('No pixel data received');
-        return;
-      }
-      
-      // 기존 텍스처 메시 제거
-      if (fractalMesh) {
-        scene.remove(fractalMesh);
-        if (fractalMesh.material.map) {
-          fractalMesh.material.map.dispose();
-        }
-        fractalMesh.material.dispose();
-        fractalMesh.geometry.dispose();
-        fractalMesh = null;
-      }
-      
-      try {
-        // Base64 디코딩
-        const binaryString = atob(data.pixels);
-        const bytes = new Uint8Array(binaryString.length);
-        for (let i = 0; i < binaryString.length; i++) {
-          bytes[i] = binaryString.charCodeAt(i);
-        }
-        
-        // 히트맵에서 점 추출
-        const positions = [];
-        const colors = [];
-        const size = currentResolution.value;
-        
-        // 현재 뷰 범위 가져오기
-        const xRange = viewBounds.value.xMax - viewBounds.value.xMin;
-        const yRange = viewBounds.value.yMax - viewBounds.value.yMin;
-        
-        for (let y = 0; y < size; y++) {
-          for (let x = 0; x < size; x++) {
-            const idx = (y * size + x) * 4;
-            const intensity = bytes[idx] / 255;
-            
-            if (intensity > 0.01) {
-              // 픽셀 좌표를 현재 뷰 범위에 맞게 변환
-              const worldX = viewBounds.value.xMin + (x / size) * xRange;
-              const worldY = viewBounds.value.yMax - (y / size) * yRange;
-              
-              // 월드 좌표를 화면 좌표(-1 ~ 1)로 변환
-              const screenX = ((worldX - viewCenter.value.x) / (xRange / 2));
-              const screenY = ((worldY - viewCenter.value.y) / (yRange / 2));
-              
-              positions.push(screenX, screenY, 0);
-              
-              // 색상 설정 (강도에 따라)
-              const color = getIFSColor(intensity);
-              colors.push(color.r, color.g, color.b);
-            }
-          }
-        }
-        
-        // 포인트 클라우드 생성
-        pointsGeometry = new THREE.BufferGeometry();
-        pointsGeometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
-        pointsGeometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
-        
-        // 줌 레벨에 따른 포인트 크기 조정
-        const pointSize = Math.max(0.001, 0.01 / Math.sqrt(zoomLevel.value));
-        
-        pointsMaterial = new THREE.PointsMaterial({
-          size: pointSize,
-          vertexColors: true,
-          sizeAttenuation: false
-        });
-        
-        pointsMesh = new THREE.Points(pointsGeometry, pointsMaterial);
-        scene.add(pointsMesh);
-        
-
-        // 디버깅을 위한 로그 추가
-        console.log('IFS Rendering - View bounds:', viewBounds.value);
-        console.log('IFS Rendering - Center:', viewCenter.value);
-        console.log('IFS Rendering - Zoom:', zoomLevel.value);
-        console.log('Points found:', positions.length / 3);
-        render();
-      } catch (error) {
-        console.error('Error processing IFS fractal:', error);
-      }
+      // IFS 렌더링 로직 전체 주석 처리
     };
+    */
 
+    /*
     const getIFSColor = (intensity) => {
-      // 로그 스케일로 강도 조정 (세부 사항 더 잘 보이게)
-      const adjustedIntensity = Math.pow(intensity, 0.5);
-      
-      switch (colorScheme.value) {
-        case 'fire':
-          return new THREE.Color(adjustedIntensity, adjustedIntensity * 0.5, 0);
-        case 'ocean':
-          return new THREE.Color(0, adjustedIntensity * 0.5, adjustedIntensity);
-        case 'rainbow':
-          const hue = adjustedIntensity * 360;
-          return new THREE.Color().setHSL(hue / 360, 0.8, 0.5 + adjustedIntensity * 0.3);
-        case 'grayscale':
-          return new THREE.Color(adjustedIntensity, adjustedIntensity, adjustedIntensity);
-        default:
-          return new THREE.Color(0, adjustedIntensity, 0); // 녹색 계열
-      }
+      // IFS 색상 처리 로직 전체 주석 처리
     };
+    */
 
     // 좌표축 업데이트
     const updateAxisVisibility = () => {
@@ -585,11 +492,10 @@ export default {
         lastMouseX = e.clientX;
         lastMouseY = e.clientY;
         
-        // IFS 프랙탈도 드래그 시 업데이트
         clearTimeout(updateTimeout);
         updateTimeout = setTimeout(() => {
           fetchFractalData();
-        }, isIFSFractal.value ? 100 : 200); // IFS는 더 빠르게 업데이트
+        }, 200);
       });
       
       // 마우스 업
@@ -599,41 +505,41 @@ export default {
       
       // 마우스 휠 (줌)
       renderer.domElement.addEventListener('wheel', (e) => {
-      e.preventDefault();
-      
-      const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1;
-      const newZoom = Math.max(0.1, Math.min(1000000, zoomLevel.value * zoomFactor));
-      
-      if (newZoom !== zoomLevel.value) {
-        // 마우스 위치를 중심으로 줌
-        const rect = renderer.domElement.getBoundingClientRect();
-        const mouseX = (e.clientX - rect.left) / rect.width * 2 - 1;
-        const mouseY = -(e.clientY - rect.top) / rect.height * 2 + 1;
+        e.preventDefault();
         
-        const rangeX = viewBounds.value.xMax - viewBounds.value.xMin;
-        const rangeY = viewBounds.value.yMax - viewBounds.value.yMin;
+        const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1;
+        const newZoom = Math.max(0.1, Math.min(1000000, zoomLevel.value * zoomFactor));
         
-        const worldX = viewCenter.value.x + mouseX * rangeX / 2;
-        const worldY = viewCenter.value.y + mouseY * rangeY / 2;
-        
-        // 새로운 중심 계산 (마우스 위치 기준 줌)
-        const t = 1 - 1 / zoomFactor;
-        viewCenter.value.x = viewCenter.value.x + t * (worldX - viewCenter.value.x);
-        viewCenter.value.y = viewCenter.value.y + t * (worldY - viewCenter.value.y);
-        
-        zoomLevel.value = newZoom;
-        updateViewBounds();
-        
-        // 줌 레벨에 따른 품질 조정
-        currentResolution.value = calculateDynamicResolution();
-        currentIterations.value = calculateDynamicIterations();
-        
-        clearTimeout(updateTimeout);
-        updateTimeout = setTimeout(() => {
-          fetchFractalData();
-        }, isIFSFractal ? 100 : 150); // IFS는 더 빠르게 업데이트
-      }
-    });
+        if (newZoom !== zoomLevel.value) {
+          // 마우스 위치를 중심으로 줌
+          const rect = renderer.domElement.getBoundingClientRect();
+          const mouseX = (e.clientX - rect.left) / rect.width * 2 - 1;
+          const mouseY = -(e.clientY - rect.top) / rect.height * 2 + 1;
+          
+          const rangeX = viewBounds.value.xMax - viewBounds.value.xMin;
+          const rangeY = viewBounds.value.yMax - viewBounds.value.yMin;
+          
+          const worldX = viewCenter.value.x + mouseX * rangeX / 2;
+          const worldY = viewCenter.value.y + mouseY * rangeY / 2;
+          
+          // 새로운 중심 계산 (마우스 위치 기준 줌)
+          const t = 1 - 1 / zoomFactor;
+          viewCenter.value.x = viewCenter.value.x + t * (worldX - viewCenter.value.x);
+          viewCenter.value.y = viewCenter.value.y + t * (worldY - viewCenter.value.y);
+          
+          zoomLevel.value = newZoom;
+          updateViewBounds();
+          
+          // 줌 레벨에 따른 품질 조정
+          currentResolution.value = calculateDynamicResolution();
+          currentIterations.value = calculateDynamicIterations();
+          
+          clearTimeout(updateTimeout);
+          updateTimeout = setTimeout(() => {
+            fetchFractalData();
+          }, 150);
+        }
+      });
       
       // 더블 클릭 (확대)
       renderer.domElement.addEventListener('dblclick', (e) => {
@@ -754,7 +660,6 @@ export default {
     };
 
     // 정리 함수
-    /*
     const cleanup = () => {
       if (fractalMesh) {
         if (fractalMesh.material.map) {
@@ -764,36 +669,6 @@ export default {
         fractalMesh.geometry.dispose();
       }
       
-      if (axisMesh) {
-        axisMesh.material.dispose();
-        axisMesh.geometry.dispose();
-      }
-      
-      if (renderer) {
-        renderer.dispose();
-        if (fractalContainer.value && renderer.domElement) {
-          fractalContainer.value.removeChild(renderer.domElement);
-        }
-      }
-    };
-    */
-
-    const cleanup = () => {
-      if (fractalMesh) {
-        if (fractalMesh.material.map) {
-          fractalMesh.material.map.dispose();
-        }
-        fractalMesh.material.dispose();
-        fractalMesh.geometry.dispose();
-      }
-      
-      /*
-      if (pointsMesh) {
-        pointsGeometry.dispose();
-        pointsMaterial.dispose();
-        scene.remove(pointsMesh);
-      }
-      */
       if (pointsMesh) {
         scene.remove(pointsMesh);
         pointsMesh = null;
@@ -819,8 +694,6 @@ export default {
         }
       }
     };
-
-
 
     // 라이프사이클 훅
     onMounted(() => {
