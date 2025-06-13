@@ -252,6 +252,8 @@ export default {
         });
         
         const sweepData = await response.json();
+        console.log('Sweep Data:', sweepData);
+        
         sweepResults.value = sweepData.sweepResults;
         updateFrequencyDomainVisualization(sweepData);
         detectFrequencyPeaks(sweepData);
@@ -264,42 +266,74 @@ export default {
     
     // Three.js 시각화 초기화
     const initTimedomainVisualization = () => {
+      console.log('Initializing time domain visualization');
+      
       const container = timeDomainContainer.value;
-      if (!container) return;
+      if (!container) {
+        console.error('Time domain container not found');
+        return;
+      }
+      
+      console.log('Time domain container dimensions:', container.clientWidth, container.clientWidth);
       
       timeDomainScene = new THREE.Scene();
       timeDomainCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 1000);
+      timeDomainCamera.position.z = 5;
       timeDomainRenderer = new THREE.WebGLRenderer({ antialias: true });
-      timeDomainRenderer.setSize(container.clientWidth, container.clientHeight);
+      timeDomainRenderer.setSize(container.clientWidth, container.clientWidth);
       timeDomainRenderer.setClearColor(0xffffff);
       container.appendChild(timeDomainRenderer.domElement);
       
       // 격자 추가
       addGridToScene(timeDomainScene, 'time');
+      
+      // 축 추가
+      const axesHelper = new THREE.AxesHelper(1);
+      timeDomainScene.add(axesHelper);
+      
+      console.log('Time domain visualization initialized');
     };
     
     const initComplexPlaneVisualization = () => {
+      console.log('Initializing complex plane visualization');
+      
       const container = complexPlaneContainer.value;
-      if (!container) return;
+      if (!container) {
+        console.error('Complex plane container not found');
+        return;
+      }
+      
+      console.log('Complex plane container dimensions:', container.clientWidth, container.clientWidth);
       
       complexPlaneScene = new THREE.Scene();
       complexPlaneCamera = new THREE.OrthographicCamera(-2, 2, 2, -2, 0.1, 1000);
+      complexPlaneCamera.position.z = 5;
       complexPlaneRenderer = new THREE.WebGLRenderer({ antialias: true });
-      complexPlaneRenderer.setSize(container.clientWidth, container.clientHeight);
+      complexPlaneRenderer.setSize(container.clientWidth, container.clientWidth);
       complexPlaneRenderer.setClearColor(0xf8f8f8);
       container.appendChild(complexPlaneRenderer.domElement);
       
       // 복소평면 축 추가
       addComplexPlaneAxes();
       addGridToScene(complexPlaneScene, 'complex');
+      
+      console.log('Complex plane visualization initialized');
     };
     
     const initFrequencyDomainVisualization = () => {
+      console.log('Initializing frequency domain visualization');
+      
       const container = frequencyDomainContainer.value;
-      if (!container) return;
+      if (!container) {
+        console.error('Frequency domain container not found');
+        return;
+      }
+      
+      console.log('Container dimensions:', container.clientWidth, container.clientHeight);
       
       frequencyDomainScene = new THREE.Scene();
       frequencyDomainCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 1000);
+      frequencyDomainCamera.position.z = 5; // 카메라 위치 조정
       frequencyDomainRenderer = new THREE.WebGLRenderer({ antialias: true });
       frequencyDomainRenderer.setSize(container.clientWidth, container.clientHeight);
       frequencyDomainRenderer.setClearColor(0xffffff);
@@ -307,6 +341,12 @@ export default {
       
       // 격자 추가
       addGridToScene(frequencyDomainScene, 'frequency');
+      
+      // 축 추가
+      const axesHelper = new THREE.AxesHelper(1);
+      frequencyDomainScene.add(axesHelper);
+      
+      console.log('Frequency domain visualization initialized');
     };
     
     // 복소평면 축 추가
@@ -426,7 +466,13 @@ export default {
     
     // 주파수 도메인 시각화 업데이트
     const updateFrequencyDomainVisualization = (sweepData) => {
-      if (!frequencyDomainScene) return;
+      console.log('Updating visualization with:', sweepData);
+      console.log('Scene exists:', !!frequencyDomainScene);
+      
+      if (!frequencyDomainScene) {
+        console.error('Frequency domain scene not initialized');
+        return;
+      }
       
       // 기존 스펙트럼 제거
       const oldSpectrum = frequencyDomainScene.getObjectByName('frequencySpectrum');
@@ -436,10 +482,14 @@ export default {
         oldSpectrum.material.dispose();
       }
       
+      // 데이터 정규화
+      const maxMagnitude = Math.max(...sweepData.magnitudes);
+      const normalizedMagnitudes = sweepData.magnitudes.map(m => m / maxMagnitude);
+      
       // FFT 스펙트럼 그리기
       const points = sweepData.frequencies.map((freq, i) => {
-        const x = (freq / maxDisplayFrequency.value) * 2 - 1;
-        const y = sweepData.magnitudes[i] * 0.8; // 크기 조정
+        const x = (freq / maxDisplayFrequency.value) * 2 - 1; // -1 ~ 1 범위로 정규화
+        const y = normalizedMagnitudes[i] * 0.8; // 0 ~ 0.8 범위로 정규화
         return new THREE.Vector3(x, y, 0);
       });
       
@@ -455,8 +505,8 @@ export default {
       // 현재 감는 주파수 표시
       const currentFreqX = (windingFrequency.value / maxDisplayFrequency.value) * 2 - 1;
       const markerGeometry = new THREE.BufferGeometry().setFromPoints([
-        new THREE.Vector3(currentFreqX, -1, 0),
-        new THREE.Vector3(currentFreqX, 1, 0)
+        new THREE.Vector3(currentFreqX, -0.1, 0),
+        new THREE.Vector3(currentFreqX, 0.9, 0)
       ]);
       const markerMaterial = new THREE.LineBasicMaterial({ 
         color: 0xff9800, 
@@ -466,7 +516,12 @@ export default {
       markerLine.name = 'currentFreqMarker';
       frequencyDomainScene.add(markerLine);
       
+      // 렌더링
       frequencyDomainRenderer.render(frequencyDomainScene, frequencyDomainCamera);
+      
+      // 디버깅을 위한 로그
+      console.log('Rendered spectrum with points:', points.length);
+      console.log('Camera position:', frequencyDomainCamera.position);
     };
     
     // 복소평면 객체 정리
@@ -811,7 +866,7 @@ export default {
 }
 
 .viz-container {
-  height: 200px;
+  height: auto;
   border: 1px solid #ddd;
   border-radius: 4px;
   margin-bottom: 10px;
