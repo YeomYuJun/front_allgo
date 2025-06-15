@@ -165,10 +165,145 @@ export default {
     // 애니메이션 관련
     let animationFrameId;
     let windingPathMesh, centerOfMassMesh, currentSignalPoint;
-    
+
     // API 기본 URL
     const API_BASE_URL = 'http://localhost:8080/api/fft';
-    
+
+    // 컨테이너 크기 관리
+    const containerConfig = ref({
+      // 기본 크기 설정
+      defaultWidth: 400,
+      defaultHeight: 300,
+      
+      // 각 컨테이너별 개별 설정 (필요시)
+      timeDomain: {
+        width: 400,
+        height: 400,
+        aspectRatio: 4/3
+      },
+      complexPlane: {
+        width: 400, 
+        height: 400, // 정사각형으로 설정
+        aspectRatio: 1
+      },
+      frequencyDomain: {
+        width: 400,
+        height: 300,
+        aspectRatio: 4/3
+      },
+      
+      // 반응형 브레이크포인트
+      breakpoints: {
+        mobile: 768,
+        tablet: 1024
+      },
+      
+      // 반응형 크기 배율
+      mobileScale: 0.8,
+      tabletScale: 0.9
+    });
+
+    // 현재 화면 크기 감지
+    const screenWidth = ref(window.innerWidth);
+
+    // 계산된 컨테이너 크기
+    const computedContainerSizes = computed(() => {
+      let scale = 1;
+      
+      if (screenWidth.value <= containerConfig.value.breakpoints.mobile) {
+        scale = containerConfig.value.mobileScale;
+      } else if (screenWidth.value <= containerConfig.value.breakpoints.tablet) {
+        scale = containerConfig.value.tabletScale;
+      }
+      
+      return {
+        timeDomain: {
+          width: Math.floor(containerConfig.value.timeDomain.width * scale),
+          height: Math.floor(containerConfig.value.timeDomain.height * scale)
+        },
+        complexPlane: {
+          width: Math.floor(containerConfig.value.complexPlane.width * scale),
+          height: Math.floor(containerConfig.value.complexPlane.height * scale)
+        },
+        frequencyDomain: {
+          width: Math.floor(containerConfig.value.frequencyDomain.width * scale),
+          height: Math.floor(containerConfig.value.frequencyDomain.height * scale)
+        }
+      };
+    });
+
+    // 통합 렌더러 설정 함수
+    const setupRenderer = (scene, camera, container, rendererType) => {
+      if (!container) {
+        console.error(`${rendererType} container not found`);
+        return null;
+      }
+      
+      const sizes = computedContainerSizes.value[rendererType];
+      
+      const renderer = new THREE.WebGLRenderer({ antialias: true });
+      renderer.setSize(sizes.width, sizes.height);
+      renderer.setClearColor(getRendererBgColor(rendererType));
+      
+      container.appendChild(renderer.domElement);
+      
+      // 카메라 설정도 중앙화
+      setupCamera(camera, rendererType, sizes);
+      
+      console.log(`${rendererType} renderer initialized:`, sizes);
+      return renderer;
+    };
+
+    // 렌더러별 배경색 설정
+    const getRendererBgColor = (rendererType) => {
+      const bgColors = {
+        timeDomain: 0xffffff,
+        complexPlane: 0xf8f8f8,
+        frequencyDomain: 0xffffff
+      };
+      return bgColors[rendererType] || 0xffffff;
+    };    
+
+
+    // 카메라 설정 중앙화
+    const setupCamera = (camera, rendererType, sizes) => {
+      const { width, height } = sizes;
+      const aspect = width / height;
+      
+      // 카메라 타입별 설정
+      if (camera instanceof THREE.OrthographicCamera) {
+        const cameraConfigs = {
+          timeDomain: { left: -1, right: 1, top: 1, bottom: -1 },
+          complexPlane: { left: -2, right: 2, top: 2, bottom: -2 },
+          frequencyDomain: { left: -1, right: 1, top: 1, bottom: -1 }
+        };
+        
+        const config = cameraConfigs[rendererType] || cameraConfigs.timeDomain;
+        
+        // 종횡비를 고려한 카메라 설정
+        if (aspect > 1) {
+          camera.left = config.left * aspect;
+          camera.right = config.right * aspect;
+          camera.top = config.top;
+          camera.bottom = config.bottom;
+        } else {
+          camera.left = config.left;
+          camera.right = config.right;
+          camera.top = config.top / aspect;
+          camera.bottom = config.bottom / aspect;
+        }
+        
+        camera.updateProjectionMatrix();
+      }
+      
+      camera.position.z = 5;
+    };
+
+
+    //===
+
+
+
     // 계산된 속성들
     const signalEquation = computed(() => {
       let equation = 'f(t) = ';
@@ -264,89 +399,63 @@ export default {
       }
     };
     
-    // Three.js 시각화 초기화
+    // Three.js 시각화 초기화 - 수정
     const initTimedomainVisualization = () => {
       console.log('Initializing time domain visualization');
-      
-      const container = timeDomainContainer.value;
-      if (!container) {
-        console.error('Time domain container not found');
-        return;
-      }
-      
-      console.log('Time domain container dimensions:', container.clientWidth, container.clientWidth);
-      
+  
       timeDomainScene = new THREE.Scene();
-      timeDomainCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 1000);
-      timeDomainCamera.position.z = 5;
-      timeDomainRenderer = new THREE.WebGLRenderer({ antialias: true });
-      timeDomainRenderer.setSize(container.clientWidth, container.clientWidth);
-      timeDomainRenderer.setClearColor(0xffffff);
-      container.appendChild(timeDomainRenderer.domElement);
+      timeDomainCamera = new THREE.OrthographicCamera();
+      timeDomainRenderer = setupRenderer(
+        timeDomainScene, 
+        timeDomainCamera, 
+        timeDomainContainer.value, 
+        'timeDomain'
+      );
       
-      // 격자 추가
+      if (!timeDomainRenderer) return;
+      
       addGridToScene(timeDomainScene, 'time');
-      
-      // 축 추가
       const axesHelper = new THREE.AxesHelper(1);
       timeDomainScene.add(axesHelper);
-      
-      console.log('Time domain visualization initialized');
     };
-    
+
+    // Three.js 복소평면 - 신호감기 시각화 초기화 - 수정
     const initComplexPlaneVisualization = () => {
       console.log('Initializing complex plane visualization');
-      
-      const container = complexPlaneContainer.value;
-      if (!container) {
-        console.error('Complex plane container not found');
-        return;
-      }
-      
-      console.log('Complex plane container dimensions:', container.clientWidth, container.clientWidth);
-      
+  
       complexPlaneScene = new THREE.Scene();
-      complexPlaneCamera = new THREE.OrthographicCamera(-2, 2, 2, -2, 0.1, 1000);
-      complexPlaneCamera.position.z = 5;
-      complexPlaneRenderer = new THREE.WebGLRenderer({ antialias: true });
-      complexPlaneRenderer.setSize(container.clientWidth, container.clientWidth);
-      complexPlaneRenderer.setClearColor(0xf8f8f8);
-      container.appendChild(complexPlaneRenderer.domElement);
+      complexPlaneCamera = new THREE.OrthographicCamera();
+      complexPlaneRenderer = setupRenderer(
+        complexPlaneScene, 
+        complexPlaneCamera, 
+        complexPlaneContainer.value, 
+        'complexPlane'
+      );
       
-      // 복소평면 축 추가
+      if (!complexPlaneRenderer) return;
+      
       addComplexPlaneAxes();
       addGridToScene(complexPlaneScene, 'complex');
-      
-      console.log('Complex plane visualization initialized');
     };
     
+    // Three.js 주파수 도메인 시각화 초기화 - 수정 
     const initFrequencyDomainVisualization = () => {
       console.log('Initializing frequency domain visualization');
-      
-      const container = frequencyDomainContainer.value;
-      if (!container) {
-        console.error('Frequency domain container not found');
-        return;
-      }
-      
-      console.log('Container dimensions:', container.clientWidth, container.clientHeight);
-      
+  
       frequencyDomainScene = new THREE.Scene();
-      frequencyDomainCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 1000);
-      frequencyDomainCamera.position.z = 5; // 카메라 위치 조정
-      frequencyDomainRenderer = new THREE.WebGLRenderer({ antialias: true });
-      frequencyDomainRenderer.setSize(container.clientWidth, container.clientHeight);
-      frequencyDomainRenderer.setClearColor(0xffffff);
-      container.appendChild(frequencyDomainRenderer.domElement);
+      frequencyDomainCamera = new THREE.OrthographicCamera();
+      frequencyDomainRenderer = setupRenderer(
+        frequencyDomainScene, 
+        frequencyDomainCamera, 
+        frequencyDomainContainer.value, 
+        'frequencyDomain'
+      );
       
-      // 격자 추가
+      if (!frequencyDomainRenderer) return;
+      
       addGridToScene(frequencyDomainScene, 'frequency');
-      
-      // 축 추가
       const axesHelper = new THREE.AxesHelper(1);
       frequencyDomainScene.add(axesHelper);
-      
-      console.log('Frequency domain visualization initialized');
     };
     
     // 복소평면 축 추가
@@ -703,21 +812,51 @@ export default {
       }
     };
     
-    // 리사이즈 핸들러
+    // 통합 리사이즈 핸들러
     const handleResize = () => {
-      [
-        { renderer: timeDomainRenderer, container: timeDomainContainer.value, camera: timeDomainCamera, scene: timeDomainScene },
-        { renderer: complexPlaneRenderer, container: complexPlaneContainer.value, camera: complexPlaneCamera, scene: complexPlaneScene },
-        { renderer: frequencyDomainRenderer, container: frequencyDomainContainer.value, camera: frequencyDomainCamera, scene: frequencyDomainScene }
-      ].forEach(({ renderer, container, camera, scene }) => {
+      screenWidth.value = window.innerWidth;
+      
+      const rendererConfigs = [
+        { 
+          renderer: timeDomainRenderer, 
+          container: timeDomainContainer.value, 
+          camera: timeDomainCamera, 
+          scene: timeDomainScene,
+          type: 'timeDomain'
+        },
+        { 
+          renderer: complexPlaneRenderer, 
+          container: complexPlaneContainer.value, 
+          camera: complexPlaneCamera, 
+          scene: complexPlaneScene,
+          type: 'complexPlane'
+        },
+        { 
+          renderer: frequencyDomainRenderer, 
+          container: frequencyDomainContainer.value, 
+          camera: frequencyDomainCamera, 
+          scene: frequencyDomainScene,
+          type: 'frequencyDomain'
+        }
+      ];
+      
+      rendererConfigs.forEach(({ renderer, container, camera, scene, type }) => {
         if (renderer && container && camera && scene) {
-          const width = container.clientWidth;
-          const height = container.clientHeight;
-          renderer.setSize(width, height);
+          const sizes = computedContainerSizes.value[type];
+          
+          // 렌더러 크기 업데이트
+          renderer.setSize(sizes.width, sizes.height);
+          
+          // 카메라 설정 업데이트
+          setupCamera(camera, type, sizes);
+          
+          // 재렌더링
           renderer.render(scene, camera);
         }
       });
     };
+
+
     
     // 정리 함수
     const cleanup = () => {
@@ -748,6 +887,13 @@ export default {
     // 와처들
     watch([signalComponents, samplingRate, duration], updateSignal, { deep: true });
     watch(windingFrequency, updateWindingVisualization);
+    watch(screenWidth, () => {
+      handleResize();
+    });
+    // 컨테이너 설정 감시
+    watch(containerConfig, () => {
+      handleResize();
+    }, { deep: true });
     
     return {
       // 템플릿 참조
@@ -779,7 +925,11 @@ export default {
       startFrequencySweep,
       toggleAnimation,
       stepAnimation,
-      resetVisualization
+      resetVisualization,
+      
+      // 새로 추가할 항목들
+      containerConfig,
+      computedContainerSizes
     };
   }
 };
