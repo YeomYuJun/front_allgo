@@ -51,7 +51,7 @@
             </v-row>
 
             <v-row justify="center" align="center" class="navigation-links">
-                <v-col cols="12" md="4">
+                <v-col cols="12" md="3">
                     <v-card class="pa-3" outlined tile>
                         <v-card-title class="justify-center">3D Function Plotter</v-card-title>
                         <v-card-text class="text-center">
@@ -65,7 +65,7 @@
                     </v-card>
                 </v-col>
 
-                <v-col cols="12" md="4">
+                <v-col cols="12" md="3">
                     <v-card class="pa-3" outlined tile>
                         <v-card-title class="justify-center">Convex Function</v-card-title>
                         <v-card-text class="text-center">
@@ -79,7 +79,7 @@
                     </v-card>
                 </v-col>
                 
-                <v-col cols="12" md="4">
+                <v-col cols="12" md="3">
                     <v-card class="pa-3" outlined tile>
                         <v-card-title class="justify-center">Fourier Transform</v-card-title>
                         <v-card-text class="text-center">
@@ -93,7 +93,7 @@
                     </v-card>
                 </v-col>
 
-                <v-col cols="12" md="4">
+                <v-col cols="12" md="3">
                     <v-card class="pa-3" outlined tile>
                         <v-card-title class="justify-center">Fractal</v-card-title>
                         <v-card-text class="text-center">
