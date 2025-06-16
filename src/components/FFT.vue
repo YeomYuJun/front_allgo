@@ -1,110 +1,120 @@
 <template>
   <section class="fft-container container">
-    <h1>푸리에 변환 시각화 - 3Blue1Brown 스타일</h1>
+    <h1>푸리에 변환 시각화</h1>
+    <section class="container-wrap">
+      <!-- 좌측 섹션 -->
+      <section class="section-l canvas-wrap">
+        <!-- 메인 시각화 영역 -->
+        <div class="visualization-grid">
+          <!-- 시간 도메인 (원본 신호) -->
+          <div class="viz-panel time-domain grid-fr">
+            <h4>시간 도메인 신호</h4>
+            <div ref="timeDomainContainer" class="viz-container"></div>
+            <div class="signal-equation">
+              {{ signalEquation }}
+            </div>
+          </div>
 
-    <!-- 신호 생성 컨트롤 -->
-    <div class="controls signal-controls">
-      <h3>1. 신호 생성</h3>
-      <div class="signal-builder">
-        <div v-for="(component, index) in signalComponents" :key="index" class="signal-component">
-          <label>주파수 {{ index + 1 }}: {{ component.frequency }}Hz</label>
-          <input type="range" v-model.number="component.frequency" min="0.5" max="20" step="0.1" />
-          
-          <label>진폭 {{ index + 1 }}: {{ component.amplitude }}</label>
-          <input type="range" v-model.number="component.amplitude" min="0" max="2" step="0.1" />
-          
-          <button @click="removeSignalComponent(index)" v-if="signalComponents.length > 1">제거</button>
-        </div>
-        <button @click="addSignalComponent">주파수 성분 추가</button>
-      </div>
-      
-      <div class="signal-params">
-        <label>샘플링 레이트: {{ samplingRate }}Hz</label>
-        <input type="range" v-model.number="samplingRate" min="50" max="1000" step="50" />
-        
-        <label>신호 지속시간: {{ duration }}초</label>
-        <input type="range" v-model.number="duration" min="1" max="5" step="0.5" />
-      </div>
-    </div>
+          <!-- 복소평면 (신호 감기) -->
+          <div class="viz-panel complex-plane">
+            <h4>복소평면 - 신호 감기 ({{ windingFrequency.toFixed(2) }}Hz)</h4>
+            <div ref="complexPlaneContainer" class="viz-container"></div>
+            <div class="center-of-mass-info">
+              <div v-if="currentWindingResult">
+                <p><strong>질량 중심:</strong></p>
+                <p>실수부: {{ currentWindingResult.centerOfMass.real.toFixed(3) }}</p>
+                <p>허수부: {{ currentWindingResult.centerOfMass.imaginary.toFixed(3) }}</p>
+                <p>크기: {{ currentWindingResult.centerOfMass.magnitude.toFixed(3) }}</p>
+              </div>
+            </div>
+          </div>
 
-    <!-- 신호 감기 컨트롤 -->
-    <div class="controls winding-controls">
-      <h3>2. 신호 감기 (Winding)</h3>
-      <div class="winding-params">
-        <label>감는 주파수: {{ windingFrequency.toFixed(2) }}Hz</label>
-        <input type="range" 
-               v-model.number="windingFrequency" 
-               :min="0" 
-               :max="maxDisplayFrequency" 
-               :step="0.1" 
-               @input="updateWindingVisualization" />
-        
-        <div class="winding-controls-buttons">
-          <button @click="startFrequencySweep" :disabled="isSweeeping">
-            {{ isSweeeping ? '스위핑 중...' : '주파수 스윕 시작' }}
-          </button>
-          <button @click="resetVisualization">리셋</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- 메인 시각화 영역 -->
-    <div class="visualization-grid">
-      <!-- 시간 도메인 (원본 신호) -->
-      <div class="viz-panel time-domain">
-        <h4>시간 도메인 신호</h4>
-        <div ref="timeDomainContainer" class="viz-container"></div>
-        <div class="signal-equation">
-          {{ signalEquation }}
-        </div>
-      </div>
-
-      <!-- 복소평면 (신호 감기) -->
-      <div class="viz-panel complex-plane">
-        <h4>복소평면 - 신호 감기 ({{ windingFrequency.toFixed(2) }}Hz)</h4>
-        <div ref="complexPlaneContainer" class="viz-container"></div>
-        <div class="center-of-mass-info">
-          <div v-if="currentWindingResult">
-            <p><strong>질량 중심:</strong></p>
-            <p>실수부: {{ currentWindingResult.centerOfMass.real.toFixed(3) }}</p>
-            <p>허수부: {{ currentWindingResult.centerOfMass.imaginary.toFixed(3) }}</p>
-            <p>크기: {{ currentWindingResult.centerOfMass.magnitude.toFixed(3) }}</p>
+          <!-- 주파수 도메인 (FFT 결과) -->
+          <div class="viz-panel frequency-domain">
+            <h4>주파수 도메인 (푸리에 변환)</h4>
+            <div ref="frequencyDomainContainer" class="viz-container"></div>
+            <div class="frequency-peaks">
+              <p><strong>주요 주파수 성분:</strong></p>
+              <div v-for="peak in detectedPeaks" :key="peak.frequency">
+                {{ peak.frequency.toFixed(1) }}Hz (크기: {{ peak.magnitude.toFixed(2) }})
+              </div>
+            </div>
           </div>
         </div>
-      </div>
-
-      <!-- 주파수 도메인 (FFT 결과) -->
-      <div class="viz-panel frequency-domain">
-        <h4>주파수 도메인 (푸리에 변환)</h4>
-        <div ref="frequencyDomainContainer" class="viz-container"></div>
-        <div class="frequency-peaks">
-          <p><strong>주요 주파수 성분:</strong></p>
-          <div v-for="peak in detectedPeaks" :key="peak.frequency">
-            {{ peak.frequency.toFixed(1) }}Hz (크기: {{ peak.magnitude.toFixed(2) }})
+      </section>
+      <!--<좌>  <우>-->
+      <!-- 우측 섹션 -->
+      <section class="section-r controls-wrap">
+        <!-- 신호 생성 컨트롤 -->
+        <div class="controls signal-controls">
+          <h3>1. 신호 생성</h3>
+          <div class="signal-builder">
+            <div v-for="(component, index) in signalComponents" :key="index" class="signal-component">
+              <label>주파수 {{ index + 1 }}: {{ component.frequency }}Hz</label>
+              <input type="range" v-model.number="component.frequency" min="0.5" max="20" step="0.1" />
+              
+              <label>진폭 {{ index + 1 }}: {{ component.amplitude }}</label>
+              <input type="range" v-model.number="component.amplitude" min="0" max="2" step="0.1" />
+              
+              <button @click="removeSignalComponent(index)" v-if="signalComponents.length > 1">제거</button>
+            </div>
+            <button @click="addSignalComponent">주파수 성분 추가</button>
+          </div>
+          
+          <div class="signal-params">
+            <label>샘플링 레이트: {{ samplingRate }}Hz</label>
+            <input type="range" v-model.number="samplingRate" min="50" max="1000" step="50" />
+            
+            <label>신호 지속시간: {{ duration }}초</label>
+            <input type="range" v-model.number="duration" min="1" max="5" step="0.5" />
           </div>
         </div>
-      </div>
 
-      <!-- 애니메이션 컨트롤 -->
-      <div class="viz-panel animation-controls">
-        <h4>애니메이션 컨트롤</h4>
-        <div class="animation-buttons">
-          <button @click="toggleAnimation">
-            {{ isAnimating ? '일시정지' : '애니메이션 시작' }}
-          </button>
-          <button @click="stepAnimation">단계별 진행</button>
+        <!-- 신호 감기 컨트롤 -->
+        <div class="controls winding-controls">
+          <h3>2. 신호 감기 (Winding)</h3>
+          <div class="winding-params">
+            <label>감는 주파수: {{ windingFrequency.toFixed(2) }}Hz</label>
+            <input type="range" 
+                  v-model.number="windingFrequency" 
+                  :min="0" 
+                  :max="maxDisplayFrequency" 
+                  :step="0.1" 
+                  @input="updateWindingVisualization" />
+            
+            <div class="winding-controls-buttons">
+              <button @click="startFrequencySweep" :disabled="isSweeeping">
+                {{ isSweeeping ? '스위핑 중...' : '주파수 스윕 시작' }}
+              </button>
+              <button @click="resetVisualization">리셋</button>
+            </div>
+          </div>
         </div>
-        
-        <div class="animation-speed">
-          <label>애니메이션 속도: {{ animationSpeed }}x</label>
-          <input type="range" v-model.number="animationSpeed" min="0.1" max="3" step="0.1" />
+
+        <!-- 애니메이션 컨트롤 -->
+        <div class="viz-panel animation-controls">
+          <h4>애니메이션 컨트롤</h4>
+          <div class="animation-buttons">
+            <button @click="toggleAnimation">
+              {{ isAnimating ? '일시정지' : '애니메이션 시작' }}
+            </button>
+            <button @click="stepAnimation">단계별 진행</button>
+          </div>
+          
+          <div class="animation-speed">
+            <label>애니메이션 속도: {{ animationSpeed }}x</label>
+            <input type="range" v-model.number="animationSpeed" min="0.1" max="3" step="0.1" />
+          </div>
+          
+          <div class="current-time">
+            현재 시간: {{ currentAnimationTime.toFixed(2) }}초
+          </div>
         </div>
-        
-        <div class="current-time">
-          현재 시간: {{ currentAnimationTime.toFixed(2) }}초
-        </div>
-      </div>
-    </div>
+      </section>
+    </section>
+    
+    
+    
 
     <!-- 인사이트 패널 -->
     <div class="insights-panel">
@@ -177,19 +187,19 @@ export default {
       
       // 각 컨테이너별 개별 설정 (필요시)
       timeDomain: {
-        width: 400,
+        width: 990,
         height: 400,
-        aspectRatio: 4/3
+        aspectRatio: 12/4
       },
       complexPlane: {
-        width: 400, 
-        height: 400, // 정사각형으로 설정
+        width: 470, 
+        height: 470, // 정사각형으로 설정
         aspectRatio: 1
       },
       frequencyDomain: {
-        width: 400,
-        height: 300,
-        aspectRatio: 4/3
+        width: 470,
+        height: 470,
+        aspectRatio: 1//4/3
       },
       
       // 반응형 브레이크포인트
@@ -508,7 +518,7 @@ export default {
       
       // 새 신호 라인 생성
       const points = signalData.timePoints.map((time, i) => {
-        const x = (time / duration.value) * 2 - 1; // -1 ~ 1로 정규화
+        const x = (time / duration.value) * 3 - 1; // -1 ~ 1로 정규화 // 진폭은 추후 css에 따라 변동 예정
         const y = signalData.amplitudes[i] * 0.8; // 진폭 조정
         return new THREE.Vector3(x, y, 0);
       });
@@ -583,21 +593,64 @@ export default {
         return;
       }
       
-      // 기존 스펙트럼 제거
-      const oldSpectrum = frequencyDomainScene.getObjectByName('frequencySpectrum');
-      if (oldSpectrum) {
-        frequencyDomainScene.remove(oldSpectrum);
-        oldSpectrum.geometry.dispose();
-        oldSpectrum.material.dispose();
+      // 기존 스펙트럼 객체들 제거
+      ['frequencySpectrum', 'currentFreqMarker'].forEach(name => {
+        const obj = frequencyDomainScene.getObjectByName(name);
+        if (obj) {
+          frequencyDomainScene.remove(obj);
+          obj.geometry.dispose();
+          obj.material.dispose();
+        }
+      });
+
+      // 기존 코드 후에 x축 눈금 추가
+    const addFrequencyAxisLabels = () => {
+      // 기존 축 눈금 제거
+      const existingLabels = frequencyDomainScene.getObjectByName('frequencyLabels');
+      if (existingLabels) {
+        frequencyDomainScene.remove(existingLabels);
       }
+      
+      const labelGroup = new THREE.Group();
+      labelGroup.name = 'frequencyLabels';
+      
+      // 눈금 간격 설정 (0, 5, 10, 15, 20Hz)
+      const tickInterval = 5;
+      const numTicks = Math.floor(maxDisplayFrequency.value / tickInterval) + 1;
+      
+      for (let i = 0; i < numTicks; i++) {
+        const frequency = i * tickInterval;
+        const x = freqToX(frequency);
+        
+        // 눈금선 그리기
+        const tickGeometry = new THREE.BufferGeometry().setFromPoints([
+          new THREE.Vector3(x, -0.15, 0),
+          new THREE.Vector3(x, -0.05, 0)
+        ]);
+        const tickMaterial = new THREE.LineBasicMaterial({ color: 0x666666 });
+        const tickLine = new THREE.Line(tickGeometry, tickMaterial);
+        labelGroup.add(tickLine);
+        
+        // 텍스트 레이블은 CSS로 오버레이하거나 생략 가능
+        // Three.js에서 텍스트는 복잡하므로 일단 눈금선만
+      }
+      
+      frequencyDomainScene.add(labelGroup);
+    };
+
       
       // 데이터 정규화
       const maxMagnitude = Math.max(...sweepData.magnitudes);
       const normalizedMagnitudes = sweepData.magnitudes.map(m => m / maxMagnitude);
+
+      // 통일된 좌표 변환 함수
+      const freqToX = (frequency) => {
+        return (frequency / maxDisplayFrequency.value) * 2 - 1; // -1 ~ 1 범위
+      };
       
       // FFT 스펙트럼 그리기
       const points = sweepData.frequencies.map((freq, i) => {
-        const x = (freq / maxDisplayFrequency.value) * 2 - 1; // -1 ~ 1 범위로 정규화
+        const x = freqToX(freq)//(freq / maxDisplayFrequency.value) * 3 - 1; // -1 ~ 1 범위로 정규화
         const y = normalizedMagnitudes[i] * 0.8; // 0 ~ 0.8 범위로 정규화
         return new THREE.Vector3(x, y, 0);
       });
@@ -612,26 +665,39 @@ export default {
       frequencyDomainScene.add(spectrumLine);
       
       // 현재 감는 주파수 표시
-      const currentFreqX = (windingFrequency.value / maxDisplayFrequency.value) * 2 - 1;
+      //const currentFreqX = (windingFrequency.value / maxDisplayFrequency.value) * 2 - 1;
+      const currentFreqX = freqToX(windingFrequency.value);
+
       const markerGeometry = new THREE.BufferGeometry().setFromPoints([
         new THREE.Vector3(currentFreqX, -0.1, 0),
         new THREE.Vector3(currentFreqX, 0.9, 0)
       ]);
       const markerMaterial = new THREE.LineBasicMaterial({ 
         color: 0xff9800, 
-        linewidth: 2 
+        linewidth: 3 
       });
       const markerLine = new THREE.Line(markerGeometry, markerMaterial);
       markerLine.name = 'currentFreqMarker';
       frequencyDomainScene.add(markerLine);
-      
+      addFrequencyAxisLabels();
       // 렌더링
       frequencyDomainRenderer.render(frequencyDomainScene, frequencyDomainCamera);
       
-      // 디버깅을 위한 로그
-      console.log('Rendered spectrum with points:', points.length);
-      console.log('Camera position:', frequencyDomainCamera.position);
+
+
+      // 상세 디버깅 로그
+      console.log('=== Frequency Domain Debug ===');
+      console.log('Winding frequency:', windingFrequency.value);
+      console.log('Max display frequency:', maxDisplayFrequency.value);
+      console.log('Marker X position:', currentFreqX);
+      console.log('Spectrum X range:', points.length > 0 ? `${points[0].x} ~ ${points[points.length-1].x}` : 'empty');
+      console.log('Points count:', points.length);
+      
+
     };
+
+
+    
     
     // 복소평면 객체 정리
     const clearComplexPlaneObjects = () => {
@@ -942,6 +1008,12 @@ export default {
   margin: 0 auto;
 }
 
+.container-wrap {
+    display: grid;
+    grid-template-columns: 3fr 1fr;
+    grid-template-rows: 1fr;
+
+}
 .controls {
   margin-bottom: 20px;
   padding: 15px;
@@ -999,6 +1071,10 @@ export default {
   gap: 20px;
   margin-bottom: 20px;
   min-height: 600px;
+}
+
+.grid-fr {
+  grid-column: 1 / 3;
 }
 
 .viz-panel {
