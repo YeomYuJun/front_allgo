@@ -43,14 +43,18 @@
     </section>
 
     <section class="content_section">
-        <v-container> <v-row justify="center" class="text-center mt-5 mb-5">
+        <v-container> 
+
+            <!-- algorithm tit -->
+            <v-row justify="center" class="text-center mt-5 mb-5">
                 <v-col cols="12">
                     <h2>Explore Algorithms</h2>
                     <p>Choose an algorithm visualization to start.</p>
                 </v-col>
             </v-row>
-
+            <!-- algorithn -->
             <v-row justify="center" align="center" class="navigation-links">
+                <!-- 3d -->
                 <v-col cols="12" md="3">
                     <v-card class="pa-3" outlined tile>
                         <v-card-title class="justify-center">3D Function Plotter</v-card-title>
@@ -65,6 +69,7 @@
                     </v-card>
                 </v-col>
 
+                <!-- 볼록함수 -->
                 <v-col cols="12" md="3">
                     <v-card class="pa-3" outlined tile>
                         <v-card-title class="justify-center">Convex Function</v-card-title>
@@ -78,7 +83,8 @@
                         </v-card-actions>
                     </v-card>
                 </v-col>
-                
+
+                <!-- FFT -->
                 <v-col cols="12" md="3">
                     <v-card class="pa-3" outlined tile>
                         <v-card-title class="justify-center">Fourier Transform</v-card-title>
@@ -93,6 +99,7 @@
                     </v-card>
                 </v-col>
 
+                <!-- 프랙탈 -->
                 <v-col cols="12" md="3">
                     <v-card class="pa-3" outlined tile>
                         <v-card-title class="justify-center">Fractal</v-card-title>
@@ -102,6 +109,75 @@
                         <v-card-actions class="justify-center">
                              <v-btn color="primary" @click="navigateTo('/fractal')">
                                 Go to Fractal
+                            </v-btn>
+                        </v-card-actions>
+                    </v-card>
+                </v-col>
+            </v-row>
+            <!-- 정렬 tit -->
+            <v-row justify="center" class="text-center mt-5 mb-5">
+                <v-col cols="12">
+                    <h2>Explore Sortings</h2>
+                    <p>Choose an sort algorithm visualization to start.</p>
+                </v-col>
+            </v-row>
+            <!-- 정렬 -->
+            <v-row justify="center" align="center" class="navigation-links">
+                <!-- Bubble -->
+                <v-col cols="12" md="3">
+                    <v-card class="pa-3" outlined tile>
+                        <v-card-title class="justify-center">Bubble Sort</v-card-title>
+                        <v-card-text class="text-center">
+                            Compare adjacent elements and swap if needed.
+                        </v-card-text>
+                        <v-card-actions class="justify-center">
+                            <v-btn color="primary" @click="navigateTo('/')">
+                                Go to Bubble Sort
+                            </v-btn>
+                        </v-card-actions>
+                    </v-card>
+                </v-col>
+
+                <!-- Quick -->
+                <v-col cols="12" md="3" v-if="false">
+                    <v-card class="pa-3" outlined tile>
+                        <v-card-title class="justify-center">Quick Sort</v-card-title>
+                        <v-card-text class="text-center">
+                            Pick a pivot and partition around it.
+                        </v-card-text>
+                        <v-card-actions class="justify-center">
+                            <v-btn color="primary" @click="navigateTo('/')">
+                                Go to Quick Sort
+                            </v-btn>
+                        </v-card-actions>
+                    </v-card>
+                </v-col>
+                
+                <!-- Merge -->
+                <v-col cols="12" md="3" v-if="false">
+                    <v-card class="pa-3" outlined tile>
+                        <v-card-title class="justify-center">Merge Sort</v-card-title>
+                        <v-card-text class="text-center">
+                            Divide into halves and merge them sorted.
+                        </v-card-text>
+                        <v-card-actions class="justify-center">
+                            <v-btn color="primary" @click="navigateTo('/')">
+                                Go to Merge Sort
+                            </v-btn>
+                        </v-card-actions>
+                    </v-card>
+                </v-col>
+
+                <!-- Heap -->
+                <v-col cols="12" md="3" v-if="false">
+                    <v-card class="pa-3" outlined tile>
+                        <v-card-title class="justify-center">Heap Sort</v-card-title>
+                        <v-card-text class="text-center">
+                            Build a heap and extract the maximum repeatedly.
+                        </v-card-text>
+                        <v-card-actions class="justify-center">
+                             <v-btn color="primary" @click="navigateTo('/')">
+                                Go to Heap Sort
                             </v-btn>
                         </v-card-actions>
                     </v-card>

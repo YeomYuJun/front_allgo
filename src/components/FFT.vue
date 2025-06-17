@@ -1002,6 +1002,7 @@ export default {
 </script>
 
 <style scoped>
+/*css가 점점 더 맘에 안든다....*/
 .fft-container {
   padding: 20px;
   max-width: 1400px;
@@ -1067,7 +1068,6 @@ export default {
 .visualization-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  grid-template-rows: 1fr 1fr;
   gap: 20px;
   margin-bottom: 20px;
   min-height: 600px;
