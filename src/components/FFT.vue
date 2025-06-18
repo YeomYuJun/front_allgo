@@ -32,7 +32,24 @@
           <!-- 주파수 도메인 (FFT 결과) -->
           <div class="viz-panel frequency-domain">
             <h4>주파수 도메인 (푸리에 변환)</h4>
-            <div ref="frequencyDomainContainer" class="viz-container"></div>
+            <div class="chart-wrapper">
+              <!-- Y축 레이블 (크기) -->
+              <div class="y-axis-labels">
+                <div class="y-tick" v-for="tick in yAxisTicks" :key="tick.value" :style="{ top: tick.position }">
+                  {{ tick.label }}
+                </div>
+              </div>
+              <!-- 차트 컨테이너 -->
+              <div class="chart-container">
+                <div ref="frequencyDomainContainer" class="viz-container"></div>
+                <!-- X축 레이블 (주파수) -->
+                <div class="x-axis-labels">
+                  <div class="x-tick" v-for="tick in xAxisTicks" :key="tick.value" :style="{ left: tick.position }">
+                    {{ tick.label }}
+                  </div>
+                </div>
+              </div>
+            </div>
             <div class="frequency-peaks">
               <p><strong>주요 주파수 성분:</strong></p>
               <div v-for="peak in detectedPeaks" :key="peak.frequency">
@@ -323,6 +340,41 @@ export default {
         .join(' + ');
       return equation + (terms || '0');
     });
+
+    // X축 눈금 (주파수: 0 ~ 20Hz)
+    const xAxisTicks = computed(() => {
+      const ticks = [];
+      const maxFreq = maxDisplayFrequency.value;
+      const tickInterval = 5; // 5Hz 간격
+      
+      for (let i = 0; i <= maxFreq; i += tickInterval) {
+        const position = `${(i / maxFreq) * 100}%`;
+        ticks.push({
+          value: i,
+          label: `${i}Hz`,
+          position: position
+        });
+      }
+      return ticks;
+    });
+
+    // Y축 눈금 (크기: -1 ~ 1, 가운데가 0)
+    const yAxisTicks = computed(() => {
+      const ticks = [];
+      const values = [-1, -0.5, 0, 0.5, 1]; // -1부터 1까지
+      
+      values.forEach((value, index) => {
+        // 맨 아래(-1)가 0%, 가운데(0)가 50%, 맨 위(1)가 100%
+        const position = `${(value + 1) * 40}%`; // -1~1을 0~80%로 변환
+        ticks.push({
+          value: value,
+          label: value.toFixed(1),
+          position: position
+        });
+      });
+      
+      return ticks;
+    });
     
     // 신호 생성 및 관리
     const addSignalComponent = () => {
@@ -594,71 +646,97 @@ export default {
       }
       
       // 기존 스펙트럼 객체들 제거
-      ['frequencySpectrum', 'currentFreqMarker'].forEach(name => {
+      ['frequencySpectrum', 'currentFreqMarker', 'frequencyLabels'].forEach(name => {
         const obj = frequencyDomainScene.getObjectByName(name);
         if (obj) {
           frequencyDomainScene.remove(obj);
-          obj.geometry.dispose();
-          obj.material.dispose();
+          if (obj.geometry) obj.geometry.dispose();
+          if (obj.material) obj.material.dispose();
         }
       });
 
-      // 기존 코드 후에 x축 눈금 추가
-    const addFrequencyAxisLabels = () => {
-      // 기존 축 눈금 제거
-      const existingLabels = frequencyDomainScene.getObjectByName('frequencyLabels');
-      if (existingLabels) {
-        frequencyDomainScene.remove(existingLabels);
-      }
-      
-      const labelGroup = new THREE.Group();
-      labelGroup.name = 'frequencyLabels';
-      
-      // 눈금 간격 설정 (0, 5, 10, 15, 20Hz)
-      const tickInterval = 5;
-      const numTicks = Math.floor(maxDisplayFrequency.value / tickInterval) + 1;
-      
-      for (let i = 0; i < numTicks; i++) {
-        const frequency = i * tickInterval;
-        const x = freqToX(frequency);
+      // 좌표 변환 함수들
+      const freqToX = (frequency) => {
+        return (frequency / maxDisplayFrequency.value) * 2 - 1; // -1 ~ 1 범위 (x축: 주파수)
+      };
+
+      const magnitudeToY = (magnitude, maxMagnitude) => {
+        return (magnitude / maxMagnitude) * 0.8; // 0 ~ 0.8 범위 (y축: 크기)
+      };
+
+      // x축, y축 눈금 및 축 라인 추가
+      const addFrequencyAxisLabels = () => {
+        const labelGroup = new THREE.Group();
+        labelGroup.name = 'frequencyLabels';
         
-        // 눈금선 그리기
-        const tickGeometry = new THREE.BufferGeometry().setFromPoints([
-          new THREE.Vector3(x, -0.15, 0),
-          new THREE.Vector3(x, -0.05, 0)
+        // x축 기준선 (주파수 축)
+        const xAxisGeometry = new THREE.BufferGeometry().setFromPoints([
+          new THREE.Vector3(-1, 0, 0),
+          new THREE.Vector3(1, 0, 0)
         ]);
-        const tickMaterial = new THREE.LineBasicMaterial({ color: 0x666666 });
-        const tickLine = new THREE.Line(tickGeometry, tickMaterial);
-        labelGroup.add(tickLine);
+        const xAxisMaterial = new THREE.LineBasicMaterial({ color: 0x333333, linewidth: 2 });
+        const xAxisLine = new THREE.Line(xAxisGeometry, xAxisMaterial);
+        labelGroup.add(xAxisLine);
         
-        // 텍스트 레이블은 CSS로 오버레이하거나 생략 가능
-        // Three.js에서 텍스트는 복잡하므로 일단 눈금선만
-      }
-      
-      frequencyDomainScene.add(labelGroup);
-    };
+        // y축 기준선 (크기 축)
+        const yAxisGeometry = new THREE.BufferGeometry().setFromPoints([
+          new THREE.Vector3(-1, 0, 0),
+          new THREE.Vector3(-1, 0.9, 0)
+        ]);
+        const yAxisMaterial = new THREE.LineBasicMaterial({ color: 0x333333, linewidth: 2 });
+        const yAxisLine = new THREE.Line(yAxisGeometry, yAxisMaterial);
+        labelGroup.add(yAxisLine);
+        
+        // 주파수 눈금 (x축) - 5Hz 간격
+        const tickInterval = 5;
+        const numTicks = Math.floor(maxDisplayFrequency.value / tickInterval) + 1;
+        
+        for (let i = 0; i < numTicks; i++) {
+          const frequency = i * tickInterval;
+          const x = freqToX(frequency);
+          
+          // 주파수 눈금선
+          const tickGeometry = new THREE.BufferGeometry().setFromPoints([
+            new THREE.Vector3(x, -0.05, 0),
+            new THREE.Vector3(x, 0.05, 0)
+          ]);
+          const tickMaterial = new THREE.LineBasicMaterial({ color: 0x666666 });
+          const tickLine = new THREE.Line(tickGeometry, tickMaterial);
+          labelGroup.add(tickLine);
+        }
+        
+        // 크기 눈금 (y축) - 0.2 간격
+        for (let i = 0; i <= 4; i++) {
+          const y = i * 0.2;
+          
+          // 크기 눈금선
+          const tickGeometry = new THREE.BufferGeometry().setFromPoints([
+            new THREE.Vector3(-1.05, y, 0),
+            new THREE.Vector3(-0.95, y, 0)
+          ]);
+          const tickMaterial = new THREE.LineBasicMaterial({ color: 0x666666 });
+          const tickLine = new THREE.Line(tickGeometry, tickMaterial);
+          labelGroup.add(tickLine);
+        }
+        
+        frequencyDomainScene.add(labelGroup);
+      };
 
       
       // 데이터 정규화
       const maxMagnitude = Math.max(...sweepData.magnitudes);
-      const normalizedMagnitudes = sweepData.magnitudes.map(m => m / maxMagnitude);
-
-      // 통일된 좌표 변환 함수
-      const freqToX = (frequency) => {
-        return (frequency / maxDisplayFrequency.value) * 2 - 1; // -1 ~ 1 범위
-      };
       
-      // FFT 스펙트럼 그리기
+      // FFT 스펙트럼 그리기 (x축: 주파수, y축: 크기)
       const points = sweepData.frequencies.map((freq, i) => {
-        const x = freqToX(freq)//(freq / maxDisplayFrequency.value) * 3 - 1; // -1 ~ 1 범위로 정규화
-        const y = normalizedMagnitudes[i] * 0.8; // 0 ~ 0.8 범위로 정규화
+        const x = freqToX(freq); // x축은 주파수
+        const y = magnitudeToY(sweepData.magnitudes[i], maxMagnitude); // y축은 크기
         return new THREE.Vector3(x, y, 0);
       });
       
       const spectrumGeometry = new THREE.BufferGeometry().setFromPoints(points);
       const spectrumMaterial = new THREE.LineBasicMaterial({ 
         color: 0xe91e63, 
-        linewidth: 2 
+        linewidth: 3 
       });
       const spectrumLine = new THREE.Line(spectrumGeometry, spectrumMaterial);
       spectrumLine.name = 'frequencySpectrum';
@@ -669,12 +747,12 @@ export default {
       const currentFreqX = freqToX(windingFrequency.value);
 
       const markerGeometry = new THREE.BufferGeometry().setFromPoints([
-        new THREE.Vector3(currentFreqX, -0.1, 0),
+        new THREE.Vector3(currentFreqX, 0, 0),
         new THREE.Vector3(currentFreqX, 0.9, 0)
       ]);
       const markerMaterial = new THREE.LineBasicMaterial({ 
         color: 0xff9800, 
-        linewidth: 3 
+        linewidth: 4 
       });
       const markerLine = new THREE.Line(markerGeometry, markerMaterial);
       markerLine.name = 'currentFreqMarker';
@@ -685,13 +763,13 @@ export default {
       
 
 
-      // 상세 디버깅 로그
-      console.log('=== Frequency Domain Debug ===');
-      console.log('Winding frequency:', windingFrequency.value);
-      console.log('Max display frequency:', maxDisplayFrequency.value);
-      console.log('Marker X position:', currentFreqX);
-      console.log('Spectrum X range:', points.length > 0 ? `${points[0].x} ~ ${points[points.length-1].x}` : 'empty');
-      console.log('Points count:', points.length);
+      // 디버깅 로그
+      console.log('=== Frequency Domain Visualization ===');
+      console.log('X축: 주파수 (0 ~', maxDisplayFrequency.value, 'Hz)');
+      console.log('Y축: 크기 (0 ~ 1)');
+      console.log('현재 감는 주파수:', windingFrequency.value, 'Hz, X위치:', currentFreqX);
+      console.log('스펙트럼 포인트 수:', points.length);
+      console.log('최대 크기:', maxMagnitude);
       
 
     };
@@ -983,6 +1061,8 @@ export default {
       
       // 계산된 속성
       signalEquation,
+      xAxisTicks,
+      yAxisTicks,
       
       // 메서드들
       addSignalComponent,
@@ -1096,6 +1176,57 @@ export default {
   border: 1px solid #ddd;
   border-radius: 4px;
   margin-bottom: 10px;
+  
+}
+.frequency-domain .viz-container {
+  margin-left: 10px;
+}
+
+/* 주파수 도메인 차트 레이아웃 */
+.chart-wrapper {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.chart-container {
+  position: relative;
+  flex: 1;
+}
+
+/* Y축 레이블 (크기) */
+.y-axis-labels {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 505px; /* frequencyDomain 높이와 맞춤 + margin + x-axis의 height */
+  padding-right: 15px;
+  position: relative;
+}
+
+.y-tick {
+  position: absolute;
+  font-size: 12px;
+  color: #666;
+  text-align: right;
+  width: 30px;
+  transform: translateY(150%);
+}
+
+/* X축 레이블 (주파수) */
+.x-axis-labels {
+  position: relative;
+  height: 20px;
+  margin-top: 5px;
+}
+
+.x-tick {
+  position: absolute;
+  font-size: 12px;
+  color: #666;
+  text-align: center;
+  transform: translateX(-50%);
 }
 
 .signal-equation {
