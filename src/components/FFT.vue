@@ -1,9 +1,13 @@
 <template>
   <section class="fft-container container">
-    <h1>푸리에 변환 시각화</h1>
+
+    <div>
+      <h2 class="tit">Fast Fourier Transform Visualization</h2>
+    </div>
+
     <section class="container-wrap">
       <!-- 좌측 섹션 -->
-      <section class="section-l canvas-wrap">
+      <section class="sub-section section-l canvas-wrap">
         <!-- 메인 시각화 영역 -->
         <div class="visualization-grid">
           <!-- 시간 도메인 (원본 신호) -->
@@ -35,7 +39,7 @@
             <div class="chart-wrapper">
               <!-- Y축 레이블 (크기) -->
               <div class="y-axis-labels">
-                <div class="y-tick" v-for="tick in yAxisTicks" :key="tick.value" :style="{ top: tick.position }">
+                <div class="y-tick" v-for="tick in yAxisTicks" :key="tick.value" :style="{ top : tick.position }">
                   {{ tick.label }}
                 </div>
               </div>
@@ -61,7 +65,7 @@
       </section>
       <!--<좌>  <우>-->
       <!-- 우측 섹션 -->
-      <section class="section-r controls-wrap">
+      <section class="sub-section section-r controls-wrap">
         <!-- 신호 생성 컨트롤 -->
         <div class="controls signal-controls">
           <h3>1. 신호 생성</h3>
@@ -109,7 +113,7 @@
         </div>
 
         <!-- 애니메이션 컨트롤 -->
-        <div class="viz-panel animation-controls">
+        <div class="controls animation-controls">
           <h4>애니메이션 컨트롤</h4>
           <div class="animation-buttons">
             <button @click="toggleAnimation">
@@ -348,7 +352,8 @@ export default {
       const tickInterval = 5; // 5Hz 간격
       
       for (let i = 0; i <= maxFreq; i += tickInterval) {
-        const position = `${(i / maxFreq) * 100}%`;
+        const pstnVal = ((i / maxFreq) * 100 ) == 0 || ((i / maxFreq) * 100 ) == 100 ? Math.abs(((i / maxFreq) * 100 ) - 5) : ((i / maxFreq) * 100 ) 
+        const position = `${pstnVal}%`;
         ticks.push({
           value: i,
           label: `${i}Hz`,
@@ -362,10 +367,10 @@ export default {
     const yAxisTicks = computed(() => {
       const ticks = [];
       const values = [-1, -0.5, 0, 0.5, 1]; // -1부터 1까지
-      
+      // 0 , 0.5, 1 , 1.5, 2
       values.forEach((value, index) => {
-        // 맨 아래(-1)가 0%, 가운데(0)가 50%, 맨 위(1)가 100%
-        const position = `${(value + 1) * 40}%`; // -1~1을 0~80%로 변환
+        // 맨 아래(-1)가 80%, 가운데(0)가 60%, 맨 위(1)가 0%가 되어야함
+        const position = `${Math.abs((value - 1) * 40 )}%`; // -1~1을 0~80%로 변환
         ticks.push({
           value: value,
           label: value.toFixed(1),
@@ -1082,7 +1087,14 @@ export default {
 </script>
 
 <style scoped>
-/*css가 점점 더 맘에 안든다....*/
+
+.tit {
+  font-weight: 600;
+  border-bottom: 5px solid #777;
+  width: fit-content;
+  margin-bottom: 25px;
+}
+
 .fft-container {
   padding: 20px;
   max-width: 1400px;
@@ -1095,6 +1107,11 @@ export default {
     grid-template-rows: 1fr;
 
 }
+
+.sub-section {
+  min-height: 1250px;
+}
+
 .controls {
   margin-bottom: 20px;
   padding: 15px;
@@ -1135,7 +1152,7 @@ export default {
 
 .winding-params {
   display: grid;
-  grid-template-columns: 2fr 1fr;
+  grid-template-columns: 1fr;
   gap: 20px;
   align-items: center;
 }
@@ -1157,11 +1174,17 @@ export default {
   grid-column: 1 / 3;
 }
 
+.controls {
+  border-radius: 8px;
+  padding: 15px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
 .viz-panel {
   background-color: white;
   border-radius: 8px;
   padding: 15px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.3);
 }
 
 .viz-panel h4 {
@@ -1254,6 +1277,7 @@ export default {
 .animation-buttons {
   display: flex;
   gap: 10px;
+  flex-direction: column;
 }
 
 .insights-panel {
@@ -1278,6 +1302,10 @@ export default {
 .insight-item h4 {
   margin-top: 0;
   color: #1976d2;
+}
+
+.section-r {
+  margin-left : 20px;
 }
 
 button {
@@ -1312,14 +1340,12 @@ label {
   display: block;
 }
 
+
+
 @media (max-width: 768px) {
   .visualization-grid {
     grid-template-columns: 1fr;
     grid-template-rows: repeat(4, auto);
-  }
-  
-  .winding-params {
-    grid-template-columns: 1fr;
   }
   
   .signal-params {
