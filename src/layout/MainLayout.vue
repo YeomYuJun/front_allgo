@@ -9,7 +9,7 @@
                     <div class="tb_center">
                         <div class="logobox">
                             <!--나중에 이미지추가-->
-                            <p style="font-size : 30px;">AllGoMath</p>
+                            <a href="/"><p style="font-size : 30px;">AllGoMath</p></a>
                         </div>
                     </div>
                     <div class="tb_right">
@@ -26,7 +26,9 @@
         </main>
         
         <footer>
-            <p>푸터 내용</p>
+            <div class="foot-bt">
+                <p>푸터 내용</p>
+            </div>
         </footer>
     </div>
 </template>
@@ -58,5 +60,13 @@
 .content_wrapper{
     margin-left: 50px;
     margin-right: 50px;
+}
+
+.foot-bt {
+    box-shadow: 0px 2px 10px rgba(0, 0, 0, 0.1);
+    height: 70px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: flex-end;
 }
 </style>
