@@ -1,112 +1,111 @@
 <template>
-  <section class="fractal-container container">
-    <h1>프랙탈 시각화</h1>
-
-    <div class="controls">
-      <div class="control-group">
-        <label>프랙탈 타입:</label>
-        <select v-model="selectedFractalType">
-          <option value="mandelbrot">만델브로트 집합</option>
-          <option value="julia">줄리아 집합</option>
-          <!-- IFS 프랙탈 옵션 주석 처리
-          <option value="sierpinski">시에르핀스키 삼각형</option>
-          <option value="barnsley">반슬리 고사리</option>
-          -->
-        </select>
-      </div>
-      
-      <div class="control-group">
-        <label>반복 횟수: {{ iterations }}</label>
-        <input type="range" 
-               v-model.number="iterations" 
-               :min="getMinIterations" 
-               :max="getMaxIterations" 
-               :step="getIterationStep" />
-      </div>
-      
-      <div class="control-group">
-        <label>기본 해상도: {{ baseResolution }}</label>
-        <input type="range" v-model.number="baseResolution" min="100" max="800" step="50" />
-      </div>
-      
-      <div v-if="selectedFractalType === 'julia'" class="control-group julia-params">
-        <label>줄리아 상수:</label>
-        <div class="julia-inputs">
-          <div>
-            <label>실수부: {{ juliaReal }}</label>
-            <input type="range" v-model.number="juliaReal" min="-2" max="2" step="0.01" />
-          </div>
-          <div>
-            <label>허수부: {{ juliaImag }}</label>
-            <input type="range" v-model.number="juliaImag" min="-2" max="2" step="0.01" />
+  <section class="fractal-desc-container container">
+    <div>
+      <h2 class="tit">프랙탈 시각화</h2>
+    </div>
+    <section class="container-wrap">
+      <!-- 좌측: 프랙탈 시각화 -->
+      <section class="sub-section section-l canvas-wrap">
+        <div class="visualization-grid">
+          <div class="viz-panel fractal-2d-panel grid-fr">
+            <h4>프랙탈 그래프</h4>
+            <div ref="fractalContainer" class="viz-container fractal-view">
+              <div v-if="isLoading" class="loading-overlay">
+                <div class="spinner"></div>
+                <p>프랙탈 계산 중...</p>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
-      
-      <div class="control-group">
-        <label>색상 스키마:</label>
-        <select v-model="colorScheme">
-          <option value="classic">클래식</option>
-          <option value="rainbow">무지개</option>
-          <option value="fire">화염</option>
-          <option value="ocean">해양</option>
-          <option value="grayscale">흑백</option>
-        </select>
-      </div>
-      
-      <div class="control-group display-options">
-        <label><input type="checkbox" v-model="showAxis" /> 좌표축 표시</label>
-        <label><input type="checkbox" v-model="smoothShading" /> 부드러운 음영</label>
-        <label><input type="checkbox" v-model="showInfo" /> 정보 표시</label>
-        <label><input type="checkbox" v-model="autoQuality" /> 자동 품질 조정</label>
-      </div>
-      
-      <div class="control-group">
-        <button @click="resetView" class="reset-button">뷰 초기화</button>
-      </div>
-    </div>
-
-    <div class="visualization-container">
-      <div ref="fractalContainer" class="fractal-view">
-        <div v-if="isLoading" class="loading-overlay">
-          <div class="spinner"></div>
-          <p>프랙탈 계산 중...</p>
+      </section>
+      <!-- 우측: 컨트롤 및 정보 -->
+      <section class="sub-section section-r controls-wrap">
+        <div class="controls signal-controls">
+          <h3>1. 프랙탈 설정</h3>
+          <div class="signal-builder">
+            <div class="signal-component">
+              <label>프랙탈 타입:</label>
+              <select v-model="selectedFractalType">
+                <option value="mandelbrot">만델브로트 집합</option>
+                <option value="julia">줄리아 집합</option>
+              </select>
+            </div>
+            <div class="signal-component">
+              <label>반복 횟수: {{ iterations }}</label>
+              <input type="range" v-model.number="iterations" :min="getMinIterations" :max="getMaxIterations" :step="getIterationStep" />
+            </div>
+            <div class="signal-component">
+              <label>기본 해상도: {{ baseResolution }}</label>
+              <input type="range" v-model.number="baseResolution" min="100" max="800" step="50" />
+            </div>
+            <div v-if="selectedFractalType === 'julia'" class="signal-component julia-params">
+              <label>줄리아 상수:</label>
+              <div class="julia-inputs">
+                <div>
+                  <label>실수부: {{ juliaReal }}</label>
+                  <input type="range" v-model.number="juliaReal" min="-2" max="2" step="0.01" />
+                </div>
+                <div>
+                  <label>허수부: {{ juliaImag }}</label>
+                  <input type="range" v-model.number="juliaImag" min="-2" max="2" step="0.01" />
+                </div>
+              </div>
+            </div>
+            <div class="signal-component">
+              <label>색상 스키마:</label>
+              <select v-model="colorScheme">
+                <option value="classic">클래식</option>
+                <option value="rainbow">무지개</option>
+                <option value="fire">화염</option>
+                <option value="ocean">해양</option>
+                <option value="grayscale">흑백</option>
+              </select>
+            </div>
+            <div class="signal-component display-options">
+              <label><input type="checkbox" v-model="showAxis" /> 좌표축 표시</label>
+              <label><input type="checkbox" v-model="smoothShading" /> 부드러운 음영</label>
+              <label><input type="checkbox" v-model="showInfo" /> 정보 표시</label>
+              <label><input type="checkbox" v-model="autoQuality" /> 자동 품질 조정</label>
+            </div>
+            <div class="signal-component">
+              <button @click="resetView" class="reset-button">뷰 초기화</button>
+            </div>
+          </div>
         </div>
-      </div>
-      
-      <div v-if="showInfo" class="info-panel">
-        <h3>프랙탈 정보</h3>
-        <div v-if="fractalInfo">
-          <p><strong>프랙탈 차원:</strong> {{ fractalDimension }}</p>
-          <p><strong>반복 깊이:</strong> {{ currentIterations }}</p>
-          <p><strong>수렴 영역 비율:</strong> {{ convergenceRatio }}%</p>
-          <p v-if="selectedFractalType === 'julia'">
-            <strong>줄리아 상수:</strong> {{ juliaReal }} + {{ juliaImag }}i
-          </p>
+        <div v-if="showInfo" class="insights-panel">
+          <h3>프랙탈 정보</h3>
+          <div class="insight-content">
+            <div v-if="fractalInfo">
+              <p><strong>프랙탈 차원:</strong> {{ fractalDimension }}</p>
+              <p><strong>반복 깊이:</strong> {{ currentIterations }}</p>
+              <p><strong>수렴 영역 비율:</strong> {{ convergenceRatio }}%</p>
+              <p v-if="selectedFractalType === 'julia'">
+                <strong>줄리아 상수:</strong> {{ juliaReal }} + {{ juliaImag }}i
+              </p>
+            </div>
+            <div class="view-info">
+              <h4>뷰 정보</h4>
+              <p><strong>줌 레벨:</strong> {{ zoomLevel.toFixed(2) }}x</p>
+              <p><strong>중심 좌표:</strong> ({{ viewCenter.x.toFixed(4) }}, {{ viewCenter.y.toFixed(4) }})</p>
+              <p><strong>표시 범위:</strong></p>
+              <p class="small">X: [{{ viewBounds.xMin.toFixed(4) }}, {{ viewBounds.xMax.toFixed(4) }}]</p>
+              <p class="small">Y: [{{ viewBounds.yMin.toFixed(4) }}, {{ viewBounds.yMax.toFixed(4) }}]</p>
+              <p><strong>렌더 해상도:</strong> {{ currentResolution }}px</p>
+              <p><strong>렌더 시간:</strong> {{ lastRenderTime }}ms</p>
+            </div>
+            <div class="controls-help">
+              <h4>조작 방법</h4>
+              <ul>
+                <li>마우스 휠: 확대/축소</li>
+                <li>마우스 드래그: 이동</li>
+                <li>더블 클릭: 해당 지점 확대</li>
+                <li>Shift + 클릭: 해당 지점 축소</li>
+              </ul>
+            </div>
+          </div>
         </div>
-        
-        <div class="view-info">
-          <h4>뷰 정보</h4>
-          <p><strong>줌 레벨:</strong> {{ zoomLevel.toFixed(2) }}x</p>
-          <p><strong>중심 좌표:</strong> ({{ viewCenter.x.toFixed(4) }}, {{ viewCenter.y.toFixed(4) }})</p>
-          <p><strong>표시 범위:</strong></p>
-          <p class="small">X: [{{ viewBounds.xMin.toFixed(4) }}, {{ viewBounds.xMax.toFixed(4) }}]</p>
-          <p class="small">Y: [{{ viewBounds.yMin.toFixed(4) }}, {{ viewBounds.yMax.toFixed(4) }}]</p>
-          <p><strong>렌더 해상도:</strong> {{ currentResolution }}px</p>
-          <p><strong>렌더 시간:</strong> {{ lastRenderTime }}ms</p>
-        </div>
-        
-        <div class="controls-help">
-          <h4>조작 방법</h4>
-          <ul>
-            <li>마우스 휠: 확대/축소</li>
-            <li>마우스 드래그: 이동</li>
-            <li>더블 클릭: 해당 지점 확대</li>
-            <li>Shift + 클릭: 해당 지점 축소</li>
-          </ul>
-        </div>
-      </div>
-    </div>
+      </section>
+    </section>
   </section>
 </template>
 
@@ -753,144 +752,154 @@ export default {
 </script>
 
 <style scoped>
-.fractal-container {
+.tit {
+  font-weight: 600;
+  border-bottom: 5px solid #777;
+  width: fit-content;
+  margin-bottom: 25px;
+}
+.fractal-desc-container {
   padding: 20px;
   max-width: 1400px;
   margin: 0 auto;
 }
-
+.container-wrap {
+  display: grid;
+  grid-template-columns: 3fr 1fr;
+  grid-template-rows: 1fr;
+}
+.sub-section {
+  min-height: 1250px;
+}
 .controls {
   margin-bottom: 20px;
   padding: 15px;
   background-color: #f5f5f5;
   border-radius: 8px;
+}
+.signal-controls h3 {
+  margin-top: 0;
+  color: #1976d2;
+}
+.signal-builder {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   gap: 15px;
-}
-
-.control-group {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-}
-
-.control-group label {
-  font-weight: bold;
-  color: #333;
-}
-
-.julia-params {
-  border-top: 1px solid #ddd;
-  padding-top: 15px;
-  grid-column: span 2;
-}
-
-.julia-inputs {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 15px;
-}
-
-.display-options {
-  flex-direction: row;
-  gap: 20px;
-  align-items: center;
-}
-
-.display-options label {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  font-weight: normal;
-}
-
-.visualization-container {
-  display: grid;
-  grid-template-columns: 1fr 300px;
-  gap: 20px;
   margin-bottom: 20px;
 }
-
+.signal-component {
+  padding: 10px;
+  background-color: white;
+  border-radius: 4px;
+  border-left: 4px solid #4caf50;
+}
+.signal-component label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: bold;
+}
+.controls input[type="range"] {
+  width: 100%;
+  margin: 5px 0;
+}
+.display-options {
+  display: flex;
+  gap: 10px;
+  margin-top: 5px;
+}
+.visualization-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 20px;
+  margin-bottom: 20px;
+  min-height: 600px;
+}
+.grid-fr {
+  grid-column: 1 / 3;
+}
+.viz-panel {
+  background-color: white;
+  border-radius: 8px;
+  padding: 15px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+.viz-panel h4 {
+  margin-top: 0;
+  color: #333;
+  border-bottom: 2px solid #2196f3;
+  padding-bottom: 8px;
+}
+.viz-container {
+  height: auto;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  margin-bottom: 10px;
+}
 .fractal-view {
-  height: 600px;
+  width: 100%;
+  height: 470px;
+  min-height: 470px;
   background-color: #000;
   border-radius: 8px;
   overflow: hidden;
 }
-
-.info-panel {
-  padding: 15px;
-  background-color: #f5f5f5;
+.insights-panel {
+  background-color: #e3f2fd;
+  padding: 20px;
   border-radius: 8px;
-  height: 600px;
-  overflow-y: auto;
+  border-left: 4px solid #2196f3;
+  margin-top: 20px;
 }
-
-.info-panel h3 {
+.insights-panel h3 {
   margin-top: 0;
+  color: #1976d2;
 }
-
-.zoom-info {
-  margin: 15px 0;
+.insight-item {
+  margin-bottom: 15px;
   padding: 10px;
-  background-color: #fff;
+  background-color: white;
   border-radius: 4px;
 }
-
-.controls-help {
-  margin-top: 15px;
-  padding-top: 15px;
-  border-top: 1px solid #ddd;
+.insight-item h4 {
+  margin-top: 0;
+  color: #1976d2;
 }
-
-.controls-help ul {
-  padding-left: 20px;
+.section-r {
+  margin-left: 20px;
 }
-
 button {
   padding: 8px 16px;
-  background-color: #4CAF50;
+  background-color: #2196f3;
   color: white;
   border: none;
   border-radius: 4px;
   cursor: pointer;
   font-size: 14px;
+  transition: background-color 0.3s;
 }
-
+button:hover:not(:disabled) {
+  background-color: #1976d2;
+}
 button:disabled {
   background-color: #cccccc;
   cursor: not-allowed;
 }
-
-input[type="range"] {
-  width: 100%;
-  max-width: 300px;
+label {
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 5px;
+  display: block;
 }
-
-select {
-  padding: 5px;
-  border-radius: 4px;
-  border: 1px solid #ddd;
-}
-
 @media (max-width: 768px) {
-  .visualization-container {
+  .container-wrap {
+    grid-template-columns: 1fr;
+    grid-template-rows: repeat(2, auto);
+  }
+  .visualization-grid {
+    grid-template-columns: 1fr;
+    grid-template-rows: repeat(1, auto);
+  }
+  .signal-builder {
     grid-template-columns: 1fr;
   }
-  
-  .fractal-view {
-    height: 400px;
-  }
-  
-  .info-panel {
-    height: auto;
-  }
-}
-
-.performance-warning {
-  color: #ff4444;
-  font-size: 0.9em;
-  margin-top: 5px;
 }
 </style> 

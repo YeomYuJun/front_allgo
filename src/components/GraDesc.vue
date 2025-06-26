@@ -1,83 +1,99 @@
 <template>
-  <section class="cmmncword-container container">
-      <h1>안장점 함수 3D 시각화</h1>
-
-      <div class="controls">
-          <div class="control-group">
+  <section class="gra-desc-container container">
+    <div>
+      <h2 class="tit">안장점 함수 3D 시각화</h2>
+    </div>
+    <section class="container-wrap">
+      <!-- 좌측: 3D 시각화 -->
+      <section class="sub-section section-l canvas-wrap">
+        <div class="visualization-grid">
+          <div class="viz-panel gra-3d-panel grid-fr">
+            <h4>3D 함수 그래프</h4>
+            <div ref="threeContainer" class="viz-container three-container"></div>
+          </div>
+        </div>
+      </section>
+      <!-- 우측: 컨트롤 및 정보 -->
+      <section class="sub-section section-r controls-wrap">
+        <div class="controls signal-controls">
+          <h3>1. 함수/표면 설정</h3>
+          <div class="signal-builder">
+            <div class="signal-component">
               <label>범위: ±{{ range }}</label>
               <input type="range" v-model.number="range" min="2" max="10" step="1" />
-          </div>
-          <div class="control-group">
+            </div>
+            <div class="signal-component">
               <label>해상도: {{ resolution }}</label>
               <input type="range" v-model.number="resolution" min="10" max="50" step="5" />
-          </div>
-          <div class="control-group">
+            </div>
+            <div class="signal-component">
               <label>함수 타입:</label>
               <select v-model="selectedFunction">
-                  <option value="standard">f(x,y) = x² - y²</option>
-                  <option value="monkey">f(x,y) = x³ - 3xy²</option>
-                  <option value="cubic">f(x,y) = x⁴ - y⁴</option>
-                  <option value="triangle">f(x,y) = x⁵ - y⁵</option> {/* API 컨트롤러와 이름 일치 확인 */}
+                <option value="standard">f(x,y) = x² - y²</option>
+                <option value="monkey">f(x,y) = x³ - 3xy²</option>
+                <option value="cubic">f(x,y) = x⁴ - y⁴</option>
+                <option value="triangle">f(x,y) = x⁵ - y⁵</option>
               </select>
-          </div>
-          <div class="control-group">
+            </div>
+            <div class="signal-component">
               <label>표시 모드:</label>
               <div class="display-options">
-                  <label><input type="checkbox" v-model="showWireframe" /> 와이어프레임</label>
-                  <label><input type="checkbox" v-model="showAxes" /> 좌표축</label>
-                  <label><input type="checkbox" v-model="showSaddlePoint" /> 안장점 (0,0,0)</label>
+                <label><input type="checkbox" v-model="showWireframe" /> 와이어프레임</label>
+                <label><input type="checkbox" v-model="showAxes" /> 좌표축</label>
+                <label><input type="checkbox" v-model="showSaddlePoint" /> 안장점 (0,0,0)</label>
               </div>
+            </div>
           </div>
-      </div>
-
-      <div class="controls gradient-controls">
-          <h2>경사 하강법 시뮬레이션</h2>
-          <div class="control-group">
+        </div>
+        <div class="controls gradient-controls">
+          <h3>2. 경사 하강법 시뮬레이션</h3>
+          <div class="signal-builder">
+            <div class="signal-component">
               <label for="startX">시작 X: {{ startX.toFixed(2) }}</label>
               <input type="range" id="startX" v-model.number="startX" :min="-range" :max="range" step="0.1" />
-          </div>
-          <div class="control-group">
+            </div>
+            <div class="signal-component">
               <label for="startY">시작 Y: {{ startY.toFixed(2) }}</label>
               <input type="range" id="startY" v-model.number="startY" :min="-range" :max="range" step="0.1" />
-          </div>
-          <div class="control-group">
+            </div>
+            <div class="signal-component">
               <label for="learningRate">학습률: {{ learningRate.toFixed(3) }}</label>
               <input type="range" id="learningRate" v-model.number="learningRate" min="0.001" max="0.5" step="0.001" />
-          </div>
-          <div class="control-group">
+            </div>
+            <div class="signal-component">
               <label for="maxIterations">최대 반복: {{ maxIterations }}</label>
               <input type="range" id="maxIterations" v-model.number="maxIterations" min="10" max="200" step="10" />
-          </div>
-          <div class="control-group">
+            </div>
+            <div class="signal-component">
               <button @click="startGradientDescent" :disabled="isGradientDescentRunning">
-                  {{ isGradientDescentRunning ? '실행 중...' : '경사 하강 시작' }}
+                {{ isGradientDescentRunning ? '실행 중...' : '경사 하강 시작' }}
               </button>
+            </div>
           </div>
-      </div>
-
-      <div ref="threeContainer" class="three-container"></div>
-
-      <div class="info-panel">
+        </div>
+        <div class="insights-panel">
           <h3>함수 정보</h3>
-          <p><strong>함수 방정식:</strong> {{ functionEquation }}</p>
-          <p v-if="selectedFunction !== 'monkey'"><strong>안장점 위치 (예상):</strong> (0, 0, 0)</p>
-          <p v-else><strong>멍키 새들 포인트 (예상):</strong> (0, 0, 0)</p>
-          <p class="description">
-              선택된 함수에 대한 간략한 설명입니다.
-          </p>
-          <div v-if="gradientPathData.length > 0" class="gradient-info">
+          <div class="insight-content">
+            <p><strong>함수 방정식:</strong> {{ functionEquation }}</p>
+            <p v-if="selectedFunction !== 'monkey'"><strong>안장점 위치 (예상):</strong> (0, 0, 0)</p>
+            <p v-else><strong>멍키 새들 포인트 (예상):</strong> (0, 0, 0)</p>
+            <p class="description">선택된 함수에 대한 간략한 설명입니다.</p>
+            <div v-if="gradientPathData.length > 0" class="gradient-info">
               <h4>경사 하강법 결과:</h4>
               <p>총 단계: {{ gradientPathData.length -1 }}</p>
               <p>최종 위치: 
-                  X={{ gradientPathData[gradientPathData.length-1].x.toFixed(3) }}, 
-                  Y={{ gradientPathData[gradientPathData.length-1].y.toFixed(3) }}, 
-                  Z={{ gradientPathData[gradientPathData.length-1].z.toFixed(3) }}
+                X={{ gradientPathData[gradientPathData.length-1].x.toFixed(3) }}, 
+                Y={{ gradientPathData[gradientPathData.length-1].y.toFixed(3) }}, 
+                Z={{ gradientPathData[gradientPathData.length-1].z.toFixed(3) }}
               </p>
+            </div>
           </div>
-      </div>
+        </div>
+      </section>
+    </section>
   </section>
 </template>
-  
+
 <script>
 import { onMounted, onBeforeUnmount, ref, watch, computed } from 'vue';
 import * as THREE from 'three';
@@ -533,53 +549,153 @@ export default {
 </script>
 
 <style scoped>
-/* ... (기존 스타일) ... */
-.controls.gradient-controls {
-    margin-top: 15px;
-    background-color: #e8f0fe; /* 다른 컨트롤과 색상 구분 */
-    padding-bottom: 20px; /* 버튼 공간 확보 */
+.tit {
+  font-weight: 600;
+  border-bottom: 5px solid #777;
+  width: fit-content;
+  margin-bottom: 25px;
 }
-.gradient-controls h2 {
-    width: 100%;
-    text-align: center;
-    margin-bottom: 15px;
-    font-size: 1.2em;
-    color: #1976D2; /* Vuetify primary color 느낌 */
+.gra-desc-container {
+  padding: 20px;
+  max-width: 1400px;
+  margin: 0 auto;
 }
-.gradient-controls .control-group {
-    align-items: center; /* 내부 요소들 중앙 정렬 */
+.container-wrap {
+  display: grid;
+  grid-template-columns: 3fr 1fr;
+  grid-template-rows: 1fr;
 }
-.gradient-controls button {
-    padding: 8px 15px;
-    background-color: #1976D2; /* Vuetify primary */
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    transition: background-color 0.3s;
-    font-size: 0.9em;
+.sub-section {
+  min-height: 1250px;
 }
-.gradient-controls button:hover:not(:disabled) {
-    background-color: #1565C0; /* Darker primary */
+.controls {
+  margin-bottom: 20px;
+  padding: 15px;
+  background-color: #f5f5f5;
+  border-radius: 8px;
 }
-.gradient-controls button:disabled {
-    background-color: #90CAF9; /* Lighter primary, disabled */
-    cursor: not-allowed;
+.signal-controls h3,
+.gradient-controls h3 {
+  margin-top: 0;
+  color: #1976d2;
 }
-.gradient-info {
-    margin-top: 15px;
-    padding-top: 10px;
-    border-top: 1px solid #eee;
+.signal-builder {
+  display: grid;
+  gap: 15px;
+  margin-bottom: 20px;
 }
-.gradient-info h4 {
-    margin-bottom: 8px;
-    color: #1976D2;
+.signal-component {
+  padding: 10px;
+  background-color: white;
+  border-radius: 4px;
+  border-left: 4px solid #4caf50;
+}
+.signal-component label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: bold;
+}
+.controls input[type="range"] {
+  width: 100%;
+  margin: 5px 0;
+}
+.display-options {
+  display: flex;
+  gap: 10px;
+  margin-top: 5px;
+}
+.visualization-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 20px;
+  margin-bottom: 20px;
+  min-height: 600px;
+}
+.grid-fr {
+  grid-column: 1 / 3;
+}
+.viz-panel {
+  background-color: white;
+  border-radius: 8px;
+  padding: 15px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+.viz-panel h4 {
+  margin-top: 0;
+  color: #333;
+  border-bottom: 2px solid #2196f3;
+  padding-bottom: 8px;
+}
+.viz-container {
+  height: auto;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  margin-bottom: 10px;
 }
 .three-container {
-    width: 100%;
-    height: 500px;
-    min-height: 500px; /* 추가 */
-    background-color: #f0f0f0;
-    /* ... 이하 동일 ... */
+  width: 100%;
+  height: 470px;
+  min-height: 470px;
+  background-color: #f0f0f0;
+}
+.insights-panel {
+  background-color: #e3f2fd;
+  padding: 20px;
+  border-radius: 8px;
+  border-left: 4px solid #2196f3;
+  margin-top: 20px;
+}
+.insights-panel h3 {
+  margin-top: 0;
+  color: #1976d2;
+}
+.insight-item {
+  margin-bottom: 15px;
+  padding: 10px;
+  background-color: white;
+  border-radius: 4px;
+}
+.insight-item h4 {
+  margin-top: 0;
+  color: #1976d2;
+}
+.section-r {
+  margin-left: 20px;
+}
+button {
+  padding: 8px 16px;
+  background-color: #2196f3;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.3s;
+}
+button:hover:not(:disabled) {
+  background-color: #1976d2;
+}
+button:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+}
+label {
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 5px;
+  display: block;
+}
+@media (max-width: 768px) {
+  .container-wrap {
+    grid-template-columns: 1fr;
+    grid-template-rows: repeat(2, auto);
+  }
+  .visualization-grid {
+    grid-template-columns: 1fr;
+    grid-template-rows: repeat(1, auto);
+  }
+  .signal-builder {
+    grid-template-columns: 1fr;
+  }
 }
 </style>
