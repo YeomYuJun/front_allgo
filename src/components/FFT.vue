@@ -171,12 +171,12 @@ export default {
       { frequency: 3, amplitude: 1 },
       { frequency: 7, amplitude: 0.5 }
     ]);
-    const samplingRate = ref(100);
+    const samplingRate = ref(500);
     const duration = ref(2);
     
     // 신호 감기 파라미터
     const windingFrequency = ref(3);
-    const maxDisplayFrequency = ref(20);
+    const maxDisplayFrequency = ref(50);
     
     // 시각화 상태
     const currentWindingResult = ref(null);
@@ -184,7 +184,7 @@ export default {
     const detectedPeaks = ref([]);
     const isSweeeping = ref(false);
     const isAnimating = ref(false);
-    const animationSpeed = ref(1);
+    const animationSpeed = ref(0.1);
     const currentAnimationTime = ref(0);
     const insights = ref([]);
     
