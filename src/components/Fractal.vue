@@ -902,4 +902,86 @@ label {
     grid-template-columns: 1fr;
   }
 }
+
+/* insights-panel 개선 */
+.insights-panel {
+  background: #f7fbff;
+  padding: 24px 24px 18px 24px;
+  border-radius: 12px;
+  border-left: 5px solid #2196f3;
+  margin-top: 24px;
+  box-shadow: 0 2px 8px rgba(33,150,243,0.07);
+  font-size: 15px;
+}
+.insights-panel h3 {
+  margin-top: 0;
+  color: #1976d2;
+  font-size: 1.25em;
+  margin-bottom: 18px;
+}
+.insight-content > div,
+.insight-content > .view-info,
+.insight-content > .controls-help {
+  background: #eaf4fb;
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-bottom: 12px;
+  box-shadow: 0 1px 2px rgba(33,150,243,0.04);
+}
+.insight-content h4 {
+  margin: 0 0 8px 0;
+  color: #1976d2;
+  font-size: 1.1em;
+}
+.insight-content p,
+.insight-content ul {
+  margin: 4px 0 4px 0;
+  font-size: 15px;
+}
+.insight-content strong {
+  min-width: 90px;
+  display: inline-block;
+  color: #1565c0;
+  font-weight: 600;
+}
+.insight-content .small {
+  font-size: 13px;
+  color: #666;
+}
+
+/* display-options 개선 */
+.display-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px 24px;
+  margin-top: 8px;
+  align-items: center;
+}
+.display-options label {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 15px;
+  font-weight: 500;
+  margin-bottom: 0;
+  white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+}
+.display-options input[type="checkbox"] {
+  accent-color: #2196f3;
+  width: 18px;
+  height: 18px;
+  margin: 0;
+}
+@media (max-width: 900px) {
+  .display-options {
+    flex-wrap: wrap;
+    gap: 10px 16px;
+  }
+}
+
+li {
+  list-style-type: none;
+}
 </style> 
