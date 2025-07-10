@@ -124,7 +124,7 @@
             <!-- 정렬 -->
             <v-row justify="center" align="center" class="navigation-links">
                 <!-- Bubble -->
-                <v-col cols="12" md="3">
+                <v-col cols="12" md="3" v-if="false">
                     <v-card class="pa-3" outlined tile>
                         <v-card-title class="justify-center">Bubble Sort</v-card-title>
                         <v-card-text class="text-center">

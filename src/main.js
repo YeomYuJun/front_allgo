@@ -18,6 +18,6 @@ const vuetify = createVuetify({
 const app = createApp(App)
 
 app.use(vuetify)
-app.use(router) // ◀◀◀ Vue 앱에 라우터 플러그인 사용 등록
+app.use(router)
 
 app.mount('#app')
