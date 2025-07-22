@@ -303,21 +303,33 @@ export default {
           params.append('juliaReal', juliaReal.value.toString());
           params.append('juliaImag', juliaImag.value.toString());
         }
-
-        if (isIFSFractal) {
-          params.append('xMin', viewBounds.value.xMin.toString());
-          params.append('xMax', viewBounds.value.xMax.toString());
-          params.append('yMin', viewBounds.value.yMin.toString());
-          params.append('yMax', viewBounds.value.yMax.toString());
-        }
         
-        const response = await fetch(`${API_BASE_URL}/generate?${params}`);
+        // PNG 이미지 URL 생성
+        const imageUrl = `${API_BASE_URL}/generate/image?${params}`;
+        // PNG 이미지를 fetch로 받아서 blob으로 변환
+        const response = await fetch(imageUrl);
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-        const data = await response.json();
-        
-        fractalInfo.value = data.info || {};  // null 체크 추가
-        updateVisualization(data);
-        
+        const blob = await response.blob();
+        // 이미지를 canvas에 그려서 ImageData 추출
+        const img = await createImageBitmap(blob);
+        const canvas = document.createElement('canvas');
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0);
+        const imageData = ctx.getImageData(0, 0, img.width, img.height);
+        // DataTexture로 변환
+        const texture = new THREE.DataTexture(
+          imageData.data,
+          img.width,
+          img.height,
+          THREE.RGBAFormat
+        );
+        texture.needsUpdate = true;
+        texture.magFilter = THREE.LinearFilter;
+        texture.minFilter = THREE.LinearFilter;
+        // 시각화 업데이트 (info는 없으므로 빈 객체 전달)
+        updateVisualization({ texture: texture, info: {} }); 
         lastRenderTime.value = Math.round(performance.now() - startTime);
       } catch (error) {
         console.error('Error fetching fractal data:', error);
@@ -362,31 +374,17 @@ export default {
     }
 
     const renderComplexFractal = (data) => {
-      if (!data.pixels) {
-        console.error('No pixel data received');
+      if (!data.texture) {
+        console.error('No texture data received');
         return;
       }
       
       try {
-        // Base64 디코딩
-        const binaryString = atob(data.pixels);
-        const bytes = new Uint8Array(binaryString.length);
-        for (let i = 0; i < binaryString.length; i++) {
-          bytes[i] = binaryString.charCodeAt(i);
-        }
-        
         if (fractalMesh?.material?.map) {
           fractalMesh.material.map.dispose();
-          fractalMesh.material.dispose();
         }
         
-        const texture = new THREE.DataTexture(
-          bytes,
-          currentResolution.value,
-          currentResolution.value,
-          THREE.RGBAFormat,
-          THREE.UnsignedByteType
-        );
+        const texture = data.texture;
         
         texture.needsUpdate = true;
         texture.magFilter = THREE.LinearFilter;
