@@ -105,7 +105,7 @@
             
             <div class="winding-controls-buttons">
               <button @click="startFrequencySweep" :disabled="isSweeeping">
-                {{ isSweeeping ? '스위핑 중...' : '주파수 스윕 시작' }}
+                {{ isSweeeping ? '스위핑 중...' : '전체 스윕 새로고침' }}
               </button>
               <button @click="resetVisualization">리셋</button>
             </div>
@@ -430,16 +430,16 @@ export default {
         currentWindingResult.value = windingData;
         updateComplexPlaneVisualization(windingData);
         generateInsights();
+        
+        // 실시간 주파수 도메인 업데이트 추가
+        updateFrequencyDomainRealTime();
       } catch (error) {
         console.error('Error updating winding visualization:', error);
       }
     };
     
-    // 주파수 스윕 수행
-    const startFrequencySweep = async () => {
-      isSweeeping.value = true;
-      sweepResults.value = [];
-      
+    // 실시간 주파수 도메인 업데이트
+    const updateFrequencyDomainRealTime = async () => {
       try {
         const response = await fetch(`${API_BASE_URL}/frequency-sweep`, {
           method: 'POST',
@@ -454,11 +454,20 @@ export default {
         });
         
         const sweepData = await response.json();
-        console.log('Sweep Data:', sweepData);
-        
         sweepResults.value = sweepData.sweepResults;
         updateFrequencyDomainVisualization(sweepData);
         detectFrequencyPeaks(sweepData);
+      } catch (error) {
+        console.error('Error updating frequency domain real-time:', error);
+      }
+    };
+
+    // 주파수 스윕 수행 (전체 스윕)
+    const startFrequencySweep = async () => {
+      isSweeeping.value = true;
+      
+      try {
+        await updateFrequencyDomainRealTime();
       } catch (error) {
         console.error('Error performing frequency sweep:', error);
       } finally {
@@ -959,6 +968,11 @@ export default {
         clearComplexPlaneObjects();
         complexPlaneRenderer.render(complexPlaneScene, complexPlaneCamera);
       }
+      
+      // 리셋 후 주파수 도메인도 업데이트
+      setTimeout(() => {
+        updateFrequencyDomainRealTime();
+      }, 100);
     };
     
     // 통합 리사이즈 핸들러
@@ -1027,6 +1041,10 @@ export default {
         initComplexPlaneVisualization();
         initFrequencyDomainVisualization();
         updateSignal();
+        // 초기 주파수 도메인 업데이트
+        setTimeout(() => {
+          updateFrequencyDomainRealTime();
+        }, 200);
         window.addEventListener('resize', handleResize);
       }, 100);
     });
@@ -1042,6 +1060,14 @@ export default {
     // 컨테이너 설정 감시
     watch(containerConfig, () => {
       handleResize();
+    }, { deep: true });
+    
+    // 신호가 변경될 때마다 주파수 도메인도 함께 업데이트
+    watch([signalComponents, samplingRate, duration], () => {
+      // 신호 업데이트 후 주파수 도메인도 업데이트
+      setTimeout(() => {
+        updateFrequencyDomainRealTime();
+      }, 100);
     }, { deep: true });
     
     return {
