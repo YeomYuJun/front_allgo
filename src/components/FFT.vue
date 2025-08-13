@@ -198,7 +198,7 @@ export default {
     let windingPathMesh, centerOfMassMesh, currentSignalPoint;
 
     // API 기본 URL
-    const API_BASE_URL = 'http://localhost:8080/api/fft';
+    const API_BASE_URL = '/api/fft'
 
     // 컨테이너 크기 관리
     const containerConfig = ref({

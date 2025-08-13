@@ -9,7 +9,7 @@ export default defineConfig({
     proxy: {
       // API 요청을 Spring Boot로 프록시
       '/api': {
-        target: 'http://15.164.49.226:8080',
+        target: 'https://allgomath.com',
         changeOrigin: true,
         secure: false,
         rewrite: (path) => path

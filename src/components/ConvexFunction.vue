@@ -143,7 +143,7 @@ export default {
     let gradientDescent = null;
 
     // API URL
-    const API_BASE_URL = 'http://localhost:8080/api/convex';
+    const API_BASE_URL = '/api/convex';
 
     const functionEquation = computed(() => {
       switch(selectedFunction.value) {

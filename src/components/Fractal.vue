@@ -214,7 +214,7 @@ export default {
     });
 
     // API URL
-    const API_BASE_URL = 'http://localhost:8080/api/fractal';
+    const API_BASE_URL = '/api/fractal';
 
     // 줌 레벨에 따른 해상도 계산
     const calculateDynamicResolution = () => {

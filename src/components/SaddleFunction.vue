@@ -109,7 +109,7 @@
       let gradientDescent = null;
   
       // API URL
-      const API_BASE_URL = 'http://localhost:8080/api/gdd';
+      const API_BASE_URL = '/api/gdd';
   
       const functionEquation = computed(() => {
         switch(selectedFunction.value) {
