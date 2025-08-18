@@ -108,8 +108,8 @@
       let mathVisualization = null;
       let gradientDescent = null;
   
-      // API URL
-      const API_BASE_URL = '/api/gdd';
+      // API URL - 환경변수 기반
+      const API_BASE_URL = `${import.meta.env.VITE_API_BASE_URL || '/api'}/gdd`;
   
       const functionEquation = computed(() => {
         switch(selectedFunction.value) {

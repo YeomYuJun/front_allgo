@@ -134,8 +134,8 @@ export default {
             }
         });
 
-        // API URL (백엔드 주소에 맞게 수정)
-        const API_BASE_URL = '/api/gdd';
+        // API URL - 환경변수 기반
+        const API_BASE_URL = `${import.meta.env.VITE_API_BASE_URL || '/api'}/gdd`;
 
         const calculateZ_local = (x, y, type) => { // 로컬 계산용 함수 이름 변경 (API와 구분)
             switch(type) {

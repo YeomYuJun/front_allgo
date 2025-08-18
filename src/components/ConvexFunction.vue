@@ -142,8 +142,8 @@ export default {
     let mathVisualization = null;
     let gradientDescent = null;
 
-    // API URL
-    const API_BASE_URL = '/api/convex';
+    // API URL - 환경변수 기반
+    const API_BASE_URL = `${import.meta.env.VITE_API_BASE_URL || '/api'}/convex`;
 
     const functionEquation = computed(() => {
       switch(selectedFunction.value) {

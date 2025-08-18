@@ -197,8 +197,8 @@ export default {
     let animationFrameId;
     let windingPathMesh, centerOfMassMesh, currentSignalPoint;
 
-    // API 기본 URL
-    const API_BASE_URL = '/api/fft'
+    // API 기본 URL - 환경변수 기반
+    const API_BASE_URL = `${import.meta.env.VITE_API_BASE_URL || '/api'}/fft`
 
     // 컨테이너 크기 관리
     const containerConfig = ref({

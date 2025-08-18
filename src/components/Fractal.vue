@@ -213,8 +213,8 @@ export default {
       return 10;
     });
 
-    // API URL
-    const API_BASE_URL = '/api/fractal';
+    // API URL - 환경변수 기반
+    const API_BASE_URL = `${import.meta.env.VITE_API_BASE_URL || '/api'}/fractal`;
 
     // 줌 레벨에 따른 해상도 계산
     const calculateDynamicResolution = () => {
