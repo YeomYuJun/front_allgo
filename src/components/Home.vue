@@ -307,9 +307,10 @@ const navigateTo = (path) => {
         .textbox5 { display: none; }
     }
     @media (max-width: 900px){
-        .textbox1 { top: 13.6%; }
-        .textbox2 { top: 48%; left: 10.6%; }
-        .textbox4 { top: 64.2%; }
+        .textbox1 { }
+        .textbox3 { display: none; }
+        .textbox2 { }
+        .textbox4 { }
     }
 
     /* 네비게이션 링크 섹션 스타일 추가 */

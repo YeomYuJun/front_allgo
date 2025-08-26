@@ -27,11 +27,30 @@
         
         <footer>
             <div class="foot-bt">
-                <p>푸터 내용</p>
+                <div class="footer-content">
+                    <div class="footer-main">
+                        <h3 class="footer-title">AllGoMath</h3>
+                        <p class="footer-subtitle">Algorithm, I and Math</p>
+                    </div>
+                    <div class="footer-info">
+                        <span class="footer-year">© {{ currentYear }}</span>
+                        <span class="footer-divider">|</span>
+                        <a href="mailto:contact@allgomath.com" class="footer-contact">
+                            Contact: contact@allgomath.com
+                        </a>
+                    </div>
+                </div>
             </div>
         </footer>
     </div>
 </template>
+
+<script setup>
+import { computed } from 'vue'
+
+// 현재 년도 자동 계산
+const currentYear = computed(() => new Date().getFullYear())
+</script>
 <style>
 .topbar {
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
@@ -63,10 +82,104 @@
 }
 
 .foot-bt {
-    box-shadow: 0px 2px 10px rgba(0, 0, 0, 0.1);
-    height: 70px;
+    box-shadow: 0px -2px 10px rgba(0, 0, 0, 0.1);
+    min-height: 80px;
     display: flex;
-    align-items: flex-end;
-    justify-content: flex-end;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-top: 1px solid #dee2e6;
+    font-family: 'JetBrains Mono', monospace;
+    padding: 20px 0;
+}
+
+.footer-content {
+    max-width: 1200px;
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 50px;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+.footer-main {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.footer-title {
+    font-size: 22px;
+    font-weight: 600;
+    color: #2c3e50;
+    margin: 0;
+    letter-spacing: 1px;
+}
+
+.footer-subtitle {
+    font-size: 13px;
+    color: #6c757d;
+    margin: 0;
+    font-style: italic;
+}
+
+.footer-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 14px;
+    flex-wrap: wrap;
+}
+
+.footer-year {
+    color: #495057;
+    font-weight: 500;
+}
+
+.footer-divider {
+    color: #adb5bd;
+    font-weight: 300;
+}
+
+.footer-contact {
+    color: #007bff;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    font-weight: 500;
+}
+
+.footer-contact:hover {
+    color: #0056b3;
+    text-decoration: underline;
+}
+
+/* 반응형 디자인 */
+@media (max-width: 768px) {
+    .footer-content {
+        flex-direction: column;
+        text-align: center;
+        padding: 0 30px;
+        gap: 16px;
+    }
+    
+    .footer-title {
+        font-size: 20px;
+    }
+    
+    .footer-info {
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+    
+    .footer-divider {
+        display: none;
+    }
+    
+    .footer-info {
+        flex-direction: column;
+        gap: 8px;
+    }
 }
 </style>
