@@ -29,10 +29,12 @@
             <div class="signal-component">
               <label>함수 타입:</label>
               <select v-model="selectedFunction">
-                <option value="standard">f(x,y) = x² - y²</option>
-                <option value="monkey">f(x,y) = x³ - 3xy²</option>
-                <option value="cubic">f(x,y) = x⁴ - y⁴</option>
-                <option value="triangle">f(x,y) = x⁵ - y⁵</option>
+                <option value="standard">f(x,y) = x² - y² (기본 안장점)</option>
+                <option value="paraboloid">f(x,y) = x² + y² (포물면)</option>
+                <option value="rosenbrock">f(x,y) = (1-x)² + 100(y-x²)² (로젠브록)</option>
+                <option value="himmelblau">f(x,y) = (x²+y-11)² + (x+y²-7)² (힘멜블라우)</option>
+                <option value="beale">f(x,y) = (1.5-x+xy)² + (2.25-x+xy²)² (빌)</option>
+                <option value="monkey">f(x,y) = x³ - 3xy² (몽키 새들)</option>
               </select>
             </div>
             <div class="signal-component">
@@ -75,9 +77,15 @@
           <h3>함수 정보</h3>
           <div class="insight-content">
             <p><strong>함수 방정식:</strong> {{ functionEquation }}</p>
-            <p v-if="selectedFunction !== 'monkey'"><strong>안장점 위치 (예상):</strong> (0, 0, 0)</p>
-            <p v-else><strong>멍키 새들 포인트 (예상):</strong> (0, 0, 0)</p>
-            <p class="description">선택된 함수에 대한 간략한 설명입니다.</p>
+            <div class="function-description">
+              <p v-if="selectedFunction === 'standard'"><strong>특징:</strong> 기본적인 안장점 함수, 최적화 학습에 적합</p>
+              <p v-else-if="selectedFunction === 'paraboloid'"><strong>특징:</strong> 단순한 볼록 함수, 전역 최솟값 (0,0)</p>
+              <p v-else-if="selectedFunction === 'rosenbrock'"><strong>특징:</strong> 바나나 함수, 전역 최솟값 (1,1), 수렴이 어려움</p>
+              <p v-else-if="selectedFunction === 'himmelblau'"><strong>특징:</strong> 4개의 전역 최솟값을 가진 복잡한 함수</p>
+              <p v-else-if="selectedFunction === 'beale'"><strong>특징:</strong> 좁은 골짜기, 전역 최솟값 (3,0.5)</p>
+              <p v-else-if="selectedFunction === 'monkey'"><strong>특징:</strong> 몽키 새들 포인트, 3차 함수</p>
+              <p v-else><strong>특징:</strong> 고차 다항식 함수</p>
+            </div>
             <div v-if="gradientPathData.length > 0" class="gradient-info">
               <h4>경사 하강법 결과:</h4>
               <p>총 단계: {{ gradientPathData.length -1 }}</p>
@@ -126,10 +134,15 @@ export default {
 
         const functionEquation = computed(() => {
             switch(selectedFunction.value) {
-                case 'standard': return 'f(x,y) = x² - y²';
-                case 'monkey': return 'f(x,y) = x³ - 3xy²';
+                case 'standard': return 'f(x,y) = x² - y² (기본 안장점 함수)';
+                case 'paraboloid': return 'f(x,y) = x² + y² (단순한 볼록 함수)';
+                case 'rosenbrock': return 'f(x,y) = (1-x)² + 100(y-x²)² (최적화 벤치마크)';
+                case 'himmelblau': return "f(x,y) = (x²+y-11)² + (x+y²-7)² (4개의 최솟값)";
+                case 'beale': return 'f(x,y) = (1.5-x+xy)² + (2.25-x+xy²)² (복잡한 골짜기)';
+                case 'monkey': return 'f(x,y) = x³ - 3xy² (몽키 새들 포인트)';
+                // 레거시 호환성
                 case 'cubic': return 'f(x,y) = x⁴ - y⁴';
-                case 'triangle': return 'f(x,y) = x⁵ - y⁵'; // API 컨트롤러의 functionType과 일치하는지 확인
+                case 'triangle': return 'f(x,y) = x⁵ - y⁵';
                 default: return 'f(x,y) = x² - y²';
             }
         });
@@ -137,13 +150,18 @@ export default {
         // API URL - 환경변수 기반
         const API_BASE_URL = `${import.meta.env.VITE_API_BASE_URL || '/api'}/gdd`;
 
-        const calculateZ_local = (x, y, type) => { // 로컬 계산용 함수 이름 변경 (API와 구분)
+        const calculateZ_local = (x, y, type) => {
             switch(type) {
                 case 'standard': return Math.pow(x, 2) - Math.pow(y, 2);
-                case 'monkey':   return Math.pow(x, 3) - 3 * x * Math.pow(y, 2);
-                case 'cubic':    return Math.pow(x, 4) - Math.pow(y, 4);
+                case 'paraboloid': return Math.pow(x, 2) + Math.pow(y, 2);
+                case 'rosenbrock': return Math.pow(1-x, 2) + 100 * Math.pow(y - Math.pow(x, 2), 2);
+                case 'himmelblau': return Math.pow(Math.pow(x, 2) + y - 11, 2) + Math.pow(x + Math.pow(y, 2) - 7, 2);
+                case 'beale': return Math.pow(1.5 - x + x*y, 2) + Math.pow(2.25 - x + x*Math.pow(y, 2), 2) + Math.pow(2.625 - x + x*Math.pow(y, 3), 2);
+                case 'monkey': return Math.pow(x, 3) - 3 * x * Math.pow(y, 2);
+                // 레거시 호환성
+                case 'cubic': return Math.pow(x, 4) - Math.pow(y, 4);
                 case 'triangle': return Math.pow(x, 5) - Math.pow(y, 5);
-                default:         return Math.pow(x, 2) - Math.pow(y, 2);
+                default: return Math.pow(x, 2) - Math.pow(y, 2);
             }
         };
         
@@ -258,14 +276,13 @@ export default {
                     const index = i * numGridPoints + j;
                     if (index < points.length) {
                         const p = points[index];
-                        // API (x,y,z) -> Three.js (x, z_api, y_api) 매핑은 
-                        // vertices.push(p.x, p.z, p.y); // 기존 방식 유지
-                        // 만약 API의 y가 수평축, z가 수직축(높이)이라면:
-                        vertices.push(p.x, p.z,  p.y); // API의 x,y를 수평면, z를 높이로 가정하고 수정 (세로로 길게 나오는 현상 관련)
+                        // Z축 스케일링 적용 - 시각적 식별을 위해 Z값을 적절히 조정
+                        const scaledZ = p.z * 0.3; // Z축을 30%로 축소하여 더 보기 좋게
+                        vertices.push(p.x, scaledZ, p.y);
                                                       // 이 부분을 API 데이터 구조에 맞게 정확히 해야 합니다.
                                                       // 아래 색상 계산도 p.z를 기준으로 합니다.
 
-                        const zValue = p.z; // 높이 값으로 사용할 z (위에서 vertices.push의 세 번째 값)
+                        const zValue = p.z * 0.3; // 스케일링된 Z값 사용
                         let r=0, g=0, b=0;
                         const normalizedZ = (zValue - (-range.value * range.value)) / (2 * range.value * range.value); // 대략적인 정규화
                         
@@ -417,9 +434,10 @@ export default {
                 // API의 (x,y,z)를 Three.js 좌표계에 맞게 변환
                 // createSurface와 동일한 방식으로 매핑해야 함
                 // vertices.push(p.x, p.z, p.y) 였다면:
-                // points.push(new THREE.Vector3(step.x, step.z, step.y)); 
+                // Z축 스케일링 적용
+                const scaledStepZ = step.z * 0.3; 
                 // vertices.push(p.x, p.y, p.z) 였다면:
-                points.push(new THREE.Vector3(step.x, step.z, step.y ));
+                points.push(new THREE.Vector3(step.x, scaledStepZ, step.y));
             });
 
             // 경로 선 생성

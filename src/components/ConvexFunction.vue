@@ -20,7 +20,7 @@
           <div class="signal-builder">
             <div class="signal-component">
               <label>범위: ±{{ range }}</label>
-              <input type="range" v-model.number="range" min="2" max="10" step="1" />
+              <input type="range" v-model.number="range" min="3" max="15" step="1" />
             </div>
             <div class="signal-component">
               <label>해상도: {{ resolution }}</label>
@@ -29,11 +29,19 @@
             <div class="signal-component">
               <label>함수 타입:</label>
               <select v-model="selectedFunction">
-                <option value="quadratic">f(x,y) = x² + y²</option>
-                <option value="quartic">f(x,y) = x⁴ + y⁴ + x²y²</option>
-                <option value="exponential">f(x,y) = e^(0.1*(x² + y²)) - 1</option>
-                <option value="rosenbrock">f(x,y) = 100(y - x²)² + (1 - x)²</option>
-                <option value="himmelblau">f(x,y) = (x² + y - 11)² + (x + y² - 7)²</option>
+                <!-- 평평하고 넓은 함수들 (경사하강법 시뮬레이션에 적합) -->
+                <option value="gentle_bowl">f(x,y) = 0.1(x² + y²)</option>
+                <option value="gentle_elliptic">f(x,y) = 0.05x² + 0.1y²</option>
+                <option value="gentle_exp">f(x,y) = 0.02*(x² + y²) + 0.001*e^(0.1*(x² + y²))</option>
+                <option value="saddle_gentle">f(x,y) = 0.1x² - 0.05y²</option>
+                <option value="ripple">f(x,y) = 0.1(x² + y²) + 0.2*sin(x)*sin(y)</option>
+                
+                <!-- 기존 함수들 (가파른 함수) -->
+                <option value="quadratic">f(x,y) = x² + y² (가파른)</option>
+                <option value="quartic">f(x,y) = x⁴ + y⁴ + x²y² (매우 가파른)</option>
+                <option value="exponential">f(x,y) = e^(0.1*(x² + y²)) - 1 (극도로 가파른)</option>
+                <option value="rosenbrock">f(x,y) = 100(y - x²)² + (1 - x)² (로젠브록)</option>
+                <option value="himmelblau">f(x,y) = (x² + y - 11)² + (x + y² - 7)² (히멜블라우)</option>
               </select>
             </div>
             <div class="signal-component">
@@ -116,9 +124,9 @@ export default {
   setup() {
     // --- 상태 변수들 ---
     const threeContainer = ref(null);
-    const range = ref(5);
+    const range = ref(8); // 더 넓은 범위로 기본 설정
     const resolution = ref(30);
-    const selectedFunction = ref('quadratic');
+    const selectedFunction = ref('gentle_bowl'); // 평평한 함수를 기본값으로
     const showWireframe = ref(true);
     const showAxes = ref(true);
     const showMinimumPoint = ref(true);
@@ -219,6 +227,45 @@ export default {
       }
     };
 
+    // Z값 스케일링 함수 (문제 함수들을 위한 임시 해결책)
+    const applyZScaling = (points, functionType) => {
+      if (!points || points.length === 0) return points;
+      
+      // 문제가 있는 함수들에 대해서만 스케일링 적용
+      const problematicFunctions = ['rosenbrock', 'himmelblau'];
+      
+      if (!problematicFunctions.includes(functionType)) {
+        return points; // 문제없는 함수는 그대로 반환
+      }
+      
+      // Z값들만 추출
+      const zValues = points.map(p => p.z);
+      const minZ = Math.min(...zValues);
+      const maxZ = Math.max(...zValues);
+      const zRange = maxZ - minZ;
+      
+      console.log(`${functionType} - Z range: ${minZ.toFixed(2)} ~ ${maxZ.toFixed(2)} (range: ${zRange.toFixed(2)})`);
+      
+      // 로그 변환 + 클리핑으로 극값 완화
+      return points.map(point => {
+        let scaledZ = point.z;
+        
+        if (functionType === 'rosenbrock') {
+          // 로젠브록: 로그 변환으로 바나나 밸리 형태 보존
+          scaledZ = Math.sign(point.z - minZ) * Math.log(1 + Math.abs(point.z - minZ) / 10) * 5;
+        } else if (functionType === 'himmelblau') {
+          // 히멜블라우: 제곱근 변환으로 급격한 변화 완화
+          scaledZ = Math.sign(point.z - minZ) * Math.sqrt(Math.abs(point.z - minZ) / 5) * 8;
+        }
+        
+        return {
+          x: point.x,
+          y: point.y,
+          z: scaledZ
+        };
+      });
+    };
+
     // --- 씬 업데이트 함수 ---
     const updateSceneObjects = async () => {
       if (!sceneManager || !mathVisualization) return;
@@ -242,8 +289,11 @@ export default {
       // 표면 데이터 가져오기
       const points = await fetchSurfaceData();
       
+      // 문제가 있는 함수들에 대해 Z값 스케일링 적용
+      const scaledPoints = applyZScaling(points, selectedFunction.value);
+      
       // 표면 생성
-      mathVisualization.createSurface(points, resolution.value, showWireframe.value, 'convex');
+      mathVisualization.createSurface(scaledPoints, resolution.value, showWireframe.value, 'convex');
       
       // 함수 분석 정보 가져오기
       await fetchFunctionAnalysis();
