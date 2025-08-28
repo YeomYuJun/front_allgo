@@ -84,7 +84,7 @@
           
           <div class="signal-params">
             <label>샘플링 레이트: {{ samplingRate }}Hz</label>
-            <input type="range" v-model.number="samplingRate" min="50" max="1000" step="50" />
+            <input type="range" v-model.number="samplingRate" min="50" max="500" step="50" />
             
             <label>신호 지속시간: {{ duration }}초</label>
             <input type="range" v-model.number="duration" min="1" max="5" step="0.5" />
@@ -100,8 +100,7 @@
                   v-model.number="windingFrequency" 
                   :min="0" 
                   :max="maxDisplayFrequency" 
-                  :step="0.1" 
-                  @input="updateWindingVisualization" />
+                  :step="0.1" />
             
             <div class="winding-controls-buttons">
               <button @click="startFrequencySweep" :disabled="isSweeeping">
@@ -171,7 +170,7 @@ export default {
       { frequency: 3, amplitude: 1 },
       { frequency: 7, amplitude: 0.5 }
     ]);
-    const samplingRate = ref(500);
+    const samplingRate = ref(250);
     const duration = ref(2);
     
     // 신호 감기 파라미터
@@ -200,70 +199,84 @@ export default {
     // API 기본 URL - 환경변수 기반
     const API_BASE_URL = `${import.meta.env.VITE_API_BASE_URL || '/api'}/fft`
 
-    // 컨테이너 크기 관리
+    // 컨테이너 크기 관리 - 반응형 개선
     const containerConfig = ref({
-      // 기본 크기 설정
-      defaultWidth: 400,
-      defaultHeight: 300,
-      
-      // 각 컨테이너별 개별 설정 (필요시)
+      // 각 컨테이너별 개별 설정 - 반응형 기반
       timeDomain: {
-        width: 990,
-        height: 400,
+        // 데스크톱 기준 크기
+        desktop: { width: 990, height: 400 },
+        // 태블릿 기준 크기  
+        tablet: { width: 750, height: 320 },
+        // 모바일 기준 크기
+        mobile: { width: 320, height: 240 },
         aspectRatio: 12/4
       },
       complexPlane: {
-        width: 470, 
-        height: 470, // 정사각형으로 설정
+        desktop: { width: 470, height: 470 },
+        tablet: { width: 360, height: 360 },
+        mobile: { width: 280, height: 280 },
         aspectRatio: 1
       },
       frequencyDomain: {
-        width: 470,
-        height: 470,
-        aspectRatio: 1//4/3
+        desktop: { width: 470, height: 470 },
+        tablet: { width: 360, height: 360 },
+        mobile: { width: 280, height: 280 },
+        aspectRatio: 1
       },
       
-      // 반응형 브레이크포인트
+      // 반응형 브레이크포인트 확장
       breakpoints: {
-        mobile: 768,
-        tablet: 1024
-      },
-      
-      // 반응형 크기 배율
-      mobileScale: 0.8,
-      tabletScale: 0.9
+        mobile: 480,
+        tablet: 768,
+        laptop: 1024,
+        desktop: 1200
+      }
     });
 
     // 현재 화면 크기 감지
     const screenWidth = ref(window.innerWidth);
 
-    // 계산된 컨테이너 크기
+    // 반응형 컨테이너 크기 계산
     const computedContainerSizes = computed(() => {
-      let scale = 1;
+      const width = screenWidth.value;
+      const breakpoints = containerConfig.value.breakpoints;
       
-      if (screenWidth.value <= containerConfig.value.breakpoints.mobile) {
-        scale = containerConfig.value.mobileScale;
-      } else if (screenWidth.value <= containerConfig.value.breakpoints.tablet) {
-        scale = containerConfig.value.tabletScale;
+      // 현재 화면 크기에 따른 디바이스 유형 결정
+      let deviceType;
+      if (width <= breakpoints.mobile) {
+        deviceType = 'mobile';
+      } else if (width <= breakpoints.tablet) {
+        deviceType = 'tablet';
+      } else {
+        deviceType = 'desktop';
       }
       
-      return {
-        timeDomain: {
-          width: Math.floor(containerConfig.value.timeDomain.width * scale),
-          height: Math.floor(containerConfig.value.timeDomain.height * scale)
-        },
-        complexPlane: {
-          width: Math.floor(containerConfig.value.complexPlane.width * scale),
-          height: Math.floor(containerConfig.value.complexPlane.height * scale)
-        },
-        frequencyDomain: {
-          width: Math.floor(containerConfig.value.frequencyDomain.width * scale),
-          height: Math.floor(containerConfig.value.frequencyDomain.height * scale)
+      // 각 컨테이너별 크기 계산
+      const getSize = (containerType) => {
+        const config = containerConfig.value[containerType];
+        let baseSize = config[deviceType] || config.desktop;
+        
+        // 뷰포트 비율 기반 추가 조정
+        if (deviceType === 'mobile' && width < 380) {
+          // 매우 작은 화면에서 추가 축소
+          baseSize = {
+            width: Math.floor(baseSize.width * 0.9),
+            height: Math.floor(baseSize.height * 0.9)
+          };
         }
+        
+        return baseSize;
+      };
+      
+      return {
+        timeDomain: getSize('timeDomain'),
+        complexPlane: getSize('complexPlane'),
+        frequencyDomain: getSize('frequencyDomain'),
+        currentDeviceType: deviceType
       };
     });
 
-    // 통합 렌더러 설정 함수
+    // 통합 렌더러 설정 함수 - 반응형 개선
     const setupRenderer = (scene, camera, container, rendererType) => {
       if (!container) {
         console.error(`${rendererType} container not found`);
@@ -272,16 +285,26 @@ export default {
       
       const sizes = computedContainerSizes.value[rendererType];
       
-      const renderer = new THREE.WebGLRenderer({ antialias: true });
+      const renderer = new THREE.WebGLRenderer({ 
+        antialias: true,
+        alpha: true // 투명 배경 지원
+      });
       renderer.setSize(sizes.width, sizes.height);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // 고해상도 디스플레이 최적화
       renderer.setClearColor(getRendererBgColor(rendererType));
+      
+      // 캔버스 반응형 스타일 적용
+      renderer.domElement.style.width = '100%';
+      renderer.domElement.style.height = 'auto';
+      renderer.domElement.style.maxWidth = `${sizes.width}px`;
+      renderer.domElement.style.maxHeight = `${sizes.height}px`;
       
       container.appendChild(renderer.domElement);
       
       // 카메라 설정도 중앙화
       setupCamera(camera, rendererType, sizes);
       
-      console.log(`${rendererType} renderer initialized:`, sizes);
+      console.log(`${rendererType} renderer initialized:`, sizes, `Device type: ${computedContainerSizes.value.currentDeviceType}`);
       return renderer;
     };
 
@@ -345,15 +368,22 @@ export default {
       return equation + (terms || '0');
     });
 
-    // X축 눈금 (주파수: 0 ~ 20Hz)
+    // X축 눈금 (주파수: 0 ~ 50Hz)
     const xAxisTicks = computed(() => {
       const ticks = [];
       const maxFreq = maxDisplayFrequency.value;
       const tickInterval = 5; // 5Hz 간격
       
       for (let i = 0; i <= maxFreq; i += tickInterval) {
-        const pstnVal = ((i / maxFreq) * 100 ) == 0 || ((i / maxFreq) * 100 ) == 100 ? Math.abs(((i / maxFreq) * 100 ) - 5) : ((i / maxFreq) * 100 ) 
-        const position = `${pstnVal}%`;
+        let position;
+        if (i === 0) {
+          position = '1%'; // 0Hz는 1%
+        } else if (i === maxFreq) {
+          position = '100%'; // 50Hz는 100%
+        } else {
+          position = `${(i / maxFreq) * 100}%`; // 중간값들은 정확한 비율
+        }
+        
         ticks.push({
           value: i,
           label: `${i}Hz`,
@@ -384,15 +414,18 @@ export default {
     // 신호 생성 및 관리
     const addSignalComponent = () => {
       signalComponents.value.push({ frequency: 5, amplitude: 1 });
-      updateSignal();
+      // updateSignal() 제거 - watch 핸들러가 처리
     };
     
     const removeSignalComponent = (index) => {
       signalComponents.value.splice(index, 1);
-      updateSignal();
+      // updateSignal() 제거 - watch 핸들러가 처리
     };
     
     const updateSignal = async () => {
+      if (isUpdatingSignal) return; // 중복 호출 방지
+      isUpdatingSignal = true;
+      
       try {
         const response = await fetch(`${API_BASE_URL}/generate-signal`, {
           method: 'POST',
@@ -406,14 +439,19 @@ export default {
         
         const signalData = await response.json();
         updateTimeDomainVisualization(signalData);
-        updateWindingVisualization();
+        // updateWindingVisualization(); 제거 - watch에서 별도 처리
       } catch (error) {
         console.error('Error updating signal:', error);
+      } finally {
+        isUpdatingSignal = false;
       }
     };
     
     // 신호 감기 시각화 업데이트
     const updateWindingVisualization = async () => {
+      if (isUpdatingWinding) return; // 중복 호출 방지
+      isUpdatingWinding = true;
+      
       try {
         const response = await fetch(`${API_BASE_URL}/winding-visualization`, {
           method: 'POST',
@@ -431,15 +469,19 @@ export default {
         updateComplexPlaneVisualization(windingData);
         generateInsights();
         
-        // 실시간 주파수 도메인 업데이트 추가
-        updateFrequencyDomainRealTime();
+        // updateFrequencyDomainRealTime(); 제거 - 별도 호출
       } catch (error) {
         console.error('Error updating winding visualization:', error);
+      } finally {
+        isUpdatingWinding = false;
       }
     };
     
     // 실시간 주파수 도메인 업데이트
     const updateFrequencyDomainRealTime = async () => {
+      if (isUpdatingFrequency) return; // 중복 호출 방지
+      isUpdatingFrequency = true;
+      
       try {
         const response = await fetch(`${API_BASE_URL}/frequency-sweep`, {
           method: 'POST',
@@ -459,6 +501,8 @@ export default {
         detectFrequencyPeaks(sweepData);
       } catch (error) {
         console.error('Error updating frequency domain real-time:', error);
+      } finally {
+        isUpdatingFrequency = false;
       }
     };
 
@@ -1021,9 +1065,22 @@ export default {
 
 
     
+    // 디바운싱 타이머 변수들 정의
+    let signalUpdateTimer = null;
+    let windingUpdateTimer = null; 
+    let frequencyUpdateTimer = null;
+    let isUpdatingSignal = false;
+    let isUpdatingWinding = false;
+    let isUpdatingFrequency = false;
+    
     // 정리 함수
     const cleanup = () => {
       stopWindingAnimation();
+      
+      // 디바운싱 타이머 정리
+      if (signalUpdateTimer) clearTimeout(signalUpdateTimer);
+      if (windingUpdateTimer) clearTimeout(windingUpdateTimer);
+      if (frequencyUpdateTimer) clearTimeout(frequencyUpdateTimer);
       
       [timeDomainRenderer, complexPlaneRenderer, frequencyDomainRenderer].forEach(renderer => {
         if (renderer) {
@@ -1040,34 +1097,94 @@ export default {
         initTimedomainVisualization();
         initComplexPlaneVisualization();
         initFrequencyDomainVisualization();
-        updateSignal();
-        // 초기 주파수 도메인 업데이트
-        setTimeout(() => {
-          updateFrequencyDomainRealTime();
-        }, 200);
+        
+        // 초기화 시 모든 시각화를 순차적으로 실행
+        updateSignal().then(() => {
+          // 신호 생성 완료 후 winding과 frequency 시각화 실행
+          setTimeout(() => {
+            updateWindingVisualization();
+          }, 50);
+          
+          // 주파수 도메인도 초기화
+          setTimeout(() => {
+            updateFrequencyDomainRealTime();
+          }, 100);
+        });
+        
         window.addEventListener('resize', handleResize);
       }, 100);
     });
     
     onBeforeUnmount(cleanup);
     
-    // 와처들
-    watch([signalComponents, samplingRate, duration], updateSignal, { deep: true });
-    watch(windingFrequency, updateWindingVisualization);
+    // 디바운싱된 업데이트 함수들
+    const debouncedUpdateSignal = () => {
+      if (signalUpdateTimer) clearTimeout(signalUpdateTimer);
+      signalUpdateTimer = setTimeout(() => {
+        updateSignal();
+      }, 100);
+    };
+    
+    const debouncedUpdateWinding = () => {
+      if (windingUpdateTimer) clearTimeout(windingUpdateTimer);
+      windingUpdateTimer = setTimeout(() => {
+        updateWindingVisualization();
+      }, 100);
+    };
+    
+    const debouncedUpdateFrequency = () => {
+      if (frequencyUpdateTimer) clearTimeout(frequencyUpdateTimer);
+      frequencyUpdateTimer = setTimeout(() => {
+        updateFrequencyDomainRealTime();
+      }, 150);
+    };
+    
+    // 신호 파라미터 변경 시 - 순차적 업데이트
+    watch([signalComponents, samplingRate, duration], () => {
+      
+      // 모든 관련 타이머 정리 (중복 방지)
+      if (signalUpdateTimer) clearTimeout(signalUpdateTimer);
+      if (windingUpdateTimer) clearTimeout(windingUpdateTimer);  
+      if (frequencyUpdateTimer) clearTimeout(frequencyUpdateTimer);
+      
+      // 순차적 업데이트: 신호 → 감기 → 주파수
+      signalUpdateTimer = setTimeout(() => {
+        updateSignal().then(() => {
+          // 신호 완료 후 감기 업데이트
+          windingUpdateTimer = setTimeout(() => {
+            updateWindingVisualization();
+          }, 50);
+        });
+      }, 100);
+      
+      // 주파수 도메인은 독립적으로 업데이트
+      frequencyUpdateTimer = setTimeout(() => {
+        updateFrequencyDomainRealTime();
+      }, 200);
+    }, { deep: true });
+    
+    // windingFrequency만 변경 시: 감기와 주파수만 업데이트 (템플릿 @input 제거됨)
+    watch(windingFrequency, () => {
+      // 모든 관련 타이머 정리
+      if (windingUpdateTimer) clearTimeout(windingUpdateTimer);
+      if (frequencyUpdateTimer) clearTimeout(frequencyUpdateTimer);
+      
+      // winding 시각화 업데이트
+      windingUpdateTimer = setTimeout(() => {
+        updateWindingVisualization();
+      }, 80);
+      
+      // frequency sweep 업데이트  
+      frequencyUpdateTimer = setTimeout(() => {
+        updateFrequencyDomainRealTime();
+      }, 120);
+    });
+    
     watch(screenWidth, () => {
       handleResize();
     });
-    // 컨테이너 설정 감시
     watch(containerConfig, () => {
       handleResize();
-    }, { deep: true });
-    
-    // 신호가 변경될 때마다 주파수 도메인도 함께 업데이트
-    watch([signalComponents, samplingRate, duration], () => {
-      // 신호 업데이트 후 주파수 도메인도 업데이트
-      setTimeout(() => {
-        updateFrequencyDomainRealTime();
-      }, 100);
     }, { deep: true });
     
     return {
@@ -1127,11 +1244,38 @@ export default {
   margin: 0 auto;
 }
 
+/* 메인 컨테이너 - 반응형 그리드 */
 .container-wrap {
     display: grid;
     grid-template-columns: 3fr 1fr;
     grid-template-rows: 1fr;
+    gap: 20px;
+}
 
+/* 태블릿 레이아웃 */
+@media (max-width: 1024px) {
+  .container-wrap {
+    grid-template-columns: 2fr 1fr;
+    gap: 15px;
+  }
+}
+
+/* 모바일 레이아웃 - 세로 스택 */
+@media (max-width: 768px) {
+  .container-wrap {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto;
+    gap: 15px;
+  }
+  
+  .section-r {
+    margin-left: 0;
+    order: 2; /* 컨트롤을 아래로 */
+  }
+  
+  .section-l {
+    order: 1; /* 시각화를 위로 */
+  }
 }
 
 .sub-section {
@@ -1176,6 +1320,22 @@ export default {
   gap: 15px;
 }
 
+/* 태블릿에서 신호 파라미터 조정 */
+@media (max-width: 1024px) {
+  .signal-params {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+}
+
+/* 모바일에서 신호 파라미터 조정 */
+@media (max-width: 768px) {
+  .signal-params {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+}
+
 .winding-params {
   display: grid;
   grid-template-columns: 1fr;
@@ -1188,12 +1348,34 @@ export default {
   gap: 10px;
 }
 
+/* 시각화 그리드 - 반응형 */
 .visualization-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 20px;
   margin-bottom: 20px;
   min-height: 600px;
+}
+
+/* 태블릿에서 그리드 간격 조정 */
+@media (max-width: 1024px) {
+  .visualization-grid {
+    gap: 15px;
+    min-height: 500px;
+  }
+}
+
+/* 모바일에서 세로 스택 */
+@media (max-width: 768px) {
+  .visualization-grid {
+    grid-template-columns: 1fr;
+    gap: 15px;
+    min-height: auto;
+  }
+  
+  .grid-fr {
+    grid-column: 1;
+  }
 }
 
 .grid-fr {
@@ -1244,14 +1426,32 @@ export default {
   flex: 1;
 }
 
-/* Y축 레이블 (크기) */
+/* Y축 레이블 (크기) - 반응형 높이 */
 .y-axis-labels {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  height: 505px; /* frequencyDomain 높이와 맞춤 + margin + x-axis의 height */
+  height: calc(470px + 25px); /* 데스크톱 기준: frequencyDomain 높이 + margin + x-axis */
   padding-right: 15px;
   position: relative;
+}
+
+@media (max-width: 768px) {
+  .y-axis-labels {
+    height: calc(360px + 25px); /* 태블릿 크기 조정 */
+    padding-right: 10px;
+  }
+}
+
+@media (max-width: 480px) {
+  .y-axis-labels {
+    height: calc(280px + 25px); /* 모바일 크기 조정 */
+    padding-right: 8px;
+  }
+  .y-tick {
+    font-size: 10px;
+    width: 25px;
+  }
 }
 
 .y-tick {
@@ -1368,14 +1568,112 @@ label {
 
 
 
-@media (max-width: 768px) {
-  .visualization-grid {
-    grid-template-columns: 1fr;
-    grid-template-rows: repeat(4, auto);
+/* 반응형 컨트롤 패널 */
+.controls {
+  margin-bottom: 15px;
+}
+
+@media (max-width: 1024px) {
+  .controls {
+    margin-bottom: 12px;
+    padding: 12px;
   }
   
-  .signal-params {
-    grid-template-columns: 1fr;
+  .sub-section {
+    min-height: auto;
+  }
+}
+
+@media (max-width: 768px) {
+  .fft-container {
+    padding: 15px;
+    max-width: 100%;
+  }
+  
+  .controls {
+    margin-bottom: 10px;
+    padding: 10px;
+  }
+  
+  .sub-section {
+    min-height: auto;
+  }
+  
+  /* 버튼 크기 조정 */
+  button {
+    padding: 10px 14px;
+    font-size: 13px;
+  }
+  
+  /* 애니메이션 버튼들을 가로 배치로 변경 */
+  .animation-buttons {
+    flex-direction: row;
+    gap: 8px;
+  }
+  
+  .winding-controls-buttons {
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  /* 제목 크기 조정 */
+  .tit {
+    font-size: 1.5rem;
+    margin-bottom: 15px;
+  }
+  
+  .viz-panel h4 {
+    font-size: 1.1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .fft-container {
+    padding: 10px;
+  }
+  
+  .controls {
+    padding: 8px;
+    margin-bottom: 8px;
+  }
+  
+  .viz-panel {
+    padding: 10px;
+  }
+  
+  /* 매우 작은 화면에서 글꼴 크기 조정 */
+  .tit {
+    font-size: 1.3rem;
+    margin-bottom: 12px;
+  }
+  
+  .viz-panel h4 {
+    font-size: 1rem;
+  }
+  
+  label {
+    font-size: 0.9rem;
+  }
+  
+  button {
+    padding: 8px 12px;
+    font-size: 12px;
+  }
+  
+  .signal-equation {
+    font-size: 12px;
+    padding: 6px;
+  }
+  
+  .center-of-mass-info,
+  .frequency-peaks {
+    font-size: 12px;
+    padding: 8px;
+  }
+  
+  /* X축 레이블 크기 조정 */
+  .x-tick {
+    font-size: 10px;
   }
 }
 </style>

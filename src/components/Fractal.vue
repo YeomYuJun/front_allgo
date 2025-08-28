@@ -10,11 +10,12 @@
           <div class="viz-panel fractal-2d-panel grid-fr">
             <h4>프랙탈 그래프</h4>
             <div ref="fractalContainer" class="viz-container fractal-view">
-              <div v-if="isLoading" class="loading-overlay">
+              
+            </div>
+            <div v-if="isLoading" class="loading-overlay">
                 <div class="spinner"></div>
                 <p>프랙탈 계산 중...</p>
               </div>
-            </div>
           </div>
         </div>
       </section>
@@ -261,11 +262,16 @@ export default {
       return quantizeIterations(Math.min(1000, dynamicIterations));
     };
 
-    // 프랙탈 데이터 가져오기
+    // 프랙탈 데이터 가져오기 - 중복 요청 방지 개선
     const fetchFractalData = async (forceUpdate = false) => {
       // 파라미터 정규화 및 양자화
       const normalizedParams = normalizeParameters();
       const paramHash = JSON.stringify(normalizedParams);
+      
+      // 중복 요청 방지 - 같은 파라미터로 이미 요청 중인 경우 무시
+      if (!forceUpdate && isCurrentlyFetching && paramHash === lastFetchParams) {
+        return;
+      }
       
       // 캐시 확인
       if (!forceUpdate && fractalCache.has(paramHash)) {
@@ -279,6 +285,8 @@ export default {
       // 중복 요청 방지
       const requestId = Date.now() + Math.random();
       currentRequestId = requestId;
+      isCurrentlyFetching = true;
+      lastFetchParams = paramHash;
       isLoading.value = true;
       const startTime = performance.now();
       
@@ -334,6 +342,8 @@ export default {
         console.error('Error fetching fractal data:', error);
       } finally {
         isLoading.value = false;
+        isCurrentlyFetching = false;
+        lastFetchParams = null;
       }
     };
 
@@ -449,19 +459,20 @@ export default {
       render();
     };
 
-    // 파라미터 양자화 시스템 - 캐시 효율성 극대화
+    // 파라미터 양자화 시스템 - 캐시 효율성 극대화 (좌표는 최소 0.01까지만)
     const getCoordinatePrecision = () => {
       if (zoomLevel.value <= 1) return 0.1;
       if (zoomLevel.value <= 10) return 0.05;
-      if (zoomLevel.value <= 100) return 0.001;
-      if (zoomLevel.value <= 1000) return 0.0001;
-      return 0.00001;
+      if (zoomLevel.value <= 100) return 0.01; // 캐시 효율성을 위해 0.01까지만
+      if (zoomLevel.value <= 1000) return 0.01; // 고줌에서도 0.01 유지
+      return 0.01; // 모든 고줌 레벨에서 0.01 고정
     };
     
     const roundToGridPrecision = (value) => {
       const precision = getCoordinatePrecision();
       const rounded = Math.round(value / precision) * precision;
-      // 소수점 자릿수 제한 (부동소수점 오차 방지)
+      
+      // 캐시 효율성을 위해 소수점 둘째 자리까지만 (0.01 단위)
       return Math.round(rounded * 100) / 100;
     };
     
@@ -481,19 +492,25 @@ export default {
       );
     };
     
-    // 줌 레벨 양자화
+    // 줌 레벨 양자화 개선 - 중복 요청 방지
     const quantizeZoom = (zoom) => {
       if (zoom <= 1) return 1;
+      if (zoom <= 2) return Math.round(zoom * 4) / 4; // 0.25 단위
       if (zoom <= 8) return Math.pow(2, Math.round(Math.log2(zoom)));
       if (zoom <= 64) return Math.ceil(zoom / 4) * 4;
       if (zoom <= 512) return Math.ceil(zoom / 16) * 16;
-      return Math.ceil(zoom / 64) * 64;
+      if (zoom <= 4096) return Math.ceil(zoom / 64) * 64;
+      return 4096; // 최대값 고정
     };
     
-    // 캐시 시스템
+    // 캐시 시스템 및 중복 요청 방지
     const fractalCache = new Map();
     const MAX_CACHE_SIZE = 50;
     let currentRequestId = null;
+    let updateTimeout = null;
+    let renderTimeout = null;
+    let lastFetchParams = null;
+    let isCurrentlyFetching = false;
     
     // 파라미터 정규화
     const normalizeParameters = () => {
@@ -528,8 +545,6 @@ export default {
       let isDragging = false;
       let lastMouseX = 0;
       let lastMouseY = 0;
-      let updateTimeout = null;
-      let renderTimeout = null;
       let dragStartTime = 0;
       
       // 마우스 다운
@@ -540,14 +555,7 @@ export default {
         dragStartTime = performance.now();
         
         // 기존 타이머 취소
-        if (updateTimeout) {
-          clearTimeout(updateTimeout);
-          updateTimeout = null;
-        }
-        if (renderTimeout) {
-          clearTimeout(renderTimeout);
-          renderTimeout = null;
-        }
+        clearTimeouts();
       });
       
       // 마우스 이동
@@ -557,8 +565,16 @@ export default {
         const deltaX = e.clientX - lastMouseX;
         const deltaY = e.clientY - lastMouseY;
         
-        // 민감도 임계값 - 작은 움직임은 무시
-        if (Math.abs(deltaX) < 2 && Math.abs(deltaY) < 2) return;
+        // 민감도 임계값 - 줌 레벨에 따라 동적 조정 (32배부터 극도로 민감하게)
+        let sensitivity;
+        if (zoomLevel.value >= 32) {
+          sensitivity = 0.5; // 32배 이상에서 0.5픽셀로 극민감
+        } else if (zoomLevel.value >= 16) {
+          sensitivity = 1; // 16배 이상에서 1픽셀
+        } else {
+          sensitivity = 2; // 기본 2픽셀
+        }
+        if (Math.abs(deltaX) < sensitivity && Math.abs(deltaY) < sensitivity) return;
         
         // 현재 표시 범위 계산
         const rangeX = viewBounds.value.xMax - viewBounds.value.xMin;
@@ -579,12 +595,7 @@ export default {
         lastMouseY = e.clientY;
         
         // 즉시 렌더링은 취소하고 디바운싱
-        if (updateTimeout) {
-          clearTimeout(updateTimeout);
-        }
-        if (renderTimeout) {
-          clearTimeout(renderTimeout);
-        }
+        clearTimeouts();
       });
       
       // 마우스 업
@@ -773,8 +784,29 @@ export default {
       render();
     };
 
+    // 타이머 정리 함수
+    const clearTimeouts = () => {
+      if (updateTimeout) {
+        clearTimeout(updateTimeout);
+        updateTimeout = null;
+      }
+      if (renderTimeout) {
+        clearTimeout(renderTimeout);
+        renderTimeout = null;
+      }
+    };
+    
+    // 디바운싱된 프랙탈 데이터 가져오기
+    const debouncedFetchFractalData = () => {
+      clearTimeouts();
+      updateTimeout = setTimeout(() => {
+        fetchFractalData();
+      }, 150);
+    };
+    
     // 정리 함수
     const cleanup = () => {
+      clearTimeouts();
       if (fractalMesh) {
         if (fractalMesh.material.map) {
           fractalMesh.material.map.dispose();
@@ -817,6 +849,7 @@ export default {
     });
 
     onBeforeUnmount(() => {
+      clearTimeouts();
       cleanup();
       window.removeEventListener('resize', handleResize);
     });
@@ -827,10 +860,11 @@ export default {
       resetView();
     });
 
+    // 파라미터 변경 시 디바운싱 적용
     watch([iterations, baseResolution, colorScheme, smoothShading, juliaReal, juliaImag], () => {
       currentResolution.value = calculateDynamicResolution();
       currentIterations.value = calculateDynamicIterations();
-      fetchFractalData();
+      debouncedFetchFractalData();
     });
 
     watch(showAxis, updateAxisVisibility);
@@ -1015,6 +1049,12 @@ label {
   }
   .signal-builder {
     grid-template-columns: 1fr;
+  }
+  .sub-section {
+    min-height: auto;
+  }
+  .section-r {
+    margin : 0;
   }
 }
 
