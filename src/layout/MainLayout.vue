@@ -1,7 +1,7 @@
 <!-- MainLayout.vue -->
 <template>
     <div class="main-layout">
-        <header>
+        <header class="header">
             <div class="topbar">
                 <div class="tb_content">
                     <div class="tb_left">
@@ -17,7 +17,7 @@
                 </div>
             </div>
         </header>
-        <main>
+        <main class="main-content">
         <div class="main_section">
             <div class="content_wrapper">
                 <slot></slot> <!-- 페이지 내용-->
@@ -25,7 +25,7 @@
         </div>
         </main>
         
-        <footer>
+        <footer class="footer">
             <div class="foot-bt">
                 <div class="footer-content">
                     <div class="footer-main">
@@ -33,10 +33,10 @@
                         <p class="footer-subtitle">Algorithm, I and Math</p>
                     </div>
                     <div class="footer-info">
-                        <span class="footer-year">© {{ currentYear }}</span>
+                        <span class="footer-year">© {{ currentYear }}. yyj2046</span>
                         <span class="footer-divider">|</span>
-                        <a href="mailto:contact@allgomath.com" class="footer-contact">
-                            Contact: contact@allgomath.com
+                        <a href="mailto:yyj2046@gmail.com" class="footer-contact">
+                            Contact: yyj2046@gmail.com
                         </a>
                     </div>
                 </div>
@@ -52,6 +52,25 @@ import { computed } from 'vue'
 const currentYear = computed(() => new Date().getFullYear())
 </script>
 <style>
+/* Sticky Footer Layout */
+.main-layout {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.header {
+    flex-shrink: 0;
+}
+
+.main-content {
+    flex: 1 0 auto;
+}
+
+.footer {
+    flex-shrink: 0;
+}
+
 .topbar {
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
     height: 70px;
@@ -134,7 +153,7 @@ const currentYear = computed(() => new Date().getFullYear())
 }
 
 .footer-year {
-    color: #495057;
+    color: #bdbdbd;
     font-weight: 500;
 }
 
@@ -144,14 +163,14 @@ const currentYear = computed(() => new Date().getFullYear())
 }
 
 .footer-contact {
-    color: #007bff;
+    color: #bdbdbd;
     text-decoration: none;
     transition: all 0.3s ease;
     font-weight: 500;
 }
 
 .footer-contact:hover {
-    color: #0056b3;
+    color: #78a0cb;
     text-decoration: underline;
 }
 

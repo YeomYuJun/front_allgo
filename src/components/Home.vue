@@ -320,7 +320,22 @@ const navigateTo = (path) => {
     }
     .navigation-links .v-card {
         transition: all 0.3s ease-in-out;
+        height: 100%; /* 카드 높이 통일 */
+        display: flex;
+        flex-direction: column;
     }
+    
+    .navigation-links .v-card .v-card-text {
+        flex-grow: 1; /* 텍스트 영역이 남은 공간을 차지하도록 */
+        display: flex;
+        align-items: center; /* 텍스트 수직 중앙 정렬 */
+        min-height: 60px; /* 최소 높이 설정 */
+    }
+    
+    .navigation-links .v-card .v-card-actions {
+        margin-top: auto; /* 버튼을 하단에 고정 */
+    }
+    
     .navigation-links .v-card:hover {
         transform: translateY(-5px);
         box-shadow: 0 4px 20px rgba(0,0,0,0.1) !important;
