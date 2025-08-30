@@ -83,7 +83,7 @@
               <p v-else-if="selectedFunction === 'rosenbrock'"><strong>특징:</strong> 바나나 함수, 전역 최솟값 (1,1), 수렴이 어려움</p>
               <p v-else-if="selectedFunction === 'himmelblau'"><strong>특징:</strong> 4개의 전역 최솟값을 가진 복잡한 함수</p>
               <p v-else-if="selectedFunction === 'beale'"><strong>특징:</strong> 좁은 골짜기, 전역 최솟값 (3,0.5)</p>
-              <p v-else-if="selectedFunction === 'monkey'"><strong>특징:</strong> 몽키 새들 포인트, 3차 함수</p>
+              <!-- <p v-else-if="selectedFunction === 'monkey'"><strong>특징:</strong> 몽키 새들 포인트, 3차 함수</p> -->
               <p v-else><strong>특징:</strong> 고차 다항식 함수</p>
             </div>
             <div v-if="gradientPathData.length > 0" class="gradient-info">
