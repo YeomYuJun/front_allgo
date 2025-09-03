@@ -78,11 +78,45 @@
           <div class="insight-content">
             <p><strong>함수 방정식:</strong> {{ functionEquation }}</p>
             <div class="function-description">
-              <p v-if="selectedFunction === 'standard'"><strong>특징:</strong> 기본적인 안장점 함수, 최적화 학습에 적합</p>
-              <p v-else-if="selectedFunction === 'paraboloid'"><strong>특징:</strong> 단순한 볼록 함수, 전역 최솟값 (0,0)</p>
-              <p v-else-if="selectedFunction === 'rosenbrock'"><strong>특징:</strong> 바나나 함수, 전역 최솟값 (1,1), 수렴이 어려움</p>
-              <p v-else-if="selectedFunction === 'himmelblau'"><strong>특징:</strong> 4개의 전역 최솟값을 가진 복잡한 함수</p>
-              <p v-else-if="selectedFunction === 'beale'"><strong>특징:</strong> 좁은 골짜기, 전역 최솟값 (3,0.5)</p>
+              <p v-if="selectedFunction === 'standard'">
+                <strong>특징:</strong> 기본적인 안장점 함수
+                <ul>
+                  <li style="list-style: none;"> - 중앙(0,0) 안장점, 등고선이 쌍곡선</li>
+                  <li style="list-style: none;"> - 경사하강법 시 축 방향에 따라 상반된 거동</li>
+                  <li style="list-style: none;"> - 시각화·학습에 적합, 스케일 안정적</li>
+                </ul>
+              </p>
+              <p v-else-if="selectedFunction === 'paraboloid'">
+                <strong>특징:</strong> 단순한 볼록 함수, 전역 최솟값 (0,0)
+                <ul>
+                  <li style="list-style: none;"> - 원형 등고선, 어디서 시작해도 (0,0)로 수렴</li>
+                  <li style="list-style: none;"> - 학습률에 비교적 둔감, 안정적 수렴</li>
+                  <li style="list-style: none;"> - 별도 스케일링 필요성 낮음</li>
+                </ul>
+              </p>
+              <p v-else-if="selectedFunction === 'rosenbrock'">
+                <strong>특징:</strong> 바나나 함수, 전역 최솟값 (1,1)
+                <ul>
+                  <li style="list-style: none;"> - 매우 좁고 길게 휘어진 골짜기(ill-conditioned)</li>
+                  <li style="list-style: none;"> - 학습률·초기값에 민감, 수렴 경로가 길어지기 쉬움</li>
+                  <li style="list-style: none;"> - z값 범위가 큼 → 동적 로그 스케일링 적용</li>
+                </ul>
+              </p>
+              <p v-else-if="selectedFunction === 'himmelblau'">
+                <strong>특징:</strong> 4개의 전역 최솟값을 가진 복잡한 함수
+                <ul>
+                  <li style="list-style: none;"> - 범위 5 이상 설정 권장</li>
+                  <li style="list-style: none;"> - z축에 동적 스케일링 적용</li>
+                </ul>
+              </p>
+              <p v-else-if="selectedFunction === 'beale'">
+                <strong>특징:</strong> 좁은 골짜기, 전역 최솟값 (3,0.5)
+                <ul>
+                  <li style="list-style: none;"> - 항들의 차수 증가로 값 폭이 매우 큼</li>
+                  <li style="list-style: none;"> - (3,0.5) 포함하도록 범위 설정 권장</li>
+                  <li style="list-style: none;"> - z값 범위 큼 → 동적 로그 스케일링 적용</li>
+                </ul>
+              </p>
               <!-- <p v-else-if="selectedFunction === 'monkey'"><strong>특징:</strong> 몽키 새들 포인트, 3차 함수</p> -->
               <p v-else><strong>특징:</strong> 고차 다항식 함수</p>
             </div>
@@ -90,9 +124,9 @@
               <h4>경사 하강법 결과:</h4>
               <p>총 단계: {{ gradientPathData.length -1 }}</p>
               <p>최종 위치: 
-                X={{ gradientPathData[gradientPathData.length-1].x.toFixed(3) }}, 
-                Y={{ gradientPathData[gradientPathData.length-1].y.toFixed(3) }}, 
-                Z={{ gradientPathData[gradientPathData.length-1].z.toFixed(3) }}
+                X={{ Number(gradientPathData[gradientPathData.length-1].x).toFixed(3) }}, 
+                Y={{ Number(gradientPathData[gradientPathData.length-1].y).toFixed(3) }}, 
+                Z={{ Number(gradientPathData[gradientPathData.length-1].z).toFixed(3) }}
               </p>
             </div>
           </div>
@@ -117,6 +151,9 @@ export default {
         const showWireframe = ref(true);
         const showAxes = ref(true);
         const showSaddlePoint = ref(true);
+        
+        // Z 스케일링 공용 변수 (표면/경로 일관성)
+        let zScaleFactor = 0.3;
 
         // --- 경사 하강법 관련 상태 변수 ---
         const startX = ref(range.value * 0.8); // 시작 X 기본값 (범위 내)
@@ -265,6 +302,17 @@ export default {
                 return;
             }
 
+            // 힘멜블라우 전용 동적 스케일링 (로그 스케일)
+            const needsLogScale = ['himmelblau', 'rosenbrock', 'beale'].includes(selectedFunction.value);
+            if (needsLogScale) {
+                const maxZ = points.reduce((m, p) => Math.max(m, p.z), 0);
+                const targetHeight = range.value * 0.6; // 원하는 최대 높이
+                const denom = Math.log1p(Math.max(maxZ, 1e-6));
+                zScaleFactor = targetHeight / denom;
+            } else {
+                zScaleFactor = 0.3; // 기존 스케일 유지
+            }
+
             const geometry = new THREE.BufferGeometry();
             const vertices = [];
             const colors = [];
@@ -276,18 +324,18 @@ export default {
                     const index = i * numGridPoints + j;
                     if (index < points.length) {
                         const p = points[index];
-                        // Z축 스케일링 적용 - 시각적 식별을 위해 Z값을 적절히 조정
-                        const scaledZ = p.z * 0.3; // Z축을 30%로 축소하여 더 보기 좋게
+                        // 로그 스케일 필요 함수에만 적용
+                        const baseZ = needsLogScale ? Math.log1p(p.z) : p.z;
+                        const scaledZ = baseZ * zScaleFactor;
                         vertices.push(p.x, scaledZ, p.y);
-                                                      // 이 부분을 API 데이터 구조에 맞게 정확히 해야 합니다.
-                                                      // 아래 색상 계산도 p.z를 기준으로 합니다.
 
-                        const zValue = p.z * 0.3; // 스케일링된 Z값 사용
+                        // 색상도 스케일 적용된 z를 기준으로
+                        const zValue = scaledZ;
                         let r=0, g=0, b=0;
-                        const normalizedZ = (zValue - (-range.value * range.value)) / (2 * range.value * range.value); // 대략적인 정규화
+                        const normalizedZ = (zValue - (-range.value * range.value)) / (2 * range.value * range.value);
                         
                         if (zValue < 0) { // 파란색 계열
-                            b = Math.min(1, Math.abs(zValue) / (range.value * Math.abs(range.value) / 2 + 1e-5)); // 0으로 나누기 방지
+                            b = Math.min(1, Math.abs(zValue) / (range.value * Math.abs(range.value) / 2 + 1e-5));
                             r = 0.2 * (1-b); g = 0.5 * (1-b);
                         } else { // 빨간색 계열
                             r = Math.min(1, zValue / (range.value * Math.abs(range.value) / 2 + 1e-5));
@@ -430,15 +478,25 @@ export default {
             }
 
             const points = [];
-            pathData.forEach(step => {
-                // API의 (x,y,z)를 Three.js 좌표계에 맞게 변환
-                // createSurface와 동일한 방식으로 매핑해야 함
-                // vertices.push(p.x, p.z, p.y) 였다면:
-                // Z축 스케일링 적용
-                const scaledStepZ = step.z * 0.3; 
-                // vertices.push(p.x, p.y, p.z) 였다면:
+            pathData.forEach(stepRaw => {
+                const step = {
+                  x: Number(stepRaw.x),
+                  y: Number(stepRaw.y),
+                  z: Number(stepRaw.z)
+                };
+                if (!isFinite(step.x) || !isFinite(step.y) || !isFinite(step.z)) return; // 잘못된 점 무시
+                // 표면과 동일 스케일 적용
+                const baseZ = ['himmelblau', 'rosenbrock', 'beale'].includes(selectedFunction.value) ? Math.log1p(step.z) : step.z;
+                if (!isFinite(baseZ)) return;
+                const scaledStepZ = baseZ * zScaleFactor; 
+                if (!isFinite(scaledStepZ)) return;
                 points.push(new THREE.Vector3(step.x, scaledStepZ, step.y));
             });
+
+            if (points.length === 0) {
+                console.warn('No valid points to draw for gradient path.');
+                return;
+            }
 
             // 경로 선 생성
             const lineMaterial = new THREE.LineBasicMaterial({ color: 0xff8800, linewidth: 3 }); // linewidth는 WebGL2에서만 잘 작동
@@ -450,15 +508,11 @@ export default {
             const pointMaterial = new THREE.MeshBasicMaterial({ color: 0xff8800 });
             gradientPathPoints = []; // 이전 포인트들 제거를 위해 배열 관리
             points.forEach((point, index) => {
-                //const pointGeometry = new THREE.SphereGeometry(0.08, 12, 12); // 점 크기 조절
                 const pointGeometry = new THREE.SphereGeometry(0.1, 12, 12); // 점 크기 조절
                 const sphere = new THREE.Mesh(pointGeometry, pointMaterial);
                 sphere.position.copy(point);
                 scene.add(sphere);
                 gradientPathPoints.push(sphere);
-
-                // (선택적) 각 스텝에 레이블 추가
-                // createTextLabel(`S${index}`, point.clone().add(new THREE.Vector3(0, 0.1, 0)), 0xff8800, 0.2);
             });
         };
 
