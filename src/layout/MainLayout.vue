@@ -9,7 +9,7 @@
                     <div class="tb_center">
                         <div class="logobox">
                             <!--나중에 이미지추가-->
-                            <a href="/"><p style="font-size : 30px;">AllGoMath</p></a>
+                            <RouterLink to="/"><p style="font-size : 30px;">AllGoMath</p></RouterLink>
                         </div>
                     </div>
                     <div class="tb_right">
@@ -47,6 +47,7 @@
 
 <script setup>
 import { computed } from 'vue'
+import { RouterLink } from 'vue-router'
 
 // 현재 년도 자동 계산
 const currentYear = computed(() => new Date().getFullYear())
