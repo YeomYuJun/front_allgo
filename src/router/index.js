@@ -7,6 +7,7 @@ import ConvexFunction from '../components/ConvexFunction.vue';
 import FFT from '../components/FFT.vue';
 import Fractal from '../components/Fractal.vue';
 import SaddleFunction from '../components/SaddleFunction.vue';
+import MonteCarloVisualization from '../components/MonteCarloVisualization.vue';
 // 필요하다면 다른 컴포넌트들도 임포트
 // import FourierTransformVisualizer from '../components/FourierTransformVisualizer.vue';
 // import SortingVisualizer from '../components/SortingVisualizer.vue';
@@ -41,6 +42,11 @@ const routes = [
     path: '/fractal',
     name: 'Fractal',
     component: Fractal,
+  },
+  {
+    path: '/monte-carlo',
+    name: 'MonteCarlo',
+    component: MonteCarloVisualization,
   },
   // {
   //   path: '/quick-sort',

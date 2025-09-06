@@ -113,6 +113,21 @@
                         </v-card-actions>
                     </v-card>
                 </v-col>
+
+                <!-- Monte Carlo Integration -->
+                <v-col cols="12" md="3">
+                    <v-card class="pa-3" outlined tile>
+                        <v-card-title class="justify-center">Monte Carlo</v-card-title>
+                        <v-card-text class="text-center">
+                            Probabilistic integration using random sampling.
+                        </v-card-text>
+                        <v-card-actions class="justify-center">
+                             <v-btn color="primary" @click="navigateTo('/monte-carlo')">
+                                Go to Monte Carlo
+                            </v-btn>
+                        </v-card-actions>
+                    </v-card>
+                </v-col>
             </v-row>
             <!-- 정렬 tit -->
             <v-row justify="center" class="text-center mt-5 mb-5">
