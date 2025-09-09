@@ -20,10 +20,11 @@
           <div class="control-builder">
             <div class="control-component">
               <label>함수 타입:</label>
-              <select v-model="selectedFunction">
-                <option value="square">f(x,y) = x² + y²</option>
-                <option value="sin_product">f(x,y) = sin(x*y)</option>
-                <option value="circle">f(x,y) = √(1 - x² - y²)</option>
+              <select v-model="selectedFunction" :disabled="isSimulationRunning">
+                <option value="square">원: x² + y² ≤ 4 (반지름=2, 4π 추정)</option>
+                <option value="sin_product">영역: sin(x*y) ≥ 0</option>
+                <option value="ellipse">타원: x²/4 + y² ≤ 1</option>
+                <option value="diamond">다이아몬드: |x| + |y| ≤ 2</option>
               </select>
             </div>
             <div class="control-component">
@@ -43,11 +44,11 @@
           <div class="control-builder">
             <div class="control-component">
               <label>점 개수: {{ iterations }}</label>
-              <input type="range" v-model.number="iterations" min="100" max="5000" step="100" />
+              <input type="range" v-model.number="iterations" min="100" max="3000" step="100" />
             </div>
             <div class="control-component">
               <label>애니메이션 속도: {{ animationSpeed }}ms</label>
-              <input type="range" v-model.number="animationSpeed" min="10" max="500" step="10" />
+              <input type="range" v-model.number="animationSpeed" min="10" max="50" step="10" />
             </div>
             <div class="control-component">
               <button @click="startSimulation" :disabled="isSimulationRunning">
@@ -103,7 +104,7 @@ export default {
       yMax: 2
     });
     const iterations = ref(1000);
-    const animationSpeed = ref(50);
+    const animationSpeed = ref(10);
     const isSimulationRunning = ref(false);
     const monteCarloResult = ref(null);
 
@@ -117,7 +118,7 @@ export default {
     let functionCurve = null;
 
     // API URL
-    const API_BASE_URL = `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'}/api/monte-carlo`;
+    const API_BASE_URL = `${import.meta.env.VITE_API_BASE_URL || '/api'}/monte-carlo`;
 
     // --- API 호출 함수 ---
     const performMonteCarloIntegration = async () => {
@@ -166,14 +167,41 @@ export default {
       controls.enableDamping = true;
       controls.dampingFactor = 0.25;
 
-      // 좌표축 추가
+      // 좌표축 추가 (XY 평면에 맞게)
       const axesHelper = new THREE.AxesHelper(3);
       scene.add(axesHelper);
 
-      // 그리드 추가
-      const gridHelper = new THREE.GridHelper(6, 20);
-      gridHelper.rotateX(Math.PI / 2);
-      scene.add(gridHelper);
+      // XY 평면 그리드 생성
+      const gridSize = 6;
+      const gridDivisions = 20;
+      const gridMaterial = new THREE.LineBasicMaterial({ color: 0x888888, transparent: true, opacity: 0.5 });
+      const gridGroup = new THREE.Group();
+
+      // X축 방향 선들 (수평선들)
+      for (let i = 0; i <= gridDivisions; i++) {
+        const y = -gridSize / 2 + (gridSize / gridDivisions) * i;
+        const points = [
+          new THREE.Vector3(-gridSize / 2, y, 0),
+          new THREE.Vector3(gridSize / 2, y, 0)
+        ];
+        const geometry = new THREE.BufferGeometry().setFromPoints(points);
+        const line = new THREE.Line(geometry, gridMaterial.clone());
+        gridGroup.add(line);
+      }
+
+      // Y축 방향 선들 (수직선들)
+      for (let i = 0; i <= gridDivisions; i++) {
+        const x = -gridSize / 2 + (gridSize / gridDivisions) * i;
+        const points = [
+          new THREE.Vector3(x, -gridSize / 2, 0),
+          new THREE.Vector3(x, gridSize / 2, 0)
+        ];
+        const geometry = new THREE.BufferGeometry().setFromPoints(points);
+        const line = new THREE.Line(geometry, gridMaterial.clone());
+        gridGroup.add(line);
+      }
+
+      scene.add(gridGroup);
 
       // Points group 초기화
       pointsGroup = new THREE.Group();
@@ -192,19 +220,160 @@ export default {
         scene.remove(functionCurve);
       }
 
-      const geometry = new THREE.BufferGeometry();
-      const points = [];
+      // Create a group to hold all function visualization elements
+      functionCurve = new THREE.Group();
 
-      const steps = 100;
-      for (let i = 0; i <= steps; i++) {
-        const x = bounds.value.xMin + (bounds.value.xMax - bounds.value.xMin) * i / steps;
-        const y = evaluateFunction(x, 0);
-        points.push(new THREE.Vector3(x, y, 0));
+      const steps = 50;
+      const xMin = bounds.value.xMin;
+      const xMax = bounds.value.xMax;
+      const yMin = bounds.value.yMin;
+      const yMax = bounds.value.yMax;
+
+      // Draw function boundaries and special contours
+      switch (selectedFunction.value) {
+
+        case 'ellipse':
+          // Draw ellipse x²/4 + y² ≤ 1 (horizontal radius=2, vertical radius=1)
+          const ellipseGeom = new THREE.RingGeometry(0.98, 1.02, 64);
+          ellipseGeom.scale(2, 1, 1); // Scale to make ellipse
+          const ellipseMat = new THREE.MeshBasicMaterial({ color: 0x00ff00, side: THREE.DoubleSide });
+          const ellipseRing = new THREE.Mesh(ellipseGeom, ellipseMat);
+          functionCurve.add(ellipseRing);
+          
+          // Draw filled ellipse
+          const ellipseFillGeom = new THREE.CircleGeometry(1, 64);
+          ellipseFillGeom.scale(2, 1, 1);
+          const ellipseFillMat = new THREE.MeshBasicMaterial({ 
+            color: 0x00ff00, 
+            side: THREE.DoubleSide,
+            transparent: true,
+            opacity: 0.1
+          });
+          const ellipseFill = new THREE.Mesh(ellipseFillGeom, ellipseFillMat);
+          functionCurve.add(ellipseFill);
+          break;
+
+        case 'diamond':
+          // Draw diamond |x| + |y| ≤ 2
+          const diamondPoints = [
+            new THREE.Vector3(2, 0, 0),   // right
+            new THREE.Vector3(0, 2, 0),   // top
+            new THREE.Vector3(-2, 0, 0),  // left
+            new THREE.Vector3(0, -2, 0),  // bottom
+            new THREE.Vector3(2, 0, 0)    // close
+          ];
+          const diamondGeom = new THREE.BufferGeometry().setFromPoints(diamondPoints);
+          const diamondMat = new THREE.LineBasicMaterial({ color: 0xff00ff, linewidth: 3 });
+          const diamondLine = new THREE.Line(diamondGeom, diamondMat);
+          functionCurve.add(diamondLine);
+          
+          // Draw filled diamond using triangle geometry
+          const diamondShape = new THREE.Shape();
+          diamondShape.moveTo(2, 0);
+          diamondShape.lineTo(0, 2);
+          diamondShape.lineTo(-2, 0);
+          diamondShape.lineTo(0, -2);
+          diamondShape.lineTo(2, 0);
+          
+          const diamondFillGeom = new THREE.ShapeGeometry(diamondShape);
+          const diamondFillMat = new THREE.MeshBasicMaterial({ 
+            color: 0xff00ff, 
+            side: THREE.DoubleSide,
+            transparent: true,
+            opacity: 0.1
+          });
+          const diamondFill = new THREE.Mesh(diamondFillGeom, diamondFillMat);
+          functionCurve.add(diamondFill);
+          break;
+
+        case 'sin_product':
+          // Draw regions where sin(x*y) >= 0 (positive regions)
+          const positivePoints = [];
+          const negativePoints = [];
+          const sampleStep = 0.1;
+          
+          for (let x = xMin; x <= xMax; x += sampleStep) {
+            for (let y = yMin; y <= yMax; y += sampleStep) {
+              const fValue = Math.sin(x * y);
+              if (fValue >= 0) {
+                positivePoints.push(new THREE.Vector3(x, y, 0));
+              } else {
+                negativePoints.push(new THREE.Vector3(x, y, 0));
+              }
+            }
+          }
+          
+          // Draw positive regions (where sin(x*y) >= 0) - these are "inside"
+          if (positivePoints.length > 0) {
+            const posGeometry = new THREE.BufferGeometry().setFromPoints(positivePoints);
+            const posMaterial = new THREE.PointsMaterial({ 
+              color: 0x0000ff, 
+              size: 0.05,
+              transparent: true,
+              opacity: 0.6
+            });
+            const posPoints = new THREE.Points(posGeometry, posMaterial);
+            functionCurve.add(posPoints);
+          }
+          
+          // Draw negative regions (where sin(x*y) < 0) - these are "outside" 
+          if (negativePoints.length > 0) {
+            const negGeometry = new THREE.BufferGeometry().setFromPoints(negativePoints);
+            const negMaterial = new THREE.PointsMaterial({ 
+              color: 0xff0000, 
+              size: 0.03,
+              transparent: true,
+              opacity: 0.3
+            });
+            const negPoints = new THREE.Points(negGeometry, negMaterial);
+            functionCurve.add(negPoints);
+          }
+          break;
+
+        case 'square':
+          // Draw threshold boundary for x^2 + y^2 <= 4
+          const threshold = 4.0;
+          const thresholdRadius = Math.sqrt(threshold);
+          if (thresholdRadius <= Math.min(Math.abs(xMax), Math.abs(yMax))) {
+            // Draw the main boundary circle (x^2 + y^2 = 4)
+            const boundaryGeometry = new THREE.RingGeometry(thresholdRadius - 0.05, thresholdRadius + 0.05, 64);
+            const boundaryMaterial = new THREE.MeshBasicMaterial({ 
+              color: 0x0000ff, 
+              side: THREE.DoubleSide,
+              transparent: true,
+              opacity: 0.8
+            });
+            const boundaryRing = new THREE.Mesh(boundaryGeometry, boundaryMaterial);
+            functionCurve.add(boundaryRing);
+
+            // Draw inner filled circle to show the "inside" region
+            const fillGeometry = new THREE.CircleGeometry(thresholdRadius, 64);
+            const fillMaterial = new THREE.MeshBasicMaterial({ 
+              color: 0x0000ff, 
+              side: THREE.DoubleSide,
+              transparent: true,
+              opacity: 0.1
+            });
+            const fillCircle = new THREE.Mesh(fillGeometry, fillMaterial);
+            functionCurve.add(fillCircle);
+          }
+          break;
+
+        default:
+          // Fallback to simple line for y=0
+          const points = [];
+          for (let i = 0; i <= steps; i++) {
+            const x = xMin + (xMax - xMin) * i / steps;
+            const y = evaluateFunction(x, 0);
+            points.push(new THREE.Vector3(x, y, 0));
+          }
+          const geometry = new THREE.BufferGeometry().setFromPoints(points);
+          const material = new THREE.LineBasicMaterial({ color: 0x0000ff, linewidth: 3 });
+          const line = new THREE.Line(geometry, material);
+          functionCurve.add(line);
+          break;
       }
 
-      geometry.setFromPoints(points);
-      const material = new THREE.LineBasicMaterial({ color: 0x0000ff, linewidth: 3 });
-      functionCurve = new THREE.Line(geometry, material);
       scene.add(functionCurve);
     };
 
@@ -212,14 +381,15 @@ export default {
     const evaluateFunction = (x, y) => {
       switch (selectedFunction.value) {
         case 'square':
-          return x * x + y * y;
+          return (x * x + y * y <= 4.0) ? 1 : 0;
         case 'sin_product':
           return Math.sin(x * y);
-        case 'circle':
-          const r = Math.sqrt(x * x + y * y);
-          return r <= 1 ? Math.sqrt(1 - x * x - y * y) : 0;
+        case 'ellipse':
+          return (x * x / 4.0 + y * y <= 1.0) ? 1 : 0;
+        case 'diamond':
+          return (Math.abs(x) + Math.abs(y) <= 2.0) ? 1 : 0;
         default:
-          return x * x + y * y;
+          return (x * x + y * y <= 4.0) ? 1 : 0;
       }
     };
 
@@ -347,8 +517,37 @@ export default {
       cleanup();
     });
 
+    // --- Function-specific bounds setup ---
+    const adjustBoundsForFunction = (functionType) => {
+      switch (functionType) {
+        case 'square':
+          // 원형 x² + y² ≤ 4, 반지름 2, [-2,2] x [-2,2]
+          bounds.value = { xMin: -2, xMax: 2, yMin: -2, yMax: 2 };
+          break;
+        case 'ellipse':
+          // 타원  x²/4 + y² ≤ 1, [-2.5,2.5] x [-1.5,1.5]
+          bounds.value = { xMin: -2.5, xMax: 2.5, yMin: -1.5, yMax: 1.5 };
+          break;
+        case 'diamond':
+          // 다이아 모양, 절대 값 범위 |x| + |y| ≤ 2,  [-2.5,2.5] x [-2.5,2.5]
+          bounds.value = { xMin: -2.5, xMax: 2.5, yMin: -2.5, yMax: 2.5 };
+          break;
+        case 'sin_product':
+          // 1사분면, 3사분면 렌더 
+          bounds.value = { xMin: -2, xMax: 2, yMin: -2, yMax: 2 };
+          break;
+        default:
+          bounds.value = { xMin: -2, xMax: 2, yMin: -2, yMax: 2 };
+      }
+    };
+
     // --- Watchers ---
-    watch([selectedFunction, bounds], () => {
+    watch(selectedFunction, (newFunction) => {
+      adjustBoundsForFunction(newFunction);
+      drawFunctionCurve();
+    });
+
+    watch(bounds, () => {
       drawFunctionCurve();
     });
 
