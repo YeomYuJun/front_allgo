@@ -24,12 +24,8 @@
                 <button @click="setPresetPoints('linear')">직선 (2점)</button>
                 <button @click="setPresetPoints('quadratic')">2차 (3점)</button>
                 <button @click="setPresetPoints('cubic')">3차 (4점)</button>
-                <button @click="setPresetPoints('quintic')">5차 (6점)</button>
+                <button @click="setPresetPoints('quintic')">5차 (6점) - 최대</button>
               </div>
-            </div>
-            <div class="control-component">
-              <label>곡선 해상도: {{ resolution }}</label>
-              <input type="range" v-model.number="resolution" min="20" max="200" step="10" />
             </div>
             <div class="control-component">
               <label>드래그로 제어점 이동 가능</label>
@@ -50,7 +46,7 @@
             </div>
             <div class="control-component">
               <label>애니메이션 속도: {{ animationSpeed }}ms</label>
-              <input type="range" v-model.number="animationSpeed" min="50" max="2000" step="50" />
+              <input type="range" v-model.number="animationSpeed" min="50" max="500" step="50" />
             </div>
             <div class="control-component">
               <button @click="startAnimation" :disabled="isAnimating">
@@ -84,14 +80,8 @@
           <h3>고급 기능</h3>
           <div class="control-builder">
             <div class="control-component">
-              <button @click="calculateDerivative" :disabled="controlPoints.length < 2">
-                도함수 곡선 표시
-              </button>
-              <button @click="elevateDegree" :disabled="controlPoints.length < 2">
-                차수 상승
-              </button>
-              <button @click="toggleDerivative">
-                {{ showDerivative ? '도함수 숨기기' : '도함수 보기' }}
+              <button @click="elevateDegree" :disabled="controlPoints.length < 2 || controlPoints.length >= 6">
+                차수 상승 (최대 5차)
               </button>
             </div>
           </div>
@@ -119,11 +109,9 @@ export default {
     const resolution = ref(100);
     const tParameter = ref(0.5);
     const showConstructionLines = ref(true);
-    const animationSpeed = ref(500);
+    const animationSpeed = ref(250);
     const isAnimating = ref(false);
     const bezierResult = ref(null);
-    const showDerivative = ref(false);
-    const derivativeResult = ref(null);
     const curveLength = ref(0);
 
     // --- Three.js 관련 객체 ---
@@ -136,14 +124,13 @@ export default {
     let controlPointsGroup = null;
     let constructionGroup = null;
     let currentPointMarker = null;
-    let derivativeGroup = null;
     let isDragging = false;
     let selectedControlPoint = null;
     let raycaster = null;
     let mouse = null;
 
     // API URL
-    const API_BASE_URL = `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'}/api/bezier`;
+    const API_BASE_URL = `${import.meta.env.VITE_API_BASE_URL || '/api'}/bezier`;
 
     // --- API 호출 함수들 ---
     const generateBezierCurve = async () => {
@@ -171,30 +158,6 @@ export default {
       }
     };
 
-    const calculateDerivativeAPI = async () => {
-      try {
-        const requestData = {
-          controlPoints: controlPoints.value,
-          resolution: resolution.value,
-          tParameter: tParameter.value,
-          showConstructionLines: false
-        };
-
-        const response = await fetch(`${API_BASE_URL}/derivative`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(requestData)
-        });
-
-        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-        return await response.json();
-      } catch (error) {
-        console.error('Error calculating derivative:', error);
-        return null;
-      }
-    };
 
     const elevateDegreeAPI = async () => {
       try {
@@ -253,11 +216,9 @@ export default {
       curveGroup = new THREE.Group();
       controlPointsGroup = new THREE.Group();
       constructionGroup = new THREE.Group();
-      derivativeGroup = new THREE.Group();
       scene.add(curveGroup);
       scene.add(controlPointsGroup);
       scene.add(constructionGroup);
-      scene.add(derivativeGroup);
 
       // 마우스 이벤트 추가
       renderer.domElement.addEventListener('mousedown', onMouseDown);
@@ -431,39 +392,13 @@ export default {
       }
     };
 
-    // --- 도함수 계산 및 표시 ---
-    const calculateDerivative = async () => {
-      const result = await calculateDerivativeAPI();
-      if (result) {
-        derivativeResult.value = result;
-        showDerivative.value = true;
-        drawDerivativeCurve(result);
-      }
-    };
-
-    const drawDerivativeCurve = (result) => {
-      derivativeGroup.clear();
-
-      if (!result.curvePoints || result.curvePoints.length === 0) return;
-
-      const points = result.curvePoints.map(p => new THREE.Vector3(p.x, p.y, 0));
-      const geometry = new THREE.BufferGeometry().setFromPoints(points);
-      const material = new THREE.LineBasicMaterial({ color: 0xff6600, linewidth: 2 });
-      const curve = new THREE.Line(geometry, material);
-      derivativeGroup.add(curve);
-    };
-
-    const toggleDerivative = () => {
-      showDerivative.value = !showDerivative.value;
-      if (showDerivative.value && derivativeResult.value) {
-        drawDerivativeCurve(derivativeResult.value);
-      } else {
-        derivativeGroup.clear();
-      }
-    };
 
     // --- 차수 상승 ---
     const elevateDegree = async () => {
+      if (controlPoints.value.length >= 6) {
+        console.warn('최대 차수(5차, 6점)에 도달했습니다.');
+        return;
+      }
       const result = await elevateDegreeAPI();
       if (result) {
         controlPoints.value = result;
@@ -517,10 +452,12 @@ export default {
       let animationT = 0;
       const step = 0.01;
       
-      const animateStep = () => {
+      const animateStep = async () => {
         if (!isAnimating.value) return;
         
         tParameter.value = animationT;
+        await updateBezierCurve();
+        
         animationT += step;
         
         if (animationT > 1) {
@@ -541,8 +478,6 @@ export default {
       stopAnimation();
       tParameter.value = 0.5;
       showConstructionLines.value = true;
-      showDerivative.value = false;
-      derivativeGroup.clear();
       setPresetPoints('cubic');
     };
 
@@ -578,11 +513,9 @@ export default {
 
     // --- Watchers ---
     watch([tParameter, showConstructionLines], () => {
-      updateBezierCurve();
-    });
-
-    watch(resolution, () => {
-      updateBezierCurve();
+      if (!isAnimating.value) {
+        updateBezierCurve();
+      }
     });
 
     return {
@@ -594,15 +527,12 @@ export default {
       animationSpeed,
       isAnimating,
       bezierResult,
-      showDerivative,
       curveLength,
       setPresetPoints,
       startAnimation,
       stopAnimation,
       resetCurve,
-      calculateDerivative,
-      elevateDegree,
-      toggleDerivative
+      elevateDegree
     };
   }
 };

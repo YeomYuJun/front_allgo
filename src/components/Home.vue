@@ -55,7 +55,7 @@
             <!-- algorithn -->
             <v-row justify="center" align="center" class="navigation-links">
                 <!-- 3d -->
-                <v-col cols="12" md="3">
+                <v-col cols="12" sm="6" md="4">
                     <v-card class="pa-3" outlined tile>
                         <v-card-title class="justify-center">3D Function Plotter</v-card-title>
                         <v-card-text class="text-center">
@@ -70,7 +70,7 @@
                 </v-col>
 
                 <!-- 볼록함수 -->
-                <v-col cols="12" md="3">
+                <v-col cols="12" sm="6" md="4">
                     <v-card class="pa-3" outlined tile>
                         <v-card-title class="justify-center">Convex Function</v-card-title>
                         <v-card-text class="text-center">
@@ -85,7 +85,7 @@
                 </v-col>
 
                 <!-- FFT -->
-                <v-col cols="12" md="3">
+                <v-col cols="12" sm="6" md="4">
                     <v-card class="pa-3" outlined tile>
                         <v-card-title class="justify-center">Fourier Transform</v-card-title>
                         <v-card-text class="text-center">
@@ -100,7 +100,7 @@
                 </v-col>
 
                 <!-- 프랙탈 -->
-                <v-col cols="12" md="3">
+                <v-col cols="12" sm="6" md="4">
                     <v-card class="pa-3" outlined tile>
                         <v-card-title class="justify-center">Fractal</v-card-title>
                         <v-card-text class="text-center">
@@ -115,7 +115,7 @@
                 </v-col>
 
                 <!-- Monte Carlo Integration -->
-                <v-col cols="12" md="3">
+                <v-col cols="12" sm="6" md="4">
                     <v-card class="pa-3" outlined tile>
                         <v-card-title class="justify-center">Monte Carlo</v-card-title>
                         <v-card-text class="text-center">
@@ -124,6 +124,21 @@
                         <v-card-actions class="justify-center">
                              <v-btn color="primary" @click="navigateTo('/monte-carlo')">
                                 Go to Monte Carlo
+                            </v-btn>
+                        </v-card-actions>
+                    </v-card>
+                </v-col>
+
+                <!-- Bezier Curves -->
+                <v-col cols="12" sm="6" md="4">
+                    <v-card class="pa-3" outlined tile>
+                        <v-card-title class="justify-center">Bezier Curves</v-card-title>
+                        <v-card-text class="text-center">
+                            Interactive Bezier curve generation and analysis.
+                        </v-card-text>
+                        <v-card-actions class="justify-center">
+                             <v-btn color="primary" @click="navigateTo('/bezier')">
+                                Go to Bezier Curves
                             </v-btn>
                         </v-card-actions>
                     </v-card>
@@ -138,61 +153,17 @@
             </v-row>
             <!-- 정렬 -->
             <v-row justify="center" align="center" class="navigation-links">
-                <!-- Bubble -->
-                <v-col cols="12" md="3" v-if="false">
-                    <v-card class="pa-3" outlined tile>
-                        <v-card-title class="justify-center">Bubble Sort</v-card-title>
+                <!-- Coming Soon Card -->
+                <v-col cols="12" sm="6" md="4">
+                    <v-card class="pa-3 coming-soon-card" outlined tile>
+                        <v-card-title class="justify-center">Sorting Algorithms</v-card-title>
                         <v-card-text class="text-center">
-                            Compare adjacent elements and swap if needed.
+                            Various sorting algorithm visualizations coming soon.<br>
+                            Please stay tuned for updates!
                         </v-card-text>
                         <v-card-actions class="justify-center">
-                            <v-btn color="primary" @click="navigateTo('/')">
-                                Go to Bubble Sort
-                            </v-btn>
-                        </v-card-actions>
-                    </v-card>
-                </v-col>
-
-                <!-- Quick -->
-                <v-col cols="12" md="3" v-if="false">
-                    <v-card class="pa-3" outlined tile>
-                        <v-card-title class="justify-center">Quick Sort</v-card-title>
-                        <v-card-text class="text-center">
-                            Pick a pivot and partition around it.
-                        </v-card-text>
-                        <v-card-actions class="justify-center">
-                            <v-btn color="primary" @click="navigateTo('/')">
-                                Go to Quick Sort
-                            </v-btn>
-                        </v-card-actions>
-                    </v-card>
-                </v-col>
-                
-                <!-- Merge -->
-                <v-col cols="12" md="3" v-if="false">
-                    <v-card class="pa-3" outlined tile>
-                        <v-card-title class="justify-center">Merge Sort</v-card-title>
-                        <v-card-text class="text-center">
-                            Divide into halves and merge them sorted.
-                        </v-card-text>
-                        <v-card-actions class="justify-center">
-                            <v-btn color="primary" @click="navigateTo('/')">
-                                Go to Merge Sort
-                            </v-btn>
-                        </v-card-actions>
-                    </v-card>
-                </v-col>
-
-                <!-- Heap -->
-                <v-col cols="12" md="3" v-if="false">
-                    <v-card class="pa-3" outlined tile>
-                        <v-card-title class="justify-center">Heap Sort</v-card-title>
-                        <v-card-text class="text-center">
-                            Build a heap and extract the maximum repeatedly.
-                        </v-card-text>
-                        <v-card-actions class="justify-center">
-                             <v-btn color="primary" @click="navigateTo('/')">
-                                Go to Heap Sort
+                            <v-btn color="grey lighten-1" disabled>
+                                Coming Soon
                             </v-btn>
                         </v-card-actions>
                     </v-card>
@@ -354,5 +325,19 @@ const navigateTo = (path) => {
     .navigation-links .v-card:hover {
         transform: translateY(-5px);
         box-shadow: 0 4px 20px rgba(0,0,0,0.1) !important;
+    }
+
+    /* Coming Soon Card 스타일 */
+    .coming-soon-card {
+        background-color: #f5f5f5 !important;
+        border-color: #e0e0e0 !important;
+    }
+    
+    .coming-soon-card .v-card-title {
+        color: #9e9e9e !important;
+    }
+    
+    .coming-soon-card .v-card-text {
+        color: #757575 !important;
     }
 </style>

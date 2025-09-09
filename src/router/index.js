@@ -8,6 +8,7 @@ import FFT from '../components/FFT.vue';
 import Fractal from '../components/Fractal.vue';
 import SaddleFunction from '../components/SaddleFunction.vue';
 import MonteCarloVisualization from '../components/MonteCarloVisualization.vue';
+import BezierVisualization from '../components/BezierVisualization.vue';
 // 필요하다면 다른 컴포넌트들도 임포트
 // import FourierTransformVisualizer from '../components/FourierTransformVisualizer.vue';
 // import SortingVisualizer from '../components/SortingVisualizer.vue';
@@ -48,14 +49,23 @@ const routes = [
     name: 'MonteCarlo',
     component: MonteCarloVisualization,
   },
+  {
+    path: '/bezier',
+    name: 'Bezier',
+    component: BezierVisualization,
+  },
   // {
   //   path: '/quick-sort',
   //   name: 'QuickSort',
   //   component: QuickSort,
   // },
   
-  
-  
+  // Catch-all route for undefined paths - must be at the end
+  {
+    path: '/:pathMatch(.*)*',
+    name: 'NotFound',
+    redirect: '/',
+  },
 ];
 
 const router = createRouter({
