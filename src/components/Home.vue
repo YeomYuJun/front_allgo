@@ -69,8 +69,8 @@
                     </v-card>
                 </v-col>
 
-                <!-- 볼록함수 -->
-                <v-col cols="12" sm="6" md="4">
+                <!-- 볼록함수 - 주석처리됨 -->
+                <!-- <v-col cols="12" sm="6" md="4">
                     <v-card class="pa-3" outlined tile>
                         <v-card-title class="justify-center">Convex Function</v-card-title>
                         <v-card-text class="text-center">
@@ -82,7 +82,7 @@
                             </v-btn>
                         </v-card-actions>
                     </v-card>
-                </v-col>
+                </v-col> -->
 
                 <!-- FFT -->
                 <v-col cols="12" sm="6" md="4">
