@@ -136,18 +136,52 @@
     
     
 
-    <!-- 인사이트 패널 -->
-    <div class="insights-panel">
-      <h3>인사이트</h3>
-      <div class="insight-content">
-        <div v-if="insights.length > 0">
-          <div v-for="insight in insights" :key="insight.id" class="insight-item">
-            <h4>{{ insight.title }}</h4>
-            <p>{{ insight.description }}</p>
+    <!-- FFT 변환 개념 설명 패널 -->
+    <div class="explanation-panel">
+      <h3>FFT (Fast Fourier Transform) 변환 과정</h3>
+      <div class="explanation-content">
+        <div class="transformation-step">
+          <h4>1. 시간 도메인 → 복소평면 (신호 감기)</h4>
+          <div class="math-formula">
+            <strong>신호 감기:</strong> z(t) = f(t) × e^(-i2πωt) = f(t) × [cos(2πωt) - i×sin(2πωt)]
           </div>
+          <p><strong>핵심 개념:</strong> 시간 도메인 신호를 특정 주파수로 복소평면에서 회전시키면서 감습니다.</p>
+          <ul>
+            <li><strong>공명 현상:</strong> 신호의 주파수와 감는 주파수가 일치하면 한 방향으로 누적</li>
+            <li><strong>상쇄 현상:</strong> 주파수가 다르면 복소평면에서 원형으로 분산되어 상쇄</li>
+          </ul>
         </div>
-        <div v-else>
-          <p>주파수를 조절하여 신호가 어떻게 감기는지 관찰해보세요!</p>
+        
+        <div class="transformation-step">
+          <h4>2. 복소평면 → 주파수 도메인 (질량 중심)</h4>
+          <div class="math-formula">
+            <strong>질량 중심:</strong> CoM = (1/T) × ∫₀ᵀ f(t) × e^(-i2πωt) dt
+          </div>
+          <p><strong>FFT 결과:</strong> 각 주파수에서의 질량 중심의 크기가 해당 주파수 성분의 강도를 나타냅니다.</p>
+          <ul>
+            <li><strong>크기 (Magnitude):</strong> |CoM| = √(실수부² + 허수부²)</li>
+            <li><strong>위상 (Phase):</strong> ∠CoM = arctan(허수부/실수부)</li>
+            <li><strong>주파수 스펙트럼:</strong> 모든 주파수에 대한 크기를 플롯한 결과</li>
+          </ul>
+        </div>
+        
+        <div class="transformation-step">
+          <h4>3. 수학적 직관</h4>
+          <p><strong>왜 이 방법이 작동하는가?</strong></p>
+          <ul>
+            <li><strong>직교성:</strong> 서로 다른 주파수의 복소 지수함수들은 서로 직교</li>
+            <li><strong>선형성:</strong> 여러 주파수가 섞인 신호는 각각의 기여도로 분해 가능</li>
+            <li><strong>오일러 공식:</strong> e^(iθ) = cos(θ) + i×sin(θ)로 회전을 복소수로 표현</li>
+          </ul>
+        </div>
+        
+        <div class="practical-tips">
+          <h4>💡 실습 팁</h4>
+          <ul>
+            <li><strong>주파수 스윕:</strong> 감는 주파수를 조절하여 각 성분이 어떻게 드러나는지 관찰</li>
+            <li><strong>다중 주파수:</strong> 여러 주파수 성분을 추가하여 스펙트럼 변화 확인</li>
+            <li><strong>애니메이션:</strong> 시간에 따른 복소평면에서의 점 움직임 관찰</li>
+          </ul>
         </div>
       </div>
     </div>
@@ -1506,28 +1540,79 @@ export default {
   flex-direction: column;
 }
 
-.insights-panel {
-  background-color: #e3f2fd;
-  padding: 20px;
+.explanation-panel {
+  background-color: #f8f9fa;
+  padding: 25px;
   border-radius: 8px;
   border-left: 4px solid #2196f3;
+  margin-top: 20px;
 }
 
-.insights-panel h3 {
+.explanation-panel h3 {
   margin-top: 0;
   color: #1976d2;
+  font-size: 1.25em;
+  margin-bottom: 20px;
 }
 
-.insight-item {
-  margin-bottom: 15px;
-  padding: 10px;
-  background-color: white;
+.explanation-content {
+  line-height: 1.6;
+  color: #495057;
+}
+
+.transformation-step {
+  margin-bottom: 20px;
+  padding: 15px;
+  background-color: #ffffff;
+  border-radius: 6px;
+  border-left: 3px solid #4caf50;
+}
+
+.transformation-step h4 {
+  margin-top: 0;
+  margin-bottom: 12px;
+  color: #1976d2;
+  font-size: 1.1em;
+}
+
+.math-formula {
+  background-color: #e7f3ff;
+  padding: 12px;
   border-radius: 4px;
+  margin: 10px 0;
+  border-left: 4px solid #007bff;
+  font-family: 'Courier New', monospace;
+  font-size: 14px;
 }
 
-.insight-item h4 {
+.explanation-content ul {
+  margin: 10px 0;
+  padding-left: 20px;
+}
+
+.explanation-content li {
+  margin: 6px 0;
+  line-height: 1.5;
+}
+
+.explanation-content strong {
+  color: #343a40;
+  font-weight: 600;
+}
+
+.practical-tips {
+  background-color: #fff3cd;
+  border: 1px solid #ffeaa7;
+  border-radius: 6px;
+  padding: 15px;
+  margin-top: 15px;
+}
+
+.practical-tips h4 {
   margin-top: 0;
-  color: #1976d2;
+  margin-bottom: 12px;
+  color: #856404;
+  font-size: 1.1em;
 }
 
 .section-r {

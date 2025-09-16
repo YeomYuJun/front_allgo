@@ -1,7 +1,7 @@
 <template>
   <section class="monte-carlo-container container">
     <div>
-      <h2 class="tit">Monte Carlo Integration 시각화</h2>
+      <h2 class="tit">Monte Carlo Integration Visualization</h2>
     </div>
     <section class="container-wrap">
       <!-- 좌측: 2D 시각화 -->
@@ -10,6 +10,28 @@
           <div class="viz-panel monte-carlo-2d-panel grid-fr">
             <h4>Monte Carlo Integration 시뮬레이션</h4>
             <div ref="threeContainer" class="viz-container three-container"></div>
+          </div>
+          <div class="explanation-panel">
+            <h4>몬테카를로 적분이란?</h4>
+            <div class="explanation-content">
+              <div class="math-formula">
+                <strong>수학적 원리:</strong> ∫f(x)dx ≈ (b-a) × (1/N) × Σf(xi), xi는 [a,b]에서 균등분포 랜덤샘플
+              </div>
+              <p><strong>핵심 아이디어:</strong></p>
+              <ul>
+                <li><strong>확률론적 접근:</strong> 함수 곡선 아래 영역에 랜덤점을 둘어 영역 비율로 적분값 추정</li>
+                <li><strong>대수의 법칙:</strong> 랜덤 샘플 개수 N이 증가할수록 참값에 수렴</li>
+                <li><strong>빨간 점:</strong> 함수 내부(영역 내부)에 위치하는 점들</li>
+                <li><strong>파란 점:</strong> 함수 외부(영역 외부)에 위치하는 점들</li>
+              </ul>
+              <p><strong>수렴 특성:</strong></p>
+              <ul>
+                <li><strong>수렴속도:</strong> O(1/√N), N이 4배 늘면 오차가 절반으로 감소</li>
+                <li><strong>차원의 저주 극복:</strong> 고차원 적분에서도 수렴속도 동일</li>
+                <li><strong>수치적 안정성:</strong> 복잡한 형태의 영역에서도 로버스하게 작동</li>
+              </ul>
+              <p><strong>응용 분야:</strong> 금융 리스크 분석, 물리 시뮬레이션, 기계학습 샘플링, 고차원 적분</p>
+            </div>
           </div>
         </div>
       </section>
@@ -638,6 +660,51 @@ export default {
   gap: 20px;
   margin-bottom: 20px;
   min-height: 600px;
+}
+
+.explanation-panel {
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  padding: 20px;
+  margin-top: 15px;
+  border: 1px solid #e9ecef;
+}
+
+.explanation-panel h4 {
+  margin-top: 0;
+  color: #495057;
+  border-bottom: 2px solid #6c757d;
+  padding-bottom: 8px;
+}
+
+.explanation-content {
+  line-height: 1.6;
+  color: #495057;
+}
+
+.math-formula {
+  background-color: #e7f3ff;
+  padding: 12px;
+  border-radius: 4px;
+  margin: 10px 0;
+  border-left: 4px solid #007bff;
+  font-family: 'Courier New', monospace;
+  font-size: 14px;
+}
+
+.explanation-content ul {
+  margin: 10px 0;
+  padding-left: 20px;
+}
+
+.explanation-content li {
+  margin: 8px 0;
+  line-height: 1.5;
+}
+
+.explanation-content strong {
+  color: #343a40;
+  font-weight: 600;
 }
 
 .grid-fr {

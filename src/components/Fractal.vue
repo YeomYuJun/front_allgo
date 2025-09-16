@@ -1,7 +1,7 @@
 <template>
   <section class="fractal-desc-container container">
     <div>
-      <h2 class="tit">프랙탈 시각화</h2>
+      <h2 class="tit">Fractal Visualization</h2>
     </div>
     <section class="container-wrap">
       <!-- 좌측: 프랙탈 시각화 -->
@@ -16,6 +16,35 @@
                 <div class="spinner"></div>
                 <p>프랙탈 계산 중...</p>
               </div>
+          </div>
+          <div class="explanation-panel">
+            <h4>프랙탈이란?</h4>
+            <div class="explanation-content">
+              <div class="math-formula">
+                <strong>만델브로트 집합:</strong> zₙ₊₁ = zₙ² + c, 수렴 테스트: |zₙ| ≤ 2
+              </div>
+              <p><strong>프랙탈의 특징:</strong></p>
+              <ul>
+                <li><strong>자기 유사성:</strong> 부분이 전체와 비슷한 구조를 가짐 (다양한 스케일에서 반복)</li>
+                <li><strong>무한 복잡성:</strong> 아무리 확대해도 차이고 복잡한 세부 구조</li>
+                <li><strong>분수 차원:</strong> 1차원과 2차원 사이의 비정수 차원</li>
+                <li><strong>수학적 아름다움:</strong> 간단한 공식에서 무한한 아름다움</li>
+              </ul>
+              <p><strong>만델브로트 vs 줄리아 집합:</strong></p>
+              <ul>
+                <li><strong>만델브로트:</strong> c가 매개변수, 항상 z₀ = 0에서 시작</li>
+                <li><strong>줄리아:</strong> c가 고정 상수, z₀가 매개변수</li>
+                <li><strong>수렴 조건:</strong> 반복 시 |zₙ| ≤ 2 바운드 내에 머물는 지</li>
+                <li><strong>색상 코딩:</strong> 발산 속도에 따라 색상 부여</li>
+              </ul>
+              <p><strong>컴퓨터 생성 방법:</strong></p>
+              <ul>
+                <li><strong>이스케이프 타임:</strong> 각 점에서 발산 속도 측정</li>
+                <li><strong>복소평면 매핑:</strong> 2D 화면을 복소수 평면으로 매핑</li>
+                <li><strong>매개변수 스카닝:</strong> 해상도만큼 복소수 평면을 샘플링</li>
+              </ul>
+              <p><strong>수학적 응용:</strong> 복소 동역학계, 처오스 이론, 물리 시뮬레이션, 컴퓨터 그래픽스</p>
+            </div>
           </div>
         </div>
       </section>
@@ -961,6 +990,51 @@ export default {
   gap: 20px;
   margin-bottom: 20px;
   min-height: 600px;
+}
+
+.explanation-panel {
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  padding: 20px;
+  margin-top: 15px;
+  border: 1px solid #e9ecef;
+}
+
+.explanation-panel h4 {
+  margin-top: 0;
+  color: #495057;
+  border-bottom: 2px solid #6c757d;
+  padding-bottom: 8px;
+}
+
+.explanation-content {
+  line-height: 1.6;
+  color: #495057;
+}
+
+.math-formula {
+  background-color: #e7f3ff;
+  padding: 12px;
+  border-radius: 4px;
+  margin: 10px 0;
+  border-left: 4px solid #007bff;
+  font-family: 'Courier New', monospace;
+  font-size: 14px;
+}
+
+.explanation-content ul {
+  margin: 10px 0;
+  padding-left: 20px;
+}
+
+.explanation-content li {
+  margin: 8px 0;
+  line-height: 1.5;
+}
+
+.explanation-content strong {
+  color: #343a40;
+  font-weight: 600;
 }
 .grid-fr {
   grid-column: 1 / 3;

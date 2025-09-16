@@ -1,7 +1,7 @@
 <template>
   <section class="gra-desc-container container">
     <div>
-      <h2 class="tit">안장점 함수 3D 시각화</h2>
+      <h2 class="tit">3D Function Visualization & Gradient Descent</h2>
     </div>
     <section class="container-wrap">
       <!-- 좌측: 3D 시각화 -->
@@ -10,6 +10,35 @@
           <div class="viz-panel gra-3d-panel grid-fr">
             <h4>3D 함수 그래프</h4>
             <div ref="threeContainer" class="viz-container three-container"></div>
+          </div>
+          <div class="explanation-panel">
+            <h4>경사 하강법이란?</h4>
+            <div class="explanation-content">
+              <div class="math-formula">
+                <strong>알고리즘:</strong> xₙ₊₁ = xₙ - α ∇f(xₙ), α = 학습률 (learning rate)
+              </div>
+              <p><strong>핵심 개념:</strong></p>
+              <ul>
+                <li><strong>그래디언트(∇f):</strong> 함수가 가장 빠르게 증가하는 방향의 벡터</li>
+                <li><strong>반대 방향 이동:</strong> 최소값을 찾기 위해 그래디언트의 반대로 이돔</li>
+                <li><strong>학습률 α:</strong> 각 단계에서 얼마나 멀리 이동할지 결정</li>
+                <li><strong>반복 과정:</strong> 지역 최속가 수렴까지 반복</li>
+              </ul>
+              <p><strong>알고리즘 특성:</strong></p>
+              <ul>
+                <li><strong>좌지보편:</strong> 경사하강법은 현재 위치의 지역 정보만 사용</li>
+                <li><strong>안장점 문제:</strong> f(x,y) = x² - y² 같은 함수에서 방향에 따라 다른 경사</li>
+                <li><strong>학습률 의존성:</strong> 너무 크면 발산, 너무 작으면 느린 수렴</li>
+                <li><strong>지역 최적화:</strong> 전역 최소값을 보장하지 않음</li>
+              </ul>
+              <p><strong>시각화 요소:</strong></p>
+              <ul>
+                <li><strong>주황색 경로:</strong> 경사하강법의 이동 경로</li>
+                <li><strong>색상 코딩:</strong> 빨강(높음) ~ 파랑(낮음) 스팩트럼</li>
+                <li><strong>빨간 점:</strong> 안장점 (0,0,0) 위치 표시</li>
+              </ul>
+              <p><strong>응용 분야:</strong> 딥러닝 모델 학습, 머신러닝, 최적화 문제, 리더십 문제</p>
+            </div>
           </div>
         </div>
       </section>
@@ -682,6 +711,51 @@ export default {
   gap: 20px;
   margin-bottom: 20px;
   min-height: 600px;
+}
+
+.explanation-panel {
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  padding: 20px;
+  margin-top: 15px;
+  border: 1px solid #e9ecef;
+}
+
+.explanation-panel h4 {
+  margin-top: 0;
+  color: #495057;
+  border-bottom: 2px solid #6c757d;
+  padding-bottom: 8px;
+}
+
+.explanation-content {
+  line-height: 1.6;
+  color: #495057;
+}
+
+.math-formula {
+  background-color: #e7f3ff;
+  padding: 12px;
+  border-radius: 4px;
+  margin: 10px 0;
+  border-left: 4px solid #007bff;
+  font-family: 'Courier New', monospace;
+  font-size: 14px;
+}
+
+.explanation-content ul {
+  margin: 10px 0;
+  padding-left: 20px;
+}
+
+.explanation-content li {
+  margin: 8px 0;
+  line-height: 1.5;
+}
+
+.explanation-content strong {
+  color: #343a40;
+  font-weight: 600;
 }
 .grid-fr {
   grid-column: 1 / 3;

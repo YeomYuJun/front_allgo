@@ -1,7 +1,7 @@
 <template>
   <section class="bezier-container container">
     <div>
-      <h2 class="tit">Bezier Curves 시각화</h2>
+      <h2 class="tit">Bezier Curves Visualization</h2>
     </div>
     <section class="container-wrap">
       <!-- 좌측: 2D 시각화 -->
@@ -10,6 +10,28 @@
           <div class="viz-panel bezier-2d-panel grid-fr">
             <h4>Bezier Curves & De Casteljau 알고리즘</h4>
             <div ref="threeContainer" class="viz-container three-container"></div>
+          </div>
+          <div class="explanation-panel">
+            <h4>베지어 곡선이란?</h4>
+            <div class="explanation-content">
+              <div class="math-formula">
+                <strong>수학적 정의:</strong> B(t) = Σ(C(n,i) × (1-t)^(n-i) × t^i × Pi), t∈[0,1]
+              </div>
+              <p><strong>핵심 개념:</strong></p>
+              <ul>
+                <li><strong>베른슈타인 다항식:</strong> 제어점들을 가중평균으로 결합하여 부드러운 곡선 생성</li>
+                <li><strong>De Casteljau 알고리즘:</strong> 재귀적 선형보간으로 곡선점을 기하학적으로 계산</li>
+                <li><strong>제어점:</strong> 곡선의 형태를 결정하는 기준점들 (빨간 구체로 표시)</li>
+                <li><strong>t 파라미터:</strong> 0에서 1까지 변화하며 곡선 위의 점을 결정</li>
+              </ul>
+              <p><strong>수학적 특성:</strong></p>
+              <ul>
+                <li>첫 번째와 마지막 제어점을 반드시 통과</li>
+                <li>제어다각형 내부에 곡선이 유지됨 (Convex Hull Property)</li>
+                <li>무한히 부드러운 곡선 (C^∞ 연속성)</li>
+              </ul>
+              <p><strong>응용 분야:</strong> 컴퓨터 그래픽스, CAD 설계, 폰트 디자인, 애니메이션 경로</p>
+            </div>
           </div>
         </div>
       </section>
@@ -633,6 +655,51 @@ export default {
   gap: 20px;
   margin-bottom: 20px;
   min-height: 600px;
+}
+
+.explanation-panel {
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  padding: 20px;
+  margin-top: 15px;
+  border: 1px solid #e9ecef;
+}
+
+.explanation-panel h4 {
+  margin-top: 0;
+  color: #495057;
+  border-bottom: 2px solid #6c757d;
+  padding-bottom: 8px;
+}
+
+.explanation-content {
+  line-height: 1.6;
+  color: #495057;
+}
+
+.math-formula {
+  background-color: #e7f3ff;
+  padding: 12px;
+  border-radius: 4px;
+  margin: 10px 0;
+  border-left: 4px solid #007bff;
+  font-family: 'Courier New', monospace;
+  font-size: 14px;
+}
+
+.explanation-content ul {
+  margin: 10px 0;
+  padding-left: 20px;
+}
+
+.explanation-content li {
+  margin: 8px 0;
+  line-height: 1.5;
+}
+
+.explanation-content strong {
+  color: #343a40;
+  font-weight: 600;
 }
 
 .grid-fr {
