@@ -24,7 +24,7 @@
                         </div>
                         <div class="text_wrap textbox5">
                             <p class="text_qst">Where is AllGoMath</p>
-                            <p class="text_ans">www.allgomath.com</p>
+                            <p class="text_ans">allgomath.com</p>
                         </div>
                     </div>
                 </v-card>
@@ -139,6 +139,21 @@
                         <v-card-actions class="justify-center">
                              <v-btn color="primary" @click="navigateTo('/bezier')">
                                 Go to Bezier Curves
+                            </v-btn>
+                        </v-card-actions>
+                    </v-card>
+                </v-col>
+                <!-- Bezier Curves -->
+                <v-col cols="12" sm="6" md="4">
+                    <v-card class="pa-3 coming-soon-card" outlined tile>
+                        <v-card-title class="justify-center">Laplace Transform</v-card-title>
+                        <v-card-text class="text-center">
+                            See how Laplace Transform works.
+                        </v-card-text>
+                        <v-card-actions class="justify-center">
+                             <v-btn color="grey lighten-1" disabled @click="navigateTo('/laplace-transform')">
+                                <!-- Go to Laplace Transform -->
+                                Coming Soon
                             </v-btn>
                         </v-card-actions>
                     </v-card>
