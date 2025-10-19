@@ -1,5 +1,7 @@
 **AllgoMath Frontend**
 
+**Site** : [https://allgomath.com](https://allgomath.com/)
+
 Vue 3와 Three.js로 구현된 수학 알고리즘 시각화 클라이언트. 3D 수학 함수, 프랙탈, FFT, 경사하강법 등을 실시간으로 시각화하고 상호작용 가능.
 
 **Tech Stack**: Vue 3 + Vite + Three.js + Vuetify | **Backend**: [AllgoMath API](https://github.com/YeomYuJun/allgomath)
