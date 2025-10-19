@@ -89,8 +89,3 @@ npm run build
 - 반응형 캔버스 리사이징
 
 ---
-
-## 🔗 관련 링크
-
-- **Backend Repository**: https://github.com/YeomYuJun/allgomath
-- **Live Demo**: [https://allgomath.com](https://allgomath.com/)
