@@ -328,14 +328,17 @@ export default {
         
         // API 요청 시작
         
-        // PNG 이미지 URL 생성
+        // 이미지 URL 생성 (WebP 또는 PNG)
         const imageUrl = `${API_BASE_URL}/generate/image?${params}`;
-        // PNG 이미지를 fetch로 받아서 blob으로 변환
+        // 이미지를 fetch로 받아서 blob으로 변환
         const response = await fetch(imageUrl);
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         const blob = await response.blob();
+        const contentType = response.headers.get('content-type');
+
         // 이미지를 canvas에 그려서 ImageData 추출
         const img = await createImageBitmap(blob);
+
         const canvas = document.createElement('canvas');
         canvas.width = img.width;
         canvas.height = img.height;
@@ -377,7 +380,7 @@ export default {
     };
 
     // Three.js 초기화
-    const initThreeScene = () => {
+    const initThreeScene = () => {ㄸ
       if (!fractalContainer.value) return;
       
       scene = new THREE.Scene();
@@ -575,72 +578,98 @@ export default {
       let lastMouseX = 0;
       let lastMouseY = 0;
       let dragStartTime = 0;
-      
+      let hasMoved = false;
+      let accumulatedDeltaX = 0;
+      let accumulatedDeltaY = 0;
+
       // 마우스 다운
       renderer.domElement.addEventListener('mousedown', (e) => {
         isDragging = true;
+        hasMoved = false;
         lastMouseX = e.clientX;
         lastMouseY = e.clientY;
         dragStartTime = performance.now();
-        
+        accumulatedDeltaX = 0;
+        accumulatedDeltaY = 0;
+
+        // 드래그 시작 시 커서 변경
+        renderer.domElement.style.cursor = 'grabbing';
+
         // 기존 타이머 취소
         clearTimeouts();
       });
-      
+
       // 마우스 이동
       renderer.domElement.addEventListener('mousemove', (e) => {
         if (!isDragging) return;
-        
+
         const deltaX = e.clientX - lastMouseX;
         const deltaY = e.clientY - lastMouseY;
-        
-        // 민감도 임계값 - 줌 레벨에 따라 동적 조정 (32배부터 극도로 민감하게)
-        let sensitivity;
-        if (zoomLevel.value >= 32) {
-          sensitivity = 0.5; // 32배 이상에서 0.5픽셀로 극민감
-        } else if (zoomLevel.value >= 16) {
-          sensitivity = 1; // 16배 이상에서 1픽셀
-        } else {
-          sensitivity = 2; // 기본 2픽셀
-        }
-        if (Math.abs(deltaX) < sensitivity && Math.abs(deltaY) < sensitivity) return;
-        
+
+        // 최소 이동 임계값 (너무 민감하지 않게)
+        if (Math.abs(deltaX) < 1 && Math.abs(deltaY) < 1) return;
+
+        hasMoved = true;
+        accumulatedDeltaX += deltaX;
+        accumulatedDeltaY += deltaY;
+
         // 현재 표시 범위 계산
         const rangeX = viewBounds.value.xMax - viewBounds.value.xMin;
         const rangeY = viewBounds.value.yMax - viewBounds.value.yMin;
-        
-        // 픽셀 이동을 복소평면 좌표로 변환
+
+        // 픽셀 이동을 복소평면 좌표로 변환 (양자화 없이 부드럽게)
         const moveX = -deltaX / fractalContainer.value.clientWidth * rangeX;
         const moveY = deltaY / fractalContainer.value.clientHeight * rangeY;
-        
-        // 좌표를 정밀도에 맞게 둡기하여 업데이트
-        viewCenter.value.x = roundToGridPrecision(viewCenter.value.x + moveX);
-        viewCenter.value.y = roundToGridPrecision(viewCenter.value.y + moveY);
-        
+
+        viewCenter.value.x += moveX;
+        viewCenter.value.y += moveY;
+
         // 경계 업데이트
         updateViewBounds();
-        
+
         lastMouseX = e.clientX;
         lastMouseY = e.clientY;
-        
-        // 즉시 렌더링은 취소하고 디바운싱
-        clearTimeouts();
+
+        // 드래그 중에는 시각적 피드백 없이 좌표만 업데이트
+        // (드래그 끝날 때 새로운 프랙탈 렌더링)
       });
-      
-      // 마우스 업
-      renderer.domElement.addEventListener('mouseup', () => {
+
+      // 마우스 업 핸들러
+      const handleMouseUp = () => {
         if (isDragging) {
           isDragging = false;
-          const dragEndTime = performance.now();
-          const dragDuration = dragEndTime - dragStartTime;
-          
-          // 드래그가 끝난 후 지연 렌더링
-          renderTimeout = setTimeout(() => {
+          renderer.domElement.style.cursor = 'grab';
+
+          if (hasMoved) {
+            // 드래그 끝난 후 좌표 양자화 적용 (캐시 효율성)
+            viewCenter.value.x = roundToGridPrecision(viewCenter.value.x);
+            viewCenter.value.y = roundToGridPrecision(viewCenter.value.y);
+            updateViewBounds();
+
+            // 새로운 프랙탈 데이터 즉시 요청
             fetchFractalData();
-          }, dragDuration > 1000 ? 100 : 300); // 긴 드래그는 빠르게, 짧은 드래그는 여유롭게
+          }
+        }
+      };
+
+      renderer.domElement.addEventListener('mouseup', handleMouseUp);
+      // canvas 밖에서 mouseup 처리
+      document.addEventListener('mouseup', handleMouseUp);
+
+      // 마우스 진입/이탈 시 커서 변경
+      renderer.domElement.addEventListener('mouseenter', () => {
+        if (!isDragging) {
+          renderer.domElement.style.cursor = 'grab';
         }
       });
-      
+
+      renderer.domElement.addEventListener('mouseleave', () => {
+        renderer.domElement.style.cursor = 'default';
+      });
+
+      // 초기 커서 설정
+      renderer.domElement.style.cursor = 'grab';
+
       // 마우스 휠 (줌)
       renderer.domElement.addEventListener('wheel', (e) => {
         e.preventDefault();

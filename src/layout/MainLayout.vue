@@ -201,5 +201,9 @@ const currentYear = computed(() => new Date().getFullYear())
         flex-direction: column;
         gap: 8px;
     }
+    .content_wrapper{
+        margin-left: 10px;
+        margin-right: 10px;
+    }
 }
 </style>
