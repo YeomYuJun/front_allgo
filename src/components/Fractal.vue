@@ -250,22 +250,24 @@ export default {
       if (!autoQuality.value) {
         return quantizeResolution(baseResolution.value);
       }
-      
+
       /* IFS 프랙탈 해상도 계산 주석 처리
-      if (selectedFractalType.value === 'sierpinski' || 
+      if (selectedFractalType.value === 'sierpinski' ||
           selectedFractalType.value === 'barnsley') {
         return baseResolution.value;
       }
       */
-      
+
       let resolution = baseResolution.value;
-      
+
       if (zoomLevel.value > 1) {
-        const scaleFactor = 1 + Math.log10(zoomLevel.value) * 0.5;
+        // 고줌 레벨에서 더 적극적으로 해상도 증가
+        const scaleFactor = 1 + Math.log10(zoomLevel.value) * 0.7;
         resolution = Math.floor(resolution * scaleFactor);
       }
-      
-      return quantizeResolution(Math.min(1200, Math.max(200, resolution)));
+
+      // 최대 해상도를 2000px로 증가 (고줌 레벨 대응)
+      return quantizeResolution(Math.min(2000, Math.max(200, resolution)));
     };
 
     // 줌 레벨에 따른 반복 횟수 계산
@@ -273,22 +275,24 @@ export default {
       if (!autoQuality.value) {
         return quantizeIterations(iterations.value);
       }
-      
+
       /* IFS 프랙탈 반복 횟수 계산 주석 처리
-      if (selectedFractalType.value === 'sierpinski' || 
+      if (selectedFractalType.value === 'sierpinski' ||
           selectedFractalType.value === 'barnsley') {
         return Math.floor(iterations.value * Math.max(1, Math.sqrt(zoomLevel.value)));
       }
       */
-      
+
       let dynamicIterations = iterations.value;
-      
+
       if (zoomLevel.value > 1) {
-        const scaleFactor = 1 + Math.log10(zoomLevel.value) * 0.6;
+        // 고줌 레벨에서 더 많은 반복 필요 (격자 현상 방지)
+        const scaleFactor = 1 + Math.log10(zoomLevel.value) * 0.8;
         dynamicIterations = Math.floor(iterations.value * scaleFactor);
       }
-      
-      return quantizeIterations(Math.min(1000, dynamicIterations));
+
+      // 최대 반복 횟수를 1500으로 증가 (고줌 레벨 대응)
+      return quantizeIterations(Math.min(1500, dynamicIterations));
     };
 
     // 프랙탈 데이터 가져오기 - 중복 요청 방지 개선
@@ -380,7 +384,7 @@ export default {
     };
 
     // Three.js 초기화
-    const initThreeScene = () => {ㄸ
+    const initThreeScene = () => {
       if (!fractalContainer.value) return;
       
       scene = new THREE.Scene();
@@ -491,21 +495,23 @@ export default {
       render();
     };
 
-    // 파라미터 양자화 시스템 - 캐시 효율성 극대화 (좌표는 최소 0.01까지만)
+    // 파라미터 양자화 시스템 - 줌 레벨에 따른 적절한 정밀도
     const getCoordinatePrecision = () => {
       if (zoomLevel.value <= 1) return 0.1;
       if (zoomLevel.value <= 10) return 0.05;
-      if (zoomLevel.value <= 100) return 0.01; // 캐시 효율성을 위해 0.01까지만
-      if (zoomLevel.value <= 1000) return 0.01; // 고줌에서도 0.01 유지
-      return 0.01; // 모든 고줌 레벨에서 0.01 고정
+      if (zoomLevel.value <= 100) return 0.01;
+      if (zoomLevel.value <= 1000) return 0.001;
+      if (zoomLevel.value <= 10000) return 0.0001;
+      return 0.00001; // 매우 높은 줌 레벨
     };
-    
+
     const roundToGridPrecision = (value) => {
       const precision = getCoordinatePrecision();
       const rounded = Math.round(value / precision) * precision;
-      
-      // 캐시 효율성을 위해 소수점 둘째 자리까지만 (0.01 단위)
-      return Math.round(rounded * 100) / 100;
+
+      // 정밀도에 맞게 반올림
+      const decimals = Math.max(0, -Math.floor(Math.log10(precision)));
+      return Number(rounded.toFixed(decimals));
     };
     
     // 반복횟수 양자화
@@ -513,13 +519,14 @@ export default {
       if (iterations <= 50) return Math.ceil(iterations / 10) * 10;
       if (iterations <= 200) return Math.ceil(iterations / 25) * 25;
       if (iterations <= 500) return Math.ceil(iterations / 50) * 50;
-      return Math.ceil(iterations / 100) * 100;
+      if (iterations <= 1000) return Math.ceil(iterations / 100) * 100;
+      return Math.ceil(iterations / 200) * 200;
     };
     
     // 해상도 양자화
     const quantizeResolution = (resolution) => {
-      const standardResolutions = [200, 300, 400, 500, 600, 800, 1000, 1200];
-      return standardResolutions.reduce((prev, curr) => 
+      const standardResolutions = [200, 300, 400, 500, 600, 800, 1000, 1200, 1600, 2000];
+      return standardResolutions.reduce((prev, curr) =>
         Math.abs(curr - resolution) < Math.abs(prev - resolution) ? curr : prev
       );
     };
@@ -531,8 +538,8 @@ export default {
       if (zoom <= 8) return Math.pow(2, Math.round(Math.log2(zoom)));
       if (zoom <= 64) return Math.ceil(zoom / 4) * 4;
       if (zoom <= 512) return Math.ceil(zoom / 16) * 16;
-      if (zoom <= 4096) return Math.ceil(zoom / 64) * 64;
-      return 4096; // 최대값 고정
+      if (zoom <= 2048) return Math.ceil(zoom / 64) * 64;
+      return 2048; // 최대값 고정
     };
     
     // 캐시 시스템 및 중복 요청 방지
@@ -675,7 +682,7 @@ export default {
         e.preventDefault();
         
         const zoomFactor = e.deltaY > 0 ? 0.8 : 1.25;
-        const newZoom = Math.max(1, Math.min(4096, Math.round(zoomLevel.value * zoomFactor)));
+        const newZoom = Math.max(1, Math.min(2048, Math.round(zoomLevel.value * zoomFactor)));
         
         if (newZoom !== zoomLevel.value) {
           // 마우스 위치를 중심으로 줌
@@ -726,7 +733,7 @@ export default {
         viewCenter.value.x = viewCenter.value.x + mouseX * rangeX / 2;
         viewCenter.value.y = viewCenter.value.y + mouseY * rangeY / 2;
         
-        zoomLevel.value = Math.max(1, Math.min(4096, Math.round(zoomLevel.value * (e.shiftKey ? 0.5 : 2))));
+        zoomLevel.value = Math.max(1, Math.min(2048, Math.round(zoomLevel.value * (e.shiftKey ? 0.5 : 2))));
         updateViewBounds();
         
         currentResolution.value = calculateDynamicResolution();
@@ -758,7 +765,7 @@ export default {
           const distance = Math.sqrt(dx * dx + dy * dy);
           
           const scale = distance / touchStartDistance;
-          zoomLevel.value = Math.max(1, Math.min(4096, Math.round(zoomLevel.value * scale)));
+          zoomLevel.value = Math.max(1, Math.min(2048, Math.round(zoomLevel.value * scale)));
           touchStartDistance = distance;
           
           updateViewBounds();
