@@ -9,7 +9,8 @@ import Fractal from '../components/Fractal.vue';
 import SaddleFunction from '../components/SaddleFunction.vue';
 import MonteCarloVisualization from '../components/MonteCarloVisualization.vue';
 import BezierVisualization from '../components/BezierVisualization.vue';
-// 필요하다면 다른 컴포넌트들도 임포트
+import BFSVisualization from '../components/BFS.vue';
+
 // import FourierTransformVisualizer from '../components/FourierTransformVisualizer.vue';
 // import SortingVisualizer from '../components/SortingVisualizer.vue';
 
@@ -53,6 +54,11 @@ const routes = [
     path: '/bezier',
     name: 'Bezier',
     component: BezierVisualization,
+  },
+  {
+    path: '/bfs',
+    name: 'BFS',
+    component: BFSVisualization,
   },
   // {
   //   path: '/quick-sort',

@@ -69,21 +69,6 @@
                     </v-card>
                 </v-col>
 
-                <!-- 볼록함수 - 주석처리됨 -->
-                <!-- <v-col cols="12" sm="6" md="4">
-                    <v-card class="pa-3" outlined tile>
-                        <v-card-title class="justify-center">Convex Function</v-card-title>
-                        <v-card-text class="text-center">
-                            See how convex functions are composed of frequencies.
-                        </v-card-text>
-                        <v-card-actions class="justify-center">
-                            <v-btn color="primary" @click="navigateTo('/convex-function')">
-                                Go to Convex Function
-                            </v-btn>
-                        </v-card-actions>
-                    </v-card>
-                </v-col> -->
-
                 <!-- FFT -->
                 <v-col cols="12" sm="6" md="4">
                     <v-card class="pa-3" outlined tile>
@@ -143,7 +128,7 @@
                         </v-card-actions>
                     </v-card>
                 </v-col>
-                <!-- Bezier Curves -->
+                <!-- Laplace Transform -->
                 <v-col cols="12" sm="6" md="4">
                     <v-card class="pa-3 coming-soon-card" outlined tile>
                         <v-card-title class="justify-center">Laplace Transform</v-card-title>
@@ -154,6 +139,28 @@
                              <v-btn color="grey lighten-1" disabled @click="navigateTo('/laplace-transform')">
                                 <!-- Go to Laplace Transform -->
                                 Coming Soon
+                            </v-btn>
+                        </v-card-actions>
+                    </v-card>
+                </v-col>
+            </v-row>
+
+            <v-row justify="center" class="text-center mt-5 mb-5">
+                <v-col cols="12">
+                    <h2>Explore Algorithms</h2>
+                    <p>Choose an Algorithm visualization to start.</p>
+                </v-col>
+            </v-row>
+            <v-row justify="center" align="center" class="navigation-links">
+                <v-col cols="12" sm="6" md="4">
+                    <v-card class="pa-3" outlined tile>
+                        <v-card-title class="justify-center">BFS(Breadth First Search)</v-card-title>
+                        <v-card-text class="text-center">
+                            See how BFS works.
+                        </v-card-text>
+                        <v-card-actions class="justify-center">
+                            <v-btn color="primary" @click="navigateTo('/bfs')">
+                                Go to BFS
                             </v-btn>
                         </v-card-actions>
                     </v-card>
