@@ -1,5 +1,6 @@
 import { createApp } from 'vue'
 import './style.css'
+import './assets/css/tokens.css'
 import App from './App.vue'
 import router from './router' // 라우터 임포트
 

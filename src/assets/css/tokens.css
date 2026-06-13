@@ -1,0 +1,15 @@
+:root{
+  --bg:#0a0b0c; --bg-2:#0d0e10; --panel:#121316; --panel-2:#16181b;
+  --line:rgba(255,255,255,.08); --line-2:rgba(255,255,255,.14);
+  --fg:#edeef0; --fg-dim:#9a9ea4; --fg-mute:#62666c;
+  --acc:#c8ff00; --acc-deep:#9bc400; --acc-ghost:rgba(200,255,0,.10);
+  --sans:'Archivo',system-ui,sans-serif;
+  --mono:'Space Mono',ui-monospace,monospace;
+  --serif:'Newsreader',Georgia,serif;
+  --r-panel:14px; --r-ctrl:8px; --r-pill:30px;
+}
+.agm-root{background:var(--bg);color:var(--fg);font-family:var(--sans);min-height:100vh;-webkit-font-smoothing:antialiased;line-height:1.5;}
+.agm-root .mono{font-family:var(--mono);}
+.agm-grid-bg::before{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
+  background-image:linear-gradient(rgba(255,255,255,.022) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.022) 1px,transparent 1px);
+  background-size:64px 64px;mask-image:radial-gradient(ellipse 120% 70% at 50% 0%,#000 30%,transparent 75%);}
