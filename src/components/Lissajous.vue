@@ -90,6 +90,7 @@ function resetSim() {
   ratioVal.value = reduceRatio(a.value, b.value).join(':')
   deltaVal.value = degFmt(delta.value)
   sim.reset({ u: 0 })
+  sim.play()
 }
 
 useThreeViewport(hostRef, {
@@ -115,7 +116,6 @@ useThreeViewport(hostRef, {
     projGroup.add(projV, projH, markV, markH)
     sm.scene.add(box, figureLine, projGroup, tracer)
     resetSim()
-    sim.play()
   },
 })
 
