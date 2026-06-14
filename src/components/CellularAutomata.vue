@@ -9,6 +9,7 @@ import RangeField from './ui/RangeField.vue'
 import AppButton from './ui/AppButton.vue'
 import Readout from './ui/Readout.vue'
 import { useThreeViewport } from '../composables/useThreeViewport.js'
+import { useSimulation } from '../composables/useSimulation.js'
 import { simulate } from '../services/automataApi.js'
 import { createEmpty, randomGrid, countPopulation, placeGlider } from '../lib/lifeGrid.js'
 
@@ -26,27 +27,28 @@ const PATTERNS = [
 
 const hostRef = ref(null)
 const pattern = ref('random')
-const speed = ref(10)
-const playing = ref(false)
-const generation = ref(0)
 const population = ref(0)
-
-let currentGrid = randomGrid(GRID, GRID, 0.28)
-let buffer = []
-let fetching = false
-let timer = null
-let disposed = false
 
 let texture = null
 let planeMesh = null
 let drawing = false
 const raycaster = new THREE.Raycaster()
 
+const sim = useSimulation({
+  fetchBatch: (grid, n) => simulate({ grid, steps: n }).then((r) => r.steps),
+  onStep: (grid) => { writeTexture(grid); syncReadout(grid) },
+  batch: BATCH,
+  initialSpeed: 10,
+})
+const playing = sim.playing
+const generation = sim.count
+const speed = sim.speed
+
 const { getSceneManager } = useThreeViewport(hostRef, {
   background: '#0a0b0c',
   cameraPosition: [0, 0, 8],
   onReady: (sm) => {
-    sm.controls.enabled = false // 평면 그리드: orbit 끄고 포인터는 셀 그리기에 사용
+    sm.controls.enabled = false
     const data = new Uint8Array(GRID * GRID * 4)
     texture = new THREE.DataTexture(data, GRID, GRID, THREE.RGBAFormat)
     texture.magFilter = THREE.NearestFilter
@@ -54,8 +56,7 @@ const { getSceneManager } = useThreeViewport(hostRef, {
     const mat = new THREE.MeshBasicMaterial({ map: texture })
     planeMesh = new THREE.Mesh(new THREE.PlaneGeometry(WORLD, WORLD), mat)
     sm.scene.add(planeMesh)
-    writeTexture()
-    syncReadout()
+    sim.reset(randomGrid(GRID, GRID, 0.28))
     const el = hostRef.value
     el.addEventListener('pointerdown', onPointerDown)
     el.addEventListener('pointermove', onPointerMove)
@@ -63,13 +64,13 @@ const { getSceneManager } = useThreeViewport(hostRef, {
   },
 })
 
-function writeTexture() {
+function writeTexture(grid) {
   if (!texture) return
   const data = texture.image.data
   for (let r = 0; r < GRID; r++) {
     for (let c = 0; c < GRID; c++) {
-      const alive = currentGrid[r][c]
-      const ty = GRID - 1 - r // 위쪽이 row 0이 되도록 Y 뒤집기
+      const alive = grid[r][c]
+      const ty = GRID - 1 - r
       const idx = (ty * GRID + c) * 4
       data[idx] = alive ? ALIVE[0] : DEAD[0]
       data[idx + 1] = alive ? ALIVE[1] : DEAD[1]
@@ -80,76 +81,16 @@ function writeTexture() {
   texture.needsUpdate = true
 }
 
-function syncReadout() {
-  population.value = countPopulation(currentGrid)
-}
-
-async function ensureBuffer() {
-  if (buffer.length || fetching) return
-  fetching = true
-  try {
-    const { generations } = await simulate({ grid: currentGrid, steps: BATCH })
-    buffer = generations || []
-  } catch (e) {
-    console.error('Life simulate failed:', e)
-    pause()
-  } finally {
-    fetching = false
-  }
-}
-
-async function advanceOne() {
-  if (disposed) return
-  if (!buffer.length) await ensureBuffer()
-  if (disposed || !buffer.length) return
-  currentGrid = buffer.shift()
-  generation.value += 1
-  writeTexture()
-  syncReadout()
-}
-
-function scheduleNext() {
-  if (!playing.value || disposed) return
-  timer = setTimeout(async () => {
-    await advanceOne()
-    scheduleNext()
-  }, 1000 / speed.value)
-}
-
-function play() {
-  if (playing.value) return
-  playing.value = true
-  scheduleNext()
-}
-
-function pause() {
-  playing.value = false
-  if (timer) { clearTimeout(timer); timer = null }
-}
-
-async function step() {
-  if (playing.value) return
-  await advanceOne()
-}
-
-function invalidateBuffer() {
-  buffer = []
+function syncReadout(grid) {
+  population.value = countPopulation(grid)
 }
 
 function applyPattern() {
-  pause()
-  if (pattern.value === 'random') {
-    currentGrid = randomGrid(GRID, GRID, 0.28)
-  } else if (pattern.value === 'glider') {
-    currentGrid = createEmpty(GRID, GRID)
-    placeGlider(currentGrid, 1, 1)
-  } else {
-    currentGrid = createEmpty(GRID, GRID)
-  }
-  generation.value = 0
-  invalidateBuffer()
-  writeTexture()
-  syncReadout()
+  let g
+  if (pattern.value === 'random') g = randomGrid(GRID, GRID, 0.28)
+  else if (pattern.value === 'glider') { g = createEmpty(GRID, GRID); placeGlider(g, 1, 1) }
+  else g = createEmpty(GRID, GRID)
+  sim.reset(g)
 }
 
 function randomize() { pattern.value = 'random'; applyPattern() }
@@ -172,11 +113,13 @@ function pointerToCell(ev) {
 function paintCell(ev, toggle) {
   const cell = pointerToCell(ev)
   if (!cell) return
-  currentGrid[cell.row][cell.col] = toggle ? !currentGrid[cell.row][cell.col] : true
-  generation.value = 0
-  invalidateBuffer()
-  writeTexture()
-  syncReadout()
+  const g = sim.current
+  if (!g) return
+  g[cell.row][cell.col] = toggle ? !g[cell.row][cell.col] : true
+  sim.count.value = 0
+  sim.invalidate()
+  writeTexture(g)
+  syncReadout(g)
 }
 
 function onPointerDown(ev) { drawing = true; paintCell(ev, true) }
@@ -184,8 +127,6 @@ function onPointerMove(ev) { if (drawing) paintCell(ev, false) }
 function onPointerUp() { drawing = false }
 
 onBeforeUnmount(() => {
-  disposed = true
-  pause()
   const el = hostRef.value
   if (el) {
     el.removeEventListener('pointerdown', onPointerDown)
@@ -228,9 +169,9 @@ const readoutItems = computed(() => [
       <ControlPanel number="02" title="Playback">
         <RangeField v-model="speed" :min="1" :max="30" :step="1" label="Speed (gen/s)" />
         <div class="btnrow">
-          <AppButton v-if="!playing" @click="play">Play</AppButton>
-          <AppButton v-else @click="pause">Pause</AppButton>
-          <AppButton variant="ghost" :disabled="playing" @click="step">Step</AppButton>
+          <AppButton v-if="!playing" @click="sim.play">Play</AppButton>
+          <AppButton v-else @click="sim.pause">Pause</AppButton>
+          <AppButton variant="ghost" :disabled="playing" @click="sim.step">Step</AppButton>
         </div>
       </ControlPanel>
       <ControlPanel number="03" title="Readout">
