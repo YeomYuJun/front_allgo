@@ -5,6 +5,7 @@ const links = [
   { to: '/FFT', label: 'Fourier' },
   { to: '/cellular-automata', label: 'Life' },
   { to: '/double-pendulum', label: 'Pendulum' },
+  { to: '/lissajous', label: 'Lissajous' },
 ]
 </script>
 
