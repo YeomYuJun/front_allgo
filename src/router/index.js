@@ -11,6 +11,7 @@ import MonteCarlo from '../components/MonteCarlo.vue';
 import BezierVisualization from '../components/BezierVisualization.vue';
 import BFSVisualization from '../components/BFS.vue';
 import CellularAutomata from '../components/CellularAutomata.vue';
+import DoublePendulum from '../components/DoublePendulum.vue';
 
 // import FourierTransformVisualizer from '../components/FourierTransformVisualizer.vue';
 // import SortingVisualizer from '../components/SortingVisualizer.vue';
@@ -72,6 +73,11 @@ const routes = [
   //   component: QuickSort,
   // },
   
+  {
+    path: '/double-pendulum',
+    name: 'DoublePendulum',
+    component: DoublePendulum,
+  },
   // Catch-all route for undefined paths - must be at the end
   {
     path: '/:pathMatch(.*)*',
