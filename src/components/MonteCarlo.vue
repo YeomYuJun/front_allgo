@@ -11,6 +11,10 @@ import Readout from './ui/Readout.vue'
 import { useThreeViewport } from '../composables/useThreeViewport.js'
 import { integrate } from '../services/monteCarloApi.js'
 
+const ACC = 0xc8ff00
+const SPHERE_RADIUS = 0.02
+const CAMERA_Z = 9
+
 const FUNCTIONS = [
   { key: 'square', label: 'Circle', eq: 'x²+y² ≤ 4' },
   { key: 'ellipse', label: 'Ellipse', eq: 'x²/4 + y² ≤ 1' },
@@ -33,10 +37,14 @@ const bounds = reactive({ ...DEFAULT_BOUNDS.square })
 
 let pointsGroup = null
 let curveGroup = null
+// 직전 배치의 공유 리소스(재실행/리셋 시 명시적 dispose 대상)
+let pointsGeo = null
+let pointsInMat = null
+let pointsOutMat = null
 
 const { getSceneManager } = useThreeViewport(hostRef, {
   background: '#0a0b0c',
-  cameraPosition: [0, 0, 9],
+  cameraPosition: [0, 0, CAMERA_Z],
   onReady: (sm) => {
     addGrid(sm.scene)
     pointsGroup = new THREE.Group()
@@ -47,40 +55,59 @@ const { getSceneManager } = useThreeViewport(hostRef, {
 
 function addGrid(scene) {
   const size = 6, div = 20
-  const mat = new THREE.LineBasicMaterial({ color: 0x2a2d31 })
+  const mat = new THREE.LineBasicMaterial({ color: 0x2a2d31 }) // 그리드 전체 공유
   const g = new THREE.Group()
   for (let i = 0; i <= div; i++) {
     const t = -size / 2 + (size / div) * i
-    g.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(-size / 2, t, 0), new THREE.Vector3(size / 2, t, 0)]), mat.clone()))
-    g.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(t, -size / 2, 0), new THREE.Vector3(t, size / 2, 0)]), mat.clone()))
+    g.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(-size / 2, t, 0), new THREE.Vector3(size / 2, t, 0)]), mat))
+    g.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(t, -size / 2, 0), new THREE.Vector3(t, size / 2, 0)]), mat))
   }
   scene.add(g)
 }
 
+// 그룹 내 모든 geometry/material을 dispose 후 씬에서 제거
+function disposeGroup(scene, group) {
+  if (!group) return
+  group.traverse((obj) => {
+    obj.geometry?.dispose()
+    if (Array.isArray(obj.material)) obj.material.forEach((m) => m.dispose())
+    else obj.material?.dispose()
+  })
+  scene.remove(group)
+}
+
 function drawCurve(scene) {
-  if (curveGroup) scene.remove(curveGroup)
+  disposeGroup(scene, curveGroup)
   curveGroup = new THREE.Group()
-  const acc = 0xc8ff00
   if (selectedFunction.value === 'square') {
     const r = 2
-    curveGroup.add(new THREE.Mesh(new THREE.RingGeometry(r - 0.03, r + 0.03, 64), new THREE.MeshBasicMaterial({ color: acc, side: THREE.DoubleSide })))
+    curveGroup.add(new THREE.Mesh(new THREE.RingGeometry(r - 0.03, r + 0.03, 64), new THREE.MeshBasicMaterial({ color: ACC, side: THREE.DoubleSide })))
   } else if (selectedFunction.value === 'ellipse') {
     const ring = new THREE.RingGeometry(0.98, 1.02, 64)
     ring.scale(2, 1, 1)
-    curveGroup.add(new THREE.Mesh(ring, new THREE.MeshBasicMaterial({ color: acc, side: THREE.DoubleSide })))
+    curveGroup.add(new THREE.Mesh(ring, new THREE.MeshBasicMaterial({ color: ACC, side: THREE.DoubleSide })))
   } else if (selectedFunction.value === 'diamond') {
     const pts = [new THREE.Vector3(2, 0, 0), new THREE.Vector3(0, 2, 0), new THREE.Vector3(-2, 0, 0), new THREE.Vector3(0, -2, 0), new THREE.Vector3(2, 0, 0)]
-    curveGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineBasicMaterial({ color: acc })))
+    curveGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineBasicMaterial({ color: ACC })))
   }
+  // sin_product: 단순 닫힌 경계 곡선이 없어 곡선은 그리지 않음(점군만 표시)
   scene.add(curveGroup)
 }
 
+// 직전 배치의 공유 geometry/material을 dispose하고 점군 비우기
+function clearPoints() {
+  pointsGeo?.dispose(); pointsGeo = null
+  pointsInMat?.dispose(); pointsInMat = null
+  pointsOutMat?.dispose(); pointsOutMat = null
+  pointsGroup?.clear()
+}
+
 function renderPoints(points) {
-  const inMat = new THREE.MeshBasicMaterial({ color: 0xc8ff00 })
-  const outMat = new THREE.MeshBasicMaterial({ color: 0x42606f })
-  const geo = new THREE.SphereGeometry(0.02, 6, 6)
+  pointsInMat = new THREE.MeshBasicMaterial({ color: ACC })
+  pointsOutMat = new THREE.MeshBasicMaterial({ color: 0x42606f })
+  pointsGeo = new THREE.SphereGeometry(SPHERE_RADIUS, 6, 6)
   for (const p of points) {
-    const s = new THREE.Mesh(geo, p.inside ? inMat : outMat)
+    const s = new THREE.Mesh(pointsGeo, p.inside ? pointsInMat : pointsOutMat)
     s.position.set(p.x, p.y, 0)
     pointsGroup.add(s)
   }
@@ -91,7 +118,7 @@ async function run() {
   const sm = getSceneManager()
   if (!sm) return
   running.value = true
-  pointsGroup.clear()
+  clearPoints()
   try {
     const data = await integrate({ iterations: iterations.value, bounds: { ...bounds }, functionType: selectedFunction.value })
     result.value = data
@@ -104,7 +131,7 @@ async function run() {
 }
 
 function reset() {
-  if (pointsGroup) pointsGroup.clear()
+  clearPoints()
   result.value = null
 }
 
@@ -138,7 +165,7 @@ const readoutItems = computed(() => {
         <template #status>
           <div class="ln">samples <b>{{ iterations }}</b></div>
         </template>
-        <div ref="hostRef" style="position:absolute;inset:0;"></div>
+        <div ref="hostRef" class="vp-host"></div>
       </AlgoViewport>
     </template>
 
@@ -167,6 +194,7 @@ const readoutItems = computed(() => {
 </template>
 
 <style scoped>
+.vp-host{position:absolute;inset:0;}
 .btnrow{display:flex;gap:10px;}
 .ln b{color:var(--acc);font-weight:400;}
 .ex-head{max-width:60ch;}

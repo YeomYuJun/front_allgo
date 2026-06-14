@@ -59,8 +59,9 @@ export default class SceneManager {
     // 기본 조명 추가
     this.addLights();
     
-    // 윈도우 리사이징 이벤트 리스너
-    window.addEventListener('resize', this.handleResize.bind(this));
+    // 윈도우 리사이징 이벤트 리스너 (bind 참조를 보관해 clear에서 정확히 해제)
+    this.boundHandleResize = this.handleResize.bind(this);
+    window.addEventListener('resize', this.boundHandleResize);
     
     // 애니메이션 시작
     this.animate();
@@ -190,8 +191,11 @@ export default class SceneManager {
       this.animationFrameId = null;
     }
     
-    // 이벤트 리스너 제거
-    window.removeEventListener('resize', this.handleResize.bind(this));
+    // 이벤트 리스너 제거 (add 시 보관한 동일 참조로 해제)
+    if (this.boundHandleResize) {
+      window.removeEventListener('resize', this.boundHandleResize);
+      this.boundHandleResize = null;
+    }
     
     // 씬 정리
     if (this.scene) {
