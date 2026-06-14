@@ -42,7 +42,7 @@ defineProps({
 .crumb .sep{opacity:.5;}
 .head{display:flex;align-items:flex-end;justify-content:space-between;gap:30px;flex-wrap:wrap;border-bottom:1px solid var(--line);padding-bottom:34px;}
 .head .l{display:flex;flex-direction:column;gap:16px;}
-.head h1{font-size:clamp(34px,5vw,64px);font-weight:700;letter-spacing:-.035em;line-height:.98;}
+.head h1{font-size:clamp(34px,5vw,64px);font-weight:700;letter-spacing:-.035em;line-height:.98;color:var(--fg);}
 .head .sub{color:var(--fg-dim);font-size:16px;max-width:48ch;}
 .tags{display:flex;gap:8px;flex-wrap:wrap;}
 .chip{font-family:var(--mono);font-size:10.5px;letter-spacing:.05em;color:var(--fg-mute);border:1px solid var(--line);padding:5px 11px;border-radius:20px;}

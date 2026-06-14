@@ -226,6 +226,9 @@ export default class SceneManager {
     this.scene = null;
     this.camera = null;
     this.renderer = null;
+    if (this.controls) {
+      this.controls.dispose();
+    }
     this.controls = null;
     this.axesHelper = null;
     this.axisLabels = [];
