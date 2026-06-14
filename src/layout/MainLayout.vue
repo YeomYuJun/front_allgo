@@ -3,6 +3,7 @@ const links = [
   { to: '/fractal', label: 'Fractal' },
   { to: '/bezier', label: 'Bezier' },
   { to: '/FFT', label: 'Fourier' },
+  { to: '/cellular-automata', label: 'Life' },
 ]
 </script>
 

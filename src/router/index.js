@@ -10,6 +10,7 @@ import SaddleFunction from '../components/SaddleFunction.vue';
 import MonteCarlo from '../components/MonteCarlo.vue';
 import BezierVisualization from '../components/BezierVisualization.vue';
 import BFSVisualization from '../components/BFS.vue';
+import CellularAutomata from '../components/CellularAutomata.vue';
 
 // import FourierTransformVisualizer from '../components/FourierTransformVisualizer.vue';
 // import SortingVisualizer from '../components/SortingVisualizer.vue';
@@ -59,6 +60,11 @@ const routes = [
     path: '/bfs',
     name: 'BFS',
     component: BFSVisualization,
+  },
+  {
+    path: '/cellular-automata',
+    name: 'CellularAutomata',
+    component: CellularAutomata,
   },
   // {
   //   path: '/quick-sort',
