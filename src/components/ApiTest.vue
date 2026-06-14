@@ -19,7 +19,7 @@
 
 <script setup>
 import { ref } from 'vue';
-import api from '../services/api';
+import { testConnection } from '../services/api';
 
 const loading = ref(false);
 const response = ref(null);
@@ -29,9 +29,9 @@ async function testApi() {
   loading.value = true;
   response.value = null;
   error.value = null;
-  
+
   try {
-    const result = await api.testConnection();
+    const result = await testConnection();
     response.value = result.data;
   } catch (err) {
     error.value = err.message || '알 수 없는 오류가 발생했습니다.';
