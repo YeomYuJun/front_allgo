@@ -7,7 +7,7 @@ import ConvexFunction from '../components/ConvexFunction.vue';
 import FFT from '../components/FFT.vue';
 import Fractal from '../components/Fractal.vue';
 import SaddleFunction from '../components/SaddleFunction.vue';
-import MonteCarloVisualization from '../components/MonteCarloVisualization.vue';
+import MonteCarlo from '../components/MonteCarlo.vue';
 import BezierVisualization from '../components/BezierVisualization.vue';
 import BFSVisualization from '../components/BFS.vue';
 
@@ -48,7 +48,7 @@ const routes = [
   {
     path: '/monte-carlo',
     name: 'MonteCarlo',
-    component: MonteCarloVisualization,
+    component: MonteCarlo,
   },
   {
     path: '/bezier',

@@ -11,6 +11,7 @@ defineExpose({ canvasHost })
       <div class="right"><slot name="bar-right" /></div>
     </div>
     <div ref="canvasHost" class="vp-canvas grab">
+      <slot />
       <div class="vp-status"><slot name="status" /></div>
       <div class="vp-legend"><slot name="legend" /></div>
     </div>
