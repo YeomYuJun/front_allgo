@@ -6,6 +6,7 @@ const links = [
   { to: '/cellular-automata', label: 'Life' },
   { to: '/double-pendulum', label: 'Pendulum' },
   { to: '/lissajous', label: 'Lissajous' },
+  { to: '/flow', label: 'Flow' },
 ]
 </script>
 
