@@ -7,6 +7,7 @@ const links = [
   { to: '/double-pendulum', label: 'Pendulum' },
   { to: '/lissajous', label: 'Lissajous' },
   { to: '/flow', label: 'Flow' },
+  { to: '/voronoi', label: 'Voronoi' },
 ]
 </script>
 

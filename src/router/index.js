@@ -14,6 +14,7 @@ import CellularAutomata from '../components/CellularAutomata.vue';
 import DoublePendulum from '../components/DoublePendulum.vue';
 import Lissajous from '../components/Lissajous.vue';
 import Flow from '../components/Flow.vue';
+import Voronoi from '../components/Voronoi.vue';
 
 // import FourierTransformVisualizer from '../components/FourierTransformVisualizer.vue';
 // import SortingVisualizer from '../components/SortingVisualizer.vue';
@@ -89,6 +90,11 @@ const routes = [
     path: '/flow',
     name: 'Flow',
     component: Flow,
+  },
+  {
+    path: '/voronoi',
+    name: 'Voronoi',
+    component: Voronoi,
   },
   // Catch-all route for undefined paths - must be at the end
   {
