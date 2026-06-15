@@ -158,15 +158,14 @@ onBeforeUnmount(() => {
 
         <div class="algo-layout">
           <div class="algo-list">
-            <div
+            <RouterLink
               v-for="a in ALGOS"
               :key="a.key"
+              :to="a.route"
               class="algo-row"
               :class="{ active: a.key === activeKey }"
-              tabindex="0"
               @mouseenter="activate(a.key)"
               @focus="activate(a.key)"
-              @click="activate(a.key)"
             >
               <span class="idx">{{ a.idx }}</span>
               <div class="body">
@@ -177,7 +176,7 @@ onBeforeUnmount(() => {
                 <div class="tags"><span class="chip" v-for="t in a.tags" :key="t">{{ t }}</span></div>
                 <span class="go">↗</span>
               </div>
-            </div>
+            </RouterLink>
           </div>
 
           <aside class="algo-preview">
