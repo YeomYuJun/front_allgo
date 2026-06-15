@@ -1,5 +1,6 @@
 <script setup>
 const links = [
+  { to: '/plotter', label: 'Plotter' },
   { to: '/fractal', label: 'Fractal' },
   { to: '/bezier', label: 'Bezier' },
   { to: '/fourier', label: 'Fourier' },
