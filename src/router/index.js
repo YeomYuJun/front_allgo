@@ -8,7 +8,7 @@ import FFT from '../components/FFT.vue';
 import Fractal from '../components/Fractal.vue';
 import SaddleFunction from '../components/SaddleFunction.vue';
 import MonteCarlo from '../components/MonteCarlo.vue';
-import BezierVisualization from '../components/BezierVisualization.vue';
+import Bezier from '../components/Bezier.vue';
 import BFSVisualization from '../components/BFS.vue';
 import CellularAutomata from '../components/CellularAutomata.vue';
 import DoublePendulum from '../components/DoublePendulum.vue';
@@ -59,7 +59,7 @@ const routes = [
   {
     path: '/bezier',
     name: 'Bezier',
-    component: BezierVisualization,
+    component: Bezier,
   },
   {
     path: '/bfs',
