@@ -1,6 +1,6 @@
 // src/router/index.js
 import { createRouter, createWebHistory } from 'vue-router';
-import Home from '../components/Home.vue'; // Home 컴포넌트 경로
+import Landing from '../components/Landing.vue';
 // GraDesc.vue 또는 SurfaceVisualizer.vue 등 시각화 컴포넌트 임포트
 import GraDesc from '../components/GraDesc.vue'; // GraDesc.vue 경로 (이전에 만든 SurfaceVisualizer.vue를 사용한다면 해당 경로로)
 import ConvexFunction from '../components/ConvexFunction.vue';
@@ -23,9 +23,9 @@ import Plotter from '../components/Plotter.vue';
 
 const routes = [
   {
-    path: '/', // 기본 경로
-    name: 'Home',
-    component: Home,
+    path: '/',
+    name: 'Landing',
+    component: Landing,
   },
   {
     path: '/gradient-descent',

@@ -1,4 +1,10 @@
 <script setup>
+import { computed } from 'vue'
+import { useRoute } from 'vue-router'
+
+const route = useRoute()
+const isLanding = computed(() => route.path === '/')
+
 const links = [
   { to: '/plotter', label: 'Plotter' },
   { to: '/fractal', label: 'Fractal' },
@@ -14,7 +20,7 @@ const links = [
 
 <template>
   <div class="agm-root agm-grid-bg">
-    <nav>
+    <nav v-if="!isLanding">
       <RouterLink to="/" class="brand">
         <span class="mark"></span>
         <span class="name">AllGoMath</span>
@@ -25,7 +31,7 @@ const links = [
       </div>
     </nav>
     <slot />
-    <footer>
+    <footer v-if="!isLanding">
       <div class="foot-bottom wrap">
         <span>AllGoMath</span>
         <span>yyj2046@gmail.com</span>
