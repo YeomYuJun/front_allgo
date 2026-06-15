@@ -15,6 +15,7 @@ import DoublePendulum from '../components/DoublePendulum.vue';
 import Lissajous from '../components/Lissajous.vue';
 import Flow from '../components/Flow.vue';
 import Voronoi from '../components/Voronoi.vue';
+import Fourier from '../components/Fourier.vue';
 
 // import FourierTransformVisualizer from '../components/FourierTransformVisualizer.vue';
 // import SortingVisualizer from '../components/SortingVisualizer.vue';
@@ -95,6 +96,11 @@ const routes = [
     path: '/voronoi',
     name: 'Voronoi',
     component: Voronoi,
+  },
+  {
+    path: '/fourier',
+    name: 'Fourier',
+    component: Fourier,
   },
   // Catch-all route for undefined paths - must be at the end
   {

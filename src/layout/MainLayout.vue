@@ -2,7 +2,7 @@
 const links = [
   { to: '/fractal', label: 'Fractal' },
   { to: '/bezier', label: 'Bezier' },
-  { to: '/FFT', label: 'Fourier' },
+  { to: '/fourier', label: 'Fourier' },
   { to: '/cellular-automata', label: 'Life' },
   { to: '/double-pendulum', label: 'Pendulum' },
   { to: '/lissajous', label: 'Lissajous' },
