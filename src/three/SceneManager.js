@@ -197,18 +197,29 @@ export default class SceneManager {
       this.boundHandleResize = null;
     }
     
-    // 씬 정리
+    // 씬 정리 (geometry + material + 바인딩된 텍스처 dispose)
     if (this.scene) {
+      const disposeMaterial = (material) => {
+        // dispose bound textures (DataTexture/CanvasTexture leak otherwise)
+        for (const key in material) {
+          const value = material[key];
+          if (value && value.isTexture) {
+            value.dispose();
+          }
+        }
+        material.dispose();
+      };
+
       this.scene.traverse((object) => {
         if (object.geometry) {
           object.geometry.dispose();
         }
-        
+
         if (object.material) {
           if (Array.isArray(object.material)) {
-            object.material.forEach(material => material.dispose());
+            object.material.forEach(disposeMaterial);
           } else {
-            object.material.dispose();
+            disposeMaterial(object.material);
           }
         }
       });
