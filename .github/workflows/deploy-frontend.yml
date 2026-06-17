@@ -1,0 +1,134 @@
+name: Deploy Frontend to S3
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'src/**'
+      - 'public/**'
+      - 'index.html'
+      - 'vite.config.js'
+      - 'package.json'
+      - '.github/workflows/deploy-frontend.yml'
+  workflow_dispatch: # 수동 실행 가능
+
+env:
+  NODE_VERSION: '18'
+  S3_BUCKET: ${{ secrets.S3_BUCKET }}
+  CLOUDFRONT_DISTRIBUTION_ID: ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }}
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. 코드 체크아웃
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # 2. Node.js 설정
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      # 3. 의존성 설치
+      - name: Install dependencies
+        run: |
+          npm ci
+          echo "✅ Dependencies installed"
+
+      # 4. Vue 프로덕션 빌드
+      - name: Build Vue project
+        run: |
+          npm run build
+          echo "✅ Vue build completed"
+
+          # 빌드 결과 확인
+          echo "📦 Build output:"
+          ls -lah dist/
+
+      # 5. AWS 자격증명 설정
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ap-northeast-2
+
+      # 6. S3에 빌드 파일 업로드
+      - name: Sync files to S3
+        run: |
+          echo "🚀 Uploading to S3..."
+
+          # S3 동기화 (--delete로 이전 파일 삭제)
+          aws s3 sync dist/ s3://${{ env.S3_BUCKET }}/ \
+            --delete \
+            --cache-control "public, max-age=31536000, immutable" \
+            --exclude "index.html" \
+            --exclude "*.map"
+
+          # index.html은 캐시 비활성화 (SPA 라우팅용)
+          aws s3 cp dist/index.html s3://${{ env.S3_BUCKET }}/index.html \
+            --cache-control "no-cache, no-store, must-revalidate" \
+            --metadata-directive REPLACE
+
+          echo "✅ S3 sync completed"
+
+      # 7. CloudFront 캐시 무효화
+      - name: Invalidate CloudFront cache
+        run: |
+          echo "🔄 Invalidating CloudFront cache..."
+
+          INVALIDATION_ID=$(aws cloudfront create-invalidation \
+            --distribution-id ${{ env.CLOUDFRONT_DISTRIBUTION_ID }} \
+            --paths "/*" \
+            --query 'Invalidation.Id' \
+            --output text)
+
+          echo "✅ CloudFront invalidation created: $INVALIDATION_ID"
+
+          # 무효화 완료 대기 (선택사항, 최대 5분)
+          echo "⏳ Waiting for invalidation to complete..."
+          aws cloudfront wait invalidation-completed \
+            --distribution-id ${{ env.CLOUDFRONT_DISTRIBUTION_ID }} \
+            --id $INVALIDATION_ID \
+            --cli-read-timeout 300 || echo "⚠️ Invalidation is still in progress (timeout)"
+
+      # 8. 배포 검증
+      - name: Verify deployment
+        run: |
+          echo "🔍 Verifying deployment..."
+
+          # S3 파일 개수 확인
+          FILE_COUNT=$(aws s3 ls s3://${{ env.S3_BUCKET }}/ --recursive | wc -l)
+          echo "📁 Total files in S3: $FILE_COUNT"
+
+          # index.html 존재 확인
+          if aws s3 ls s3://${{ env.S3_BUCKET }}/index.html; then
+            echo "✅ index.html found in S3"
+          else
+            echo "❌ index.html not found in S3"
+            exit 1
+          fi
+
+      # 9. 배포 성공 알림
+      - name: Deployment Summary
+        if: success()
+        run: |
+          echo "✅ Frontend deployment completed successfully!"
+          echo "🌐 Website: https://allgomath.com"
+          echo "📦 S3 Bucket: s3://${{ env.S3_BUCKET }}"
+          echo "🔄 CloudFront: Distribution ${{ env.CLOUDFRONT_DISTRIBUTION_ID }}"
+          echo ""
+          echo "⏳ Note: CloudFront cache invalidation may take 5-15 minutes."
+          echo "🔗 Check your website: https://allgomath.com"
+
+      # 10. 배포 실패 알림
+      - name: Deployment Failed
+        if: failure()
+        run: |
+          echo "❌ Frontend deployment failed!"
+          echo "Please check the logs above for details."
