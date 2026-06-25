@@ -11,6 +11,7 @@ const ROUTES = {
   voronoi: '/voronoi',
   bfs: '/breadth-first-search',
   dp: '/dynamic-programming',
+  dfs: '/depth-first-search',
 }
 
 export const ALGOS = [
@@ -50,4 +51,7 @@ export const ALGOS = [
   { key: 'dp', idx: '12', name: 'Dynamic Programming', meta: 'Grid-path DP with backtracking',
     eq: 'dp[r][c] = a[r][c] + best(↑,←)', tags: ['optimization', 'grid'], route: ROUTES.dp,
     desc: 'Fill a grid table cell by cell, then trace back the optimal max/min collecting path.' },
+  { key: 'dfs', idx: '13', name: 'Depth-First Search', meta: 'Maze backtracking with an explicit stack',
+    eq: 'explore deep, backtrack on dead end', tags: ['graph', 'backtracking'], route: ROUTES.dfs,
+    desc: 'Dive as deep as possible, hit dead ends and unwind — the found path is rarely the shortest.' },
 ]

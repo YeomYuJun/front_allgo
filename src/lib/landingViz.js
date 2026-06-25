@@ -604,6 +604,58 @@ function makeBfs(canvas) {
   };
 }
 
+/* ---------------- DFS maze preview ---------------- */
+function makeDfs(canvas) {
+  const s = setup(canvas);
+  const ctx = s.ctx;
+  let raf = null, running = false, t = 0;
+  const COLS = 18, ROWS = 12;
+  // decorative snake path that dives & backtracks - no real DFS compute
+  function frame() {
+    if (!running) return;
+    s.resize();
+    ctx.clearRect(0, 0, s.W, s.H);
+    const cw = s.W / COLS, ch = s.H / ROWS;
+    // progress oscillates: dive forward then backtrack
+    const prog = (Math.sin(t * 0.6) + 1) / 2;
+    const total = COLS * ROWS;
+    const head = Math.floor(prog * total);
+    // snake path: column-first dive
+    const pathSet = new Set();
+    for (let i = 0; i < head; i++) {
+      const col = Math.floor(i / ROWS);
+      const row = col % 2 === 0 ? i % ROWS : ROWS - 1 - (i % ROWS);
+      pathSet.add(row * COLS + col);
+    }
+    for (let r = 0; r < ROWS; r++) {
+      for (let c = 0; c < COLS; c++) {
+        const onPath = pathSet.has(r * COLS + c);
+        if (onPath) {
+          const depth = c / COLS;
+          ctx.fillStyle = `rgba(${Math.round(120 + depth * 80)},${Math.round(180 + depth * 75)},20,0.9)`;
+        } else {
+          ctx.fillStyle = 'rgba(255,255,255,0.04)';
+        }
+        ctx.fillRect(c * cw + 1, r * ch + 1, cw - 2, ch - 2);
+      }
+    }
+    // head marker
+    if (head > 0 && head < total) {
+      const hi = head - 1;
+      const col = Math.floor(hi / ROWS);
+      const row = col % 2 === 0 ? hi % ROWS : ROWS - 1 - (hi % ROWS);
+      ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.5;
+      ctx.strokeRect(col * cw + 2, row * ch + 2, cw - 4, ch - 4);
+    }
+    t += 0.022;
+    raf = requestAnimationFrame(frame);
+  }
+  return {
+    start() { if (running) return; running = true; frame(); },
+    stop() { running = false; if (raf) cancelAnimationFrame(raf); ctx.clearRect(0, 0, s.W, s.H); },
+  };
+}
+
 export { makeSaddle };
 
 export const previews = {
@@ -619,4 +671,5 @@ export const previews = {
   voronoi: (c) => makeVoronoi(c),
   bfs: (c) => makeBfs(c),
   dp: (c) => makeDp(c),
+  dfs: (c) => makeDfs(c),
 };

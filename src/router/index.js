@@ -13,6 +13,7 @@ import Fourier from '../components/Fourier.vue';
 import Plotter from '../components/Plotter.vue';
 import BreadthFirstSearch from '../components/BreadthFirstSearch.vue';
 import DynamicProgramming from '../components/DynamicProgramming.vue';
+import DepthFirstSearch from '../components/DepthFirstSearch.vue';
 
 const routes = [
   {
@@ -79,6 +80,11 @@ const routes = [
     path: '/dynamic-programming',
     name: 'DynamicProgramming',
     component: DynamicProgramming,
+  },
+  {
+    path: '/depth-first-search',
+    name: 'DepthFirstSearch',
+    component: DepthFirstSearch,
   },
   // Catch-all route for undefined paths - must be at the end
   {

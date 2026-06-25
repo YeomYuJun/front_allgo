@@ -17,6 +17,7 @@ const links = [
   { to: '/voronoi', label: 'Voronoi' },
   { to: '/breadth-first-search', label: 'BFS' },
   { to: '/dynamic-programming', label: 'DP' },
+  { to: '/depth-first-search', label: 'DFS' },
 ]
 </script>
 
