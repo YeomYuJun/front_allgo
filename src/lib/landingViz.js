@@ -656,6 +656,60 @@ function makeDfs(canvas) {
   };
 }
 
+/* ---------------- Greedy timeline preview ---------------- */
+function makeGreedy(canvas) {
+  const s = setup(canvas);
+  const ctx = s.ctx;
+  let raf = null, running = false, t = 0;
+  const BARS = 8;
+  function frame() {
+    if (!running) return;
+    s.resize();
+    ctx.clearRect(0, 0, s.W, s.H);
+    const padX = 12, padBot = 14, padTop = 8;
+    const lh = (s.H - padTop - padBot) / BARS;
+    const barW = s.W - padX * 2;
+    // animate a sweep cursor that lights bars up sequentially
+    const sweep = ((Math.sin(t * 0.6) + 1) / 2) * BARS;
+    for (let i = 0; i < BARS; i++) {
+      const y = padTop + i * lh + lh * 0.15;
+      const bh = lh * 0.7;
+      // decorative bar sizes: alternate widths
+      const start = (i * 0.13) % 1;
+      const len = 0.18 + ((i * 0.17 + 0.1) % 0.55);
+      const x0 = padX + start * barW;
+      const x1 = x0 + len * barW;
+      const accepted = i < Math.floor(sweep) && (i % 3 !== 1);
+      let fill, stroke;
+      if (i >= Math.ceil(sweep)) {
+        fill = 'rgba(255,255,255,0.04)'; stroke = 'rgba(255,255,255,0.12)';
+      } else if (accepted) {
+        fill = 'rgba(200,255,0,0.85)'; stroke = ACC;
+      } else {
+        fill = 'rgba(150,60,60,0.15)'; stroke = 'rgba(190,80,80,0.45)';
+      }
+      ctx.beginPath();
+      const r = Math.min(4, bh / 2);
+      ctx.moveTo(x0 + r, y); ctx.arcTo(x1, y, x1, y + bh, r);
+      ctx.arcTo(x1, y + bh, x0, y + bh, r); ctx.arcTo(x0, y + bh, x0, y, r);
+      ctx.arcTo(x0, y, x1, y, r); ctx.closePath();
+      ctx.fillStyle = fill; ctx.fill();
+      ctx.lineWidth = 1; ctx.strokeStyle = stroke; ctx.stroke();
+    }
+    // sweep cursor line
+    const cx = padX + (((t * 0.3) % 1)) * barW;
+    ctx.strokeStyle = 'rgba(200,255,0,0.3)'; ctx.lineWidth = 1; ctx.setLineDash([3, 3]);
+    ctx.beginPath(); ctx.moveTo(cx, padTop - 2); ctx.lineTo(cx, s.H - padBot + 2); ctx.stroke();
+    ctx.setLineDash([]);
+    t += 0.025;
+    raf = requestAnimationFrame(frame);
+  }
+  return {
+    start() { if (running) return; running = true; frame(); },
+    stop() { running = false; if (raf) cancelAnimationFrame(raf); ctx.clearRect(0, 0, s.W, s.H); },
+  };
+}
+
 export { makeSaddle };
 
 export const previews = {
@@ -672,4 +726,5 @@ export const previews = {
   bfs: (c) => makeBfs(c),
   dp: (c) => makeDp(c),
   dfs: (c) => makeDfs(c),
+  greedy: (c) => makeGreedy(c),
 };

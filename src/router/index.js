@@ -14,6 +14,7 @@ import Plotter from '../components/Plotter.vue';
 import BreadthFirstSearch from '../components/BreadthFirstSearch.vue';
 import DynamicProgramming from '../components/DynamicProgramming.vue';
 import DepthFirstSearch from '../components/DepthFirstSearch.vue';
+import Greedy from '../components/Greedy.vue';
 
 const routes = [
   {
@@ -85,6 +86,11 @@ const routes = [
     path: '/depth-first-search',
     name: 'DepthFirstSearch',
     component: DepthFirstSearch,
+  },
+  {
+    path: '/greedy',
+    name: 'Greedy',
+    component: Greedy,
   },
   // Catch-all route for undefined paths - must be at the end
   {

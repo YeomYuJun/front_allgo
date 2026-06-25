@@ -12,6 +12,7 @@ const ROUTES = {
   bfs: '/breadth-first-search',
   dp: '/dynamic-programming',
   dfs: '/depth-first-search',
+  greedy: '/greedy',
 }
 
 export const ALGOS = [
@@ -54,4 +55,7 @@ export const ALGOS = [
   { key: 'dfs', idx: '13', name: 'Depth-First Search', meta: 'Maze backtracking with an explicit stack',
     eq: 'explore deep, backtrack on dead end', tags: ['graph', 'backtracking'], route: ROUTES.dfs,
     desc: 'Dive as deep as possible, hit dead ends and unwind — the found path is rarely the shortest.' },
+  { key: 'greedy', idx: '14', name: 'Greedy Scheduling', meta: 'Interval scheduling / activity selection',
+    eq: 'keep if start ≥ last end', tags: ['greedy', 'optimization'], route: ROUTES.greedy,
+    desc: 'Scan tasks on a timeline and keep each that fits — only earliest-finish is provably optimal.' },
 ]

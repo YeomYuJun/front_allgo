@@ -3,9 +3,9 @@ import { makeSaddle, previews } from '../landingViz.js'
 import { ALGOS } from '../landingAlgorithms.js'
 
 describe('landingViz', () => {
-  it('exposes makeSaddle and 13 preview factories', () => {
+  it('exposes makeSaddle and 14 preview factories', () => {
     expect(typeof makeSaddle).toBe('function')
-    expect(Object.keys(previews)).toHaveLength(13)
+    expect(Object.keys(previews)).toHaveLength(14)
   })
 
   it('has a preview factory for every ALGOS key', () => {
