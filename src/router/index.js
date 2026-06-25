@@ -15,6 +15,7 @@ import BreadthFirstSearch from '../components/BreadthFirstSearch.vue';
 import DynamicProgramming from '../components/DynamicProgramming.vue';
 import DepthFirstSearch from '../components/DepthFirstSearch.vue';
 import Greedy from '../components/Greedy.vue';
+import FourierTransform from '../components/FourierTransform.vue';
 
 const routes = [
   {
@@ -91,6 +92,11 @@ const routes = [
     path: '/greedy',
     name: 'Greedy',
     component: Greedy,
+  },
+  {
+    path: '/fourier-transform',
+    name: 'FourierTransform',
+    component: FourierTransform,
   },
   // Catch-all route for undefined paths - must be at the end
   {

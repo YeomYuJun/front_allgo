@@ -19,6 +19,7 @@ const links = [
   { to: '/dynamic-programming', label: 'DP' },
   { to: '/depth-first-search', label: 'DFS' },
   { to: '/greedy', label: 'Greedy' },
+  { to: '/fourier-transform', label: 'FFT' },
 ]
 </script>
 

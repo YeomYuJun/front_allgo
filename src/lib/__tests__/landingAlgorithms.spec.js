@@ -5,16 +5,17 @@ const ROUTES = [
   '/plotter', '/fourier', '/fractal', '/monte-carlo', '/bezier',
   '/flow', '/cellular-automata', '/lissajous', '/double-pendulum', '/voronoi',
   '/breadth-first-search', '/dynamic-programming', '/depth-first-search', '/greedy',
+  '/fourier-transform',
 ]
 
 describe('landingAlgorithms', () => {
-  it('lists 14 algorithms', () => {
-    expect(ALGOS).toHaveLength(14)
+  it('lists 15 algorithms', () => {
+    expect(ALGOS).toHaveLength(15)
   })
 
-  it('has sequential idx 01..14', () => {
+  it('has sequential idx 01..15', () => {
     expect(ALGOS.map((a) => a.idx)).toEqual(
-      ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12', '13', '14'],
+      ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12', '13', '14', '15'],
     )
   })
 

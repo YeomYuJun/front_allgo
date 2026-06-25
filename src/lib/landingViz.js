@@ -710,6 +710,57 @@ function makeGreedy(canvas) {
   };
 }
 
+/* ---------------- Fourier Transform - decorative winding spiral ---------------- */
+function makeFourierTransform(canvas) {
+  const s = setup(canvas);
+  const ctx = s.ctx;
+  let raf = null, running = false, t = 0;
+  const COMPS = [{ f: 3, a: 1 }, { f: 7, a: 0.5 }];
+  const NS = 120;
+  function g(time) {
+    let v = 0;
+    for (const c of COMPS) v += c.a * Math.cos(2 * Math.PI * c.f * time);
+    return v;
+  }
+  function frame() {
+    if (!running) return;
+    s.resize();
+    ctx.clearRect(0, 0, s.W, s.H);
+    const windF = 3 + Math.sin(t * 0.3) * 2.5;
+    const cx = s.W / 2, cy = s.H / 2;
+    const DUR = 2;
+    const ma = 1.5;
+    const R = Math.min(s.W, s.H) * 0.38;
+    const sc = R / ma;
+    // wound path
+    ctx.lineWidth = 1.3;
+    ctx.beginPath();
+    for (let i = 0; i < NS; i++) {
+      const tt = i / NS * DUR, v = g(tt), ang = 2 * Math.PI * windF * tt;
+      const px = cx + sc * v * Math.cos(ang), py = cy - sc * v * Math.sin(ang);
+      i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+    }
+    ctx.strokeStyle = ACC; ctx.stroke();
+    // COM dot
+    let rx = 0, ry = 0;
+    for (let i = 0; i < NS; i++) {
+      const tt = i / NS * DUR, v = g(tt), ang = 2 * Math.PI * windF * tt;
+      rx += v * Math.cos(ang); ry -= v * Math.sin(ang);
+    }
+    rx /= NS; ry /= NS;
+    const MAG = 4;
+    const mx = cx + sc * rx * MAG, my = cy - sc * ry * MAG;
+    ctx.fillStyle = "#fff";
+    ctx.beginPath(); ctx.arc(mx, my, 4, 0, Math.PI * 2); ctx.fill();
+    t += 0.022;
+    raf = requestAnimationFrame(frame);
+  }
+  return {
+    start() { if (running) return; running = true; frame(); },
+    stop() { running = false; if (raf) cancelAnimationFrame(raf); ctx.clearRect(0, 0, s.W, s.H); },
+  };
+}
+
 export { makeSaddle };
 
 export const previews = {
@@ -727,4 +778,5 @@ export const previews = {
   dp: (c) => makeDp(c),
   dfs: (c) => makeDfs(c),
   greedy: (c) => makeGreedy(c),
+  fouriertransform: (c) => makeFourierTransform(c),
 };

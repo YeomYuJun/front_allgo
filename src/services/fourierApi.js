@@ -7,3 +7,11 @@ import apiClient from './api'
 export function series(payload) {
   return apiClient.post('/algorithms/fourier/series', payload).then((r) => r.data)
 }
+
+/**
+ * @param {{signal:number[], sampleRate:number}} payload
+ * @returns {Promise<{spectrum:Array<{freq:number,mag:number}>, peaks:number[]}>}
+ */
+export function transform(payload) {
+  return apiClient.post('/algorithms/fourier/transform', payload).then((r) => r.data)
+}

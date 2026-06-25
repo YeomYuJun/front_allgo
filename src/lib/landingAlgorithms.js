@@ -13,6 +13,7 @@ const ROUTES = {
   dp: '/dynamic-programming',
   dfs: '/depth-first-search',
   greedy: '/greedy',
+  fouriertransform: '/fourier-transform',
 }
 
 export const ALGOS = [
@@ -58,4 +59,7 @@ export const ALGOS = [
   { key: 'greedy', idx: '14', name: 'Greedy Scheduling', meta: 'Interval scheduling / activity selection',
     eq: 'keep if start ≥ last end', tags: ['greedy', 'optimization'], route: ROUTES.greedy,
     desc: 'Scan tasks on a timeline and keep each that fits — only earliest-finish is provably optimal.' },
+  { key: 'fouriertransform', idx: '15', name: 'Fourier Transform (DFT)', meta: 'Winding machine + real DFT spectrum',
+    eq: 'X(f) = ∫ g(t) e^{-2πift} dt', tags: ['signal', 'spectrum'], route: ROUTES.fouriertransform,
+    desc: 'Wind a signal around the origin; the centre of mass spikes where the winding frequency matches a real component — confirmed by a backend DFT.' },
 ]
