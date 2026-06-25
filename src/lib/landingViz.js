@@ -518,6 +518,47 @@ function makeVoronoi(canvas) {
   };
 }
 
+/* ---------------- BFS grid preview ---------------- */
+function makeBfs(canvas) {
+  const s = setup(canvas);
+  const ctx = s.ctx;
+  let raf = null, running = false, t = 0;
+  const COLS = 18, ROWS = 12;
+  function frame() {
+    if (!running) return;
+    s.resize();
+    ctx.clearRect(0, 0, s.W, s.H);
+    const cw = s.W / COLS, ch = s.H / ROWS;
+    const cx = Math.floor(COLS / 2), cy = Math.floor(ROWS / 2);
+    const wave = (Math.sin(t * 0.7) + 1) * 0.5 * Math.max(COLS, ROWS);
+    for (let r = 0; r < ROWS; r++) {
+      for (let c = 0; c < COLS; c++) {
+        const dist = Math.abs(c - cx) + Math.abs(r - cy);
+        const lit = dist <= wave;
+        const onPath = lit && (c === cx || r === cy) && dist <= Math.round(wave * 0.6);
+        if (onPath) {
+          ctx.fillStyle = ACC;
+        } else if (lit) {
+          const alpha = Math.max(0.08, 0.55 - (dist / (wave + 1)) * 0.45);
+          ctx.fillStyle = `rgba(200,255,0,${alpha.toFixed(2)})`;
+        } else {
+          ctx.fillStyle = 'rgba(255,255,255,0.04)';
+        }
+        ctx.fillRect(c * cw + 1, r * ch + 1, cw - 2, ch - 2);
+      }
+    }
+    // start marker
+    ctx.fillStyle = '#fff';
+    ctx.beginPath(); ctx.arc(cx * cw + cw / 2, cy * ch + ch / 2, Math.min(cw, ch) * 0.22, 0, Math.PI * 2); ctx.fill();
+    t += 0.025;
+    raf = requestAnimationFrame(frame);
+  }
+  return {
+    start() { if (running) return; running = true; frame(); },
+    stop() { running = false; if (raf) cancelAnimationFrame(raf); ctx.clearRect(0, 0, s.W, s.H); },
+  };
+}
+
 export { makeSaddle };
 
 export const previews = {
@@ -531,4 +572,5 @@ export const previews = {
   lissajous: (c) => makeLissajous(c),
   pendulum: (c) => makePendulum(c),
   voronoi: (c) => makeVoronoi(c),
+  bfs: (c) => makeBfs(c),
 };

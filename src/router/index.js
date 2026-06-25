@@ -11,6 +11,7 @@ import Flow from '../components/Flow.vue';
 import Voronoi from '../components/Voronoi.vue';
 import Fourier from '../components/Fourier.vue';
 import Plotter from '../components/Plotter.vue';
+import BreadthFirstSearch from '../components/BreadthFirstSearch.vue';
 
 const routes = [
   {
@@ -67,6 +68,11 @@ const routes = [
     path: '/plotter',
     name: 'Plotter',
     component: Plotter,
+  },
+  {
+    path: '/breadth-first-search',
+    name: 'BreadthFirstSearch',
+    component: BreadthFirstSearch,
   },
   // Catch-all route for undefined paths - must be at the end
   {

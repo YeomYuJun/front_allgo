@@ -15,6 +15,7 @@ const links = [
   { to: '/lissajous', label: 'Lissajous' },
   { to: '/flow', label: 'Flow' },
   { to: '/voronoi', label: 'Voronoi' },
+  { to: '/breadth-first-search', label: 'BFS' },
 ]
 </script>
 

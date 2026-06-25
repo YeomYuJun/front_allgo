@@ -9,6 +9,7 @@ const ROUTES = {
   lissajous: '/lissajous',
   pendulum: '/double-pendulum',
   voronoi: '/voronoi',
+  bfs: '/breadth-first-search',
 }
 
 export const ALGOS = [
@@ -42,4 +43,7 @@ export const ALGOS = [
   { key: 'voronoi', idx: '10', name: 'Voronoi Diagram', meta: 'Regions of nearest influence',
     eq: 'V(pᵢ) = { x : |x−pᵢ| ≤ |x−pⱼ| }', tags: ['geometry', 'spatial'], route: ROUTES.voronoi,
     desc: 'Partition the plane into cells of nearest influence — the geometric dual of Delaunay.' },
+  { key: 'bfs', idx: '11', name: 'Breadth-First Search', meta: 'Shortest path on a grid maze',
+    eq: 'dist(v) = dist(u) + 1', tags: ['graph', 'pathfinding'], route: ROUTES.bfs,
+    desc: 'Flood a grid maze in expanding waves until the goal is reached, then retrace the shortest path.' },
 ]
