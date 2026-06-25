@@ -16,6 +16,7 @@ const links = [
   { to: '/flow', label: 'Flow' },
   { to: '/voronoi', label: 'Voronoi' },
   { to: '/breadth-first-search', label: 'BFS' },
+  { to: '/dynamic-programming', label: 'DP' },
 ]
 </script>
 

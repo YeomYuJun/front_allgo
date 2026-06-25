@@ -10,6 +10,7 @@ const ROUTES = {
   pendulum: '/double-pendulum',
   voronoi: '/voronoi',
   bfs: '/breadth-first-search',
+  dp: '/dynamic-programming',
 }
 
 export const ALGOS = [
@@ -46,4 +47,7 @@ export const ALGOS = [
   { key: 'bfs', idx: '11', name: 'Breadth-First Search', meta: 'Shortest path on a grid maze',
     eq: 'dist(v) = dist(u) + 1', tags: ['graph', 'pathfinding'], route: ROUTES.bfs,
     desc: 'Flood a grid maze in expanding waves until the goal is reached, then retrace the shortest path.' },
+  { key: 'dp', idx: '12', name: 'Dynamic Programming', meta: 'Grid-path DP with backtracking',
+    eq: 'dp[r][c] = a[r][c] + best(↑,←)', tags: ['optimization', 'grid'], route: ROUTES.dp,
+    desc: 'Fill a grid table cell by cell, then trace back the optimal max/min collecting path.' },
 ]

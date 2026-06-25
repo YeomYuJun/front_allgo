@@ -518,6 +518,51 @@ function makeVoronoi(canvas) {
   };
 }
 
+/* ---------------- DP grid preview ---------------- */
+function makeDp(canvas) {
+  const s = setup(canvas);
+  const ctx = s.ctx;
+  let raf = null, running = false, t = 0;
+  const N = 6;
+  function frame() {
+    if (!running) return;
+    s.resize();
+    ctx.clearRect(0, 0, s.W, s.H);
+    const cw = s.W / N, ch = s.H / N;
+    const total = N * N;
+    const filled = Math.floor(((Math.sin(t * 0.5) + 1) / 2) * (total + 1));
+    // path: diagonal from top-left to bottom-right
+    const pathSet = new Set();
+    let r = 0, c = 0;
+    while (r < N && c < N) {
+      pathSet.add(r * N + c);
+      if (r < N - 1 && c < N - 1) { r % 2 === 0 ? c++ : r++; }
+      else if (r < N - 1) { r++; }
+      else { c++; }
+    }
+    pathSet.add((N - 1) * N + (N - 1));
+    for (let row = 0; row < N; row++) {
+      for (let col = 0; col < N; col++) {
+        const fi = row * N + col;
+        const isFilled = fi < filled;
+        const onPath = isFilled && pathSet.has(fi);
+        ctx.fillStyle = onPath ? 'rgba(200,255,0,0.22)' : isFilled ? 'rgba(60,80,40,0.35)' : 'rgba(255,255,255,0.04)';
+        ctx.fillRect(col * cw + 1, row * ch + 1, cw - 2, ch - 2);
+        if (onPath) {
+          ctx.strokeStyle = ACC; ctx.lineWidth = 1.5;
+          ctx.strokeRect(col * cw + 2, row * ch + 2, cw - 4, ch - 4);
+        }
+      }
+    }
+    t += 0.022;
+    raf = requestAnimationFrame(frame);
+  }
+  return {
+    start() { if (running) return; running = true; frame(); },
+    stop() { running = false; if (raf) cancelAnimationFrame(raf); ctx.clearRect(0, 0, s.W, s.H); },
+  };
+}
+
 /* ---------------- BFS grid preview ---------------- */
 function makeBfs(canvas) {
   const s = setup(canvas);
@@ -573,4 +618,5 @@ export const previews = {
   pendulum: (c) => makePendulum(c),
   voronoi: (c) => makeVoronoi(c),
   bfs: (c) => makeBfs(c),
+  dp: (c) => makeDp(c),
 };

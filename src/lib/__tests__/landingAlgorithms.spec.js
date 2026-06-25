@@ -4,17 +4,17 @@ import { ALGOS } from '../landingAlgorithms.js'
 const ROUTES = [
   '/plotter', '/fourier', '/fractal', '/monte-carlo', '/bezier',
   '/flow', '/cellular-automata', '/lissajous', '/double-pendulum', '/voronoi',
-  '/breadth-first-search',
+  '/breadth-first-search', '/dynamic-programming',
 ]
 
 describe('landingAlgorithms', () => {
-  it('lists 11 algorithms', () => {
-    expect(ALGOS).toHaveLength(11)
+  it('lists 12 algorithms', () => {
+    expect(ALGOS).toHaveLength(12)
   })
 
-  it('has sequential idx 01..11', () => {
+  it('has sequential idx 01..12', () => {
     expect(ALGOS.map((a) => a.idx)).toEqual(
-      ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11'],
+      ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12'],
     )
   })
 

@@ -12,6 +12,7 @@ import Voronoi from '../components/Voronoi.vue';
 import Fourier from '../components/Fourier.vue';
 import Plotter from '../components/Plotter.vue';
 import BreadthFirstSearch from '../components/BreadthFirstSearch.vue';
+import DynamicProgramming from '../components/DynamicProgramming.vue';
 
 const routes = [
   {
@@ -73,6 +74,11 @@ const routes = [
     path: '/breadth-first-search',
     name: 'BreadthFirstSearch',
     component: BreadthFirstSearch,
+  },
+  {
+    path: '/dynamic-programming',
+    name: 'DynamicProgramming',
+    component: DynamicProgramming,
   },
   // Catch-all route for undefined paths - must be at the end
   {
