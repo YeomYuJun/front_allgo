@@ -6,7 +6,9 @@
    the FE as illustrative geometry per spec.
    ============================================================ */
 
-const ACC = "#c8ff00";
+import { accent } from './theme.js'
+
+const ACC = accent();
 const DUR = 2;          // signal window, seconds
 const NS = 480;         // integration / path samples
 const FMIN = 0.5, FMAX = 14;   // winding-frequency sweep range (Hz)

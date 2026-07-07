@@ -1,4 +1,5 @@
 <script setup>
+import { accentHex } from '../lib/theme.js'
 import { ref, computed, watch } from 'vue'
 import * as THREE from 'three'
 import AlgorithmLayout from './ui/AlgorithmLayout.vue'
@@ -16,7 +17,7 @@ import { FUNCTIONS, normalize, heightColor } from '../lib/plotter.js'
 
 const S = 3
 const HY = 1.4
-const ACC = 0xc8ff00
+const ACC = accentHex()
 
 const hostRef = ref(null)
 const fn = ref('saddle')

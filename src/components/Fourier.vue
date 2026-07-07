@@ -1,4 +1,5 @@
 <script setup>
+import { accentHex } from '../lib/theme.js'
 import { ref, computed, watch } from 'vue'
 import * as THREE from 'three'
 import AlgorithmLayout from './ui/AlgorithmLayout.vue'
@@ -17,7 +18,7 @@ const SCALE = 0.95
 const WAVE_X0 = 0.4
 const DX = 0.012
 const WAVE_LEN = 250
-const ACC = 0xc8ff00
+const ACC = accentHex()
 
 const WAVES = [
   { value: 'square', label: 'Square' },

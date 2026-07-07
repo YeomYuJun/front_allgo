@@ -2,8 +2,10 @@
    this module only holds the local array and replays an injected event trace
    (compare/swap/write/pivot/lock). */
 
-const ACC = '#c8ff00'
-const WARN = '#ffb224'
+import { accent, warn } from './theme.js'
+
+const ACC = accent()
+const WARN = warn()
 
 export function createSortLab(canvas, opts = {}) {
   const ctx = canvas.getContext('2d')

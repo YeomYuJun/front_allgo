@@ -1,4 +1,5 @@
 <script setup>
+import { accentHex } from '../lib/theme.js'
 import { ref, computed, watch } from 'vue'
 import * as THREE from 'three'
 import AlgorithmLayout from './ui/AlgorithmLayout.vue'
@@ -21,7 +22,7 @@ const EPS = 0.012
 const BATCH = 120
 const DT = 0.1
 const TRAIL_MAX = 200
-const ACC = 0xc8ff00
+const ACC = accentHex()
 const TWIN = 0x96afdc
 
 const hostRef = ref(null)

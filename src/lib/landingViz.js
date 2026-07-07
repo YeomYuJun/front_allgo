@@ -1,7 +1,9 @@
 /* AllGoMath landing visualization engine -- pure canvas-2D, no deps.
    Ported behavior-preserving from allgoamth-refactor/viz.js (SP-12). */
 
-const ACC = "#c8ff00";
+import { accent } from './theme.js'
+
+const ACC = accent();
 const ACC_DEEP = "#7f9e1a";
 
 function setup(canvas) {

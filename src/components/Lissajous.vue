@@ -1,4 +1,5 @@
 <script setup>
+import { accentHex } from '../lib/theme.js'
 import { ref, computed, watch } from 'vue'
 import * as THREE from 'three'
 import AlgorithmLayout from './ui/AlgorithmLayout.vue'
@@ -17,7 +18,7 @@ import { reduceRatio } from '../lib/lissajous.js'
 const SCALE = 2.5
 const BATCH = 150
 const TRAIL_MAX = 300
-const ACC = 0xc8ff00
+const ACC = accentHex()
 
 const hostRef = ref(null)
 const a = ref(3)

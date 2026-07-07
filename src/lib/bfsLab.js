@@ -3,7 +3,9 @@
    Ported from Allgomath-publish/bfs-lab.js. */
 import { idx, inBounds, emptyWalls, randomMaze } from './bfsGrid.js'
 
-const ACC = '#c8ff00'
+import { accent } from './theme.js'
+
+const ACC = accent()
 
 export function createBfsLab(canvas, opts = {}) {
   const ctx = canvas.getContext('2d')

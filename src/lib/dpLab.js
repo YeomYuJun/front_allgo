@@ -3,7 +3,9 @@
    Ported from Allgomath-publish/dp-lab.js. */
 import { randomGrid, cycleValue } from './dpGrid.js'
 
-const ACC = '#c8ff00'
+import { accent } from './theme.js'
+
+const ACC = accent()
 
 export function createDpLab(canvas, opts = {}) {
   const ctx = canvas.getContext('2d')

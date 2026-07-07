@@ -3,7 +3,9 @@
    Ported from Allgomath-publish/dfs-lab.js. */
 import { idx, inBounds, emptyWalls, randomMaze } from './bfsGrid.js'
 
-const ACC = '#c8ff00'
+import { accent } from './theme.js'
+
+const ACC = accent()
 
 export function createDfsLab(canvas, opts = {}) {
   const ctx = canvas.getContext('2d')

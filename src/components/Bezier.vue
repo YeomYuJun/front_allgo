@@ -1,4 +1,5 @@
 <script setup>
+import { accentHex } from '../lib/theme.js'
 import { ref, computed, watch, onBeforeUnmount } from 'vue'
 import * as THREE from 'three'
 import AlgorithmLayout from './ui/AlgorithmLayout.vue'
@@ -16,7 +17,7 @@ import { PRESETS, deCasteljau } from '../lib/bezier.js'
 const SC = 3
 const SAMPLES = 80
 const PICK_R = 0.28
-const ACC = 0xc8ff00
+const ACC = accentHex()
 const MAX_LAYERS = 6
 
 const DEGREES = [

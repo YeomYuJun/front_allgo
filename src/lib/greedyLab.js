@@ -2,7 +2,9 @@
    this module only generates the task set locally and replays an injected trace.
    Ported from Allgomath-publish/greedy-lab.js. */
 
-const ACC = '#c8ff00'
+import { accent } from './theme.js'
+
+const ACC = accent()
 const T = 100
 
 export function createGreedyLab(canvas, opts = {}) {

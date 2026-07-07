@@ -1,4 +1,5 @@
 <script setup>
+import { accentHex } from '../lib/theme.js'
 import { ref, reactive, computed, watch } from 'vue'
 import * as THREE from 'three'
 import AlgorithmLayout from './ui/AlgorithmLayout.vue'
@@ -12,7 +13,7 @@ import { useThreeViewport } from '../composables/useThreeViewport.js'
 import { useLabHotkeys } from '../composables/useLabHotkeys.js'
 import { integrate } from '../services/monteCarloApi.js'
 
-const ACC = 0xc8ff00
+const ACC = accentHex()
 const SPHERE_RADIUS = 0.02
 const CAMERA_Z = 9
 
