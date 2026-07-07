@@ -14,6 +14,7 @@ const ROUTES = {
   dfs: '/depth-first-search',
   greedy: '/greedy',
   fouriertransform: '/fourier-transform',
+  sorting: '/sorting',
 }
 
 export const ALGOS = [
@@ -62,4 +63,7 @@ export const ALGOS = [
   { key: 'fouriertransform', idx: '15', name: 'Fourier Transform (DFT)', meta: 'Winding machine + real DFT spectrum',
     eq: 'X(f) = ∫ g(t) e^{-2πift} dt', tags: ['signal', 'spectrum'], route: ROUTES.fouriertransform,
     desc: 'Wind a signal around the origin; the centre of mass spikes where the winding frequency matches a real component — confirmed by a backend DFT.' },
+  { key: 'sorting', idx: '16', name: 'Sorting', meta: 'Bubble vs merge vs quick, comparison by comparison',
+    eq: 'O(n²)  vs  O(n log n)', tags: ['sorting', 'complexity'], route: ROUTES.sorting,
+    desc: 'Race three sorting strategies over the same array and count every comparison and swap live.' },
 ]

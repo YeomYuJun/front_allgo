@@ -761,6 +761,48 @@ function makeFourierTransform(canvas) {
   };
 }
 
+/* ---------------- Sorting - decorative endless bubble sort ---------------- */
+function makeSorting(canvas) {
+  const s = setup(canvas);
+  const ctx = s.ctx;
+  let raf = null, running = false;
+  const N = 26;
+  let vals = [], i = 0, end = N - 1, cool = 0;
+  function shuffle() {
+    vals = Array.from({ length: N }, (_, k) => k + 1);
+    for (let k = N - 1; k > 0; k--) { const j = Math.floor(Math.random() * (k + 1)); const t = vals[k]; vals[k] = vals[j]; vals[j] = t; }
+    i = 0; end = N - 1;
+  }
+  shuffle();
+  function stepSort() {
+    if (end <= 0) { if (++cool > 60) { shuffle(); cool = 0; } return; }
+    for (let k = 0; k < 2 && end > 0; k++) {
+      if (vals[i] > vals[i + 1]) { const t = vals[i]; vals[i] = vals[i + 1]; vals[i + 1] = t; }
+      i++;
+      if (i >= end) { i = 0; end--; }
+    }
+  }
+  function frame() {
+    if (!running) return;
+    s.resize();
+    ctx.clearRect(0, 0, s.W, s.H);
+    stepSort();
+    const padX = s.W * 0.12, padY = s.H * 0.18;
+    const bw = (s.W - padX * 2) / N;
+    for (let k = 0; k < N; k++) {
+      const bh = (vals[k] / N) * (s.H - padY * 2);
+      const sorted = k > end;
+      ctx.fillStyle = sorted ? "rgba(200,255,0,0.5)" : (k === i || k === i + 1) && end > 0 ? "#e8ecef" : "rgba(120,140,150,0.4)";
+      ctx.fillRect(padX + k * bw + 1, s.H - padY - bh, Math.max(1, bw - 2), bh);
+    }
+    raf = requestAnimationFrame(frame);
+  }
+  return {
+    start() { if (running) return; running = true; frame(); },
+    stop() { running = false; if (raf) cancelAnimationFrame(raf); ctx.clearRect(0, 0, s.W, s.H); },
+  };
+}
+
 export { makeSaddle };
 
 export const previews = {
@@ -779,4 +821,5 @@ export const previews = {
   dfs: (c) => makeDfs(c),
   greedy: (c) => makeGreedy(c),
   fouriertransform: (c) => makeFourierTransform(c),
+  sorting: (c) => makeSorting(c),
 };

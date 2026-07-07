@@ -20,6 +20,7 @@ const links = [
   { to: '/depth-first-search', label: 'DFS' },
   { to: '/greedy', label: 'Greedy' },
   { to: '/fourier-transform', label: 'FFT' },
+  { to: '/sorting', label: 'Sorting' },
 ]
 </script>
 

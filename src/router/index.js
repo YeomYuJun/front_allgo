@@ -16,6 +16,7 @@ import DynamicProgramming from '../components/DynamicProgramming.vue';
 import DepthFirstSearch from '../components/DepthFirstSearch.vue';
 import Greedy from '../components/Greedy.vue';
 import FourierTransform from '../components/FourierTransform.vue';
+import Sorting from '../components/Sorting.vue';
 
 const routes = [
   {
@@ -97,6 +98,11 @@ const routes = [
     path: '/fourier-transform',
     name: 'FourierTransform',
     component: FourierTransform,
+  },
+  {
+    path: '/sorting',
+    name: 'Sorting',
+    component: Sorting,
   },
   // Catch-all route for undefined paths - must be at the end
   {
