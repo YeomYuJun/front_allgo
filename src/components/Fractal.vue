@@ -10,6 +10,7 @@ import ToggleControl from './ui/ToggleControl.vue'
 import AppButton from './ui/AppButton.vue'
 import Readout from './ui/Readout.vue'
 import { createFractalLab } from '../lib/fractalEscape.js'
+import { useLabHotkeys } from '../composables/useLabHotkeys.js'
 
 const TYPES = [
   { value: 'mandelbrot', label: 'Mandelbrot' },
