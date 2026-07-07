@@ -1,6 +1,7 @@
 <script setup>
 import { accentHex } from '../lib/theme.js'
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onBeforeUnmount } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import * as THREE from 'three'
 import AlgorithmLayout from './ui/AlgorithmLayout.vue'
 import AlgoViewport from './ui/AlgoViewport.vue'
@@ -37,6 +38,32 @@ const timeVal = ref('0.0')
 const divVal = ref('0.00')
 
 const degFmt = (d) => `${d}°`
+
+// URL 쿼리로 초기 조건 공유: t1/t2(초기각) g(중력) ar(팔 비율) d(감쇠)
+const route = useRoute()
+const router = useRouter()
+let urlTimer = null
+{
+  const q = route.query
+  const num = (v, lo, hi) => { const n = parseFloat(v); return Number.isFinite(n) ? Math.min(hi, Math.max(lo, n)) : null }
+  const t1 = num(q.t1, -180, 180); if (t1 != null) theta1Deg.value = Math.round(t1)
+  const t2 = num(q.t2, -180, 180); if (t2 != null) theta2Deg.value = Math.round(t2)
+  const g = num(q.g, 0.3, 2.6); if (g != null) gravity.value = g
+  const ar = num(q.ar, 0.5, 1.5); if (ar != null) armRatio.value = ar
+  const d = num(q.d, 0, 0.012); if (d != null) damping.value = d
+}
+
+function scheduleUrlSync() {
+  clearTimeout(urlTimer)
+  urlTimer = setTimeout(() => {
+    router.replace({ query: {
+      t1: String(theta1Deg.value), t2: String(theta2Deg.value),
+      g: gravity.value.toFixed(1), ar: armRatio.value.toFixed(2), d: damping.value.toFixed(3),
+    } }).catch(() => {})
+  }, 400)
+}
+
+onBeforeUnmount(() => clearTimeout(urlTimer))
 
 let armA = null, armB = null, bobA = null, bobB = null, jointA = null, pivotDot = null, trailLineA = null, trailLineB = null
 let trailA = [], trailB = []
@@ -147,8 +174,8 @@ useThreeViewport(hostRef, {
   },
 })
 
-watch([gravity, armRatio, damping], () => sim.invalidate())
-watch([theta1Deg, theta2Deg], () => resetSim())
+watch([gravity, armRatio, damping], () => { sim.invalidate(); scheduleUrlSync() })
+watch([theta1Deg, theta2Deg], () => { resetSim(); scheduleUrlSync() })
 watch([twin, trail], () => applyVisibility())
 
 const readoutItems = computed(() => [

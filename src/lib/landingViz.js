@@ -52,6 +52,33 @@ function makeSaddle(canvas, opts) {
   }
   if (opts.parallax) window.addEventListener("mousemove", onMove);
 
+  // opts.orbit: 프리뷰를 직접 드래그해 회전 (start/stop과 함께 리스너 부착/해제)
+  let dragging = false, px = 0, py = 0, listening = false;
+  function dragDown(e) { dragging = true; px = e.clientX; py = e.clientY; }
+  function dragMove(e) {
+    if (!dragging) return;
+    rotY += (e.clientX - px) * 0.008;
+    rotX = Math.max(-1.55, Math.min(0.25, rotX + (e.clientY - py) * 0.006));
+    px = e.clientX; py = e.clientY;
+  }
+  function dragUp() { dragging = false; }
+  function addOrbit() {
+    if (!opts.orbit || listening) return;
+    listening = true;
+    canvas.style.cursor = "grab";
+    canvas.addEventListener("pointerdown", dragDown);
+    window.addEventListener("pointermove", dragMove);
+    window.addEventListener("pointerup", dragUp);
+  }
+  function removeOrbit() {
+    if (!listening) return;
+    listening = false;
+    dragging = false;
+    canvas.removeEventListener("pointerdown", dragDown);
+    window.removeEventListener("pointermove", dragMove);
+    window.removeEventListener("pointerup", dragUp);
+  }
+
   function project(x, y, z) {
     // rotate Y
     const cy = Math.cos(rotY), sy = Math.sin(rotY);
@@ -70,8 +97,8 @@ function makeSaddle(canvas, opts) {
 
   function frame() {
     if (!running) return;
-    rotY += autoSpin;
-    if (opts.parallax) {
+    if (!dragging) rotY += autoSpin;
+    if (opts.parallax && !dragging) {
       tgX = (opts.rotX != null ? opts.rotX : -0.95) + my * 0.35;
       tgY = rotY + mx * 0.0; // spin handles y; parallax tilts x
       rotX = lerp(rotX, tgX, 0.05);
@@ -133,8 +160,8 @@ function makeSaddle(canvas, opts) {
   }
   function onResize() { s.resize(); }
   return {
-    start() { if (running) return; running = true; window.addEventListener("resize", onResize); frame(); },
-    stop() { running = false; if (raf) cancelAnimationFrame(raf); window.removeEventListener("resize", onResize); if (opts.parallax) window.removeEventListener("mousemove", onMove); ctx.clearRect(0, 0, s.W, s.H); },
+    start() { if (running) return; running = true; window.addEventListener("resize", onResize); addOrbit(); frame(); },
+    stop() { running = false; if (raf) cancelAnimationFrame(raf); window.removeEventListener("resize", onResize); if (opts.parallax) window.removeEventListener("mousemove", onMove); removeOrbit(); ctx.clearRect(0, 0, s.W, s.H); },
   };
 }
 
@@ -808,7 +835,7 @@ function makeSorting(canvas) {
 export { makeSaddle };
 
 export const previews = {
-  plotter: (c) => makeSaddle(c, { density: 20, autoSpin: 0.006, rotX: -0.9, scale: 0.92, alpha: 1, parallax: false }),
+  plotter: (c) => makeSaddle(c, { density: 20, autoSpin: 0.006, rotX: -0.9, scale: 0.92, alpha: 1, parallax: false, orbit: true }),
   fourier: (c) => makeFourier(c),
   fractal: (c) => makeFractal(c),
   montecarlo: (c, cb) => makeMonteCarlo(c, cb),

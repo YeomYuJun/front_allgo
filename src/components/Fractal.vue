@@ -1,5 +1,6 @@
 <script setup>
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import AlgorithmLayout from './ui/AlgorithmLayout.vue'
 import AlgoViewport from './ui/AlgoViewport.vue'
 import ControlPanel from './ui/ControlPanel.vue'
@@ -40,14 +41,61 @@ const jIm     = ref(0.113)
 const stat = ref({ type: 'mandelbrot', zoom: 1, cx: 0, cy: 0, ms: 0, iter: 120, scheme: 'classic' })
 
 let lab = null
+let urlTimer = null
+const route = useRoute()
+const router = useRouter()
+const copied = ref(false)
+
+// URL 쿼리로 뷰 상태 공유: t(type) c(scheme) it(iter) cx/cy/s(span) jr/ji(julia)
+function restoreFromUrl() {
+  const q = route.query
+  const num = (v) => { const n = parseFloat(v); return Number.isFinite(n) ? n : null }
+  if (typeof q.t === 'string' && TYPES.some((t) => t.value === q.t)) { type.value = q.t; lab.setType(q.t) }
+  if (typeof q.c === 'string' && SCHEMES.some((s) => s.value === q.c)) { scheme.value = q.c; lab.setScheme(q.c) }
+  const it = num(q.it)
+  if (it != null) { maxIter.value = Math.min(800, Math.max(50, Math.round(it))); lab.setIter(maxIter.value) }
+  const jr = num(q.jr), ji = num(q.ji)
+  if (jr != null || ji != null) {
+    if (jr != null) jRe.value = Math.min(2, Math.max(-2, jr))
+    if (ji != null) jIm.value = Math.min(2, Math.max(-2, ji))
+    lab.setJulia(jRe.value, jIm.value)
+  }
+  const cx = num(q.cx), cy = num(q.cy), span = num(q.s)
+  if (cx != null || cy != null || span != null) lab.setView(cx, cy, span)
+}
+
+function scheduleUrlSync() {
+  clearTimeout(urlTimer)
+  urlTimer = setTimeout(() => {
+    if (!lab) return
+    const v = lab.getView()
+    const query = {
+      t: type.value, c: scheme.value, it: String(maxIter.value),
+      cx: v.cx.toPrecision(12), cy: v.cy.toPrecision(12), s: v.span.toPrecision(6),
+    }
+    if (isJulia.value) { query.jr = jRe.value.toFixed(3); query.ji = jIm.value.toFixed(3) }
+    router.replace({ query }).catch(() => {})
+  }, 400)
+}
+
+async function copyLink() {
+  try {
+    await navigator.clipboard.writeText(window.location.href)
+    copied.value = true
+    setTimeout(() => { copied.value = false }, 1500)
+  } catch (e) {
+    console.error('clipboard copy failed:', e)
+  }
+}
 
 onMounted(() => {
   lab = createFractalLab(canvasRef.value, {
-    onStat: (s) => { stat.value = s },
+    onStat: (s) => { stat.value = s; scheduleUrlSync() },
   })
+  restoreFromUrl()
 })
 
-onBeforeUnmount(() => { if (lab) lab.dispose() })
+onBeforeUnmount(() => { clearTimeout(urlTimer); if (lab) lab.dispose() })
 
 function onType(v)   { type.value = v;    lab && lab.setType(v) }
 function onIter(v)   { maxIter.value = v; lab && lab.setIter(v) }
@@ -96,7 +144,10 @@ const readoutItems = computed(() => [
           <RangeField :model-value="jRe" :min="-2" :max="2" :step="0.001" label="Julia real" :format="(v) => v.toFixed(3)" @update:model-value="onJRe" />
           <RangeField :model-value="jIm" :min="-2" :max="2" :step="0.001" label="Julia imag" :format="(v) => v.toFixed(3)" @update:model-value="onJIm" />
         </template>
-        <AppButton variant="ghost" @click="lab && lab.reset()">Reset view</AppButton>
+        <div class="btnrow">
+          <AppButton variant="ghost" @click="lab && lab.reset()">Reset view</AppButton>
+          <AppButton variant="ghost" @click="copyLink">{{ copied ? 'Copied ✓' : 'Copy link' }}</AppButton>
+        </div>
       </ControlPanel>
 
       <ControlPanel number="02" title="Render">
@@ -126,6 +177,7 @@ const readoutItems = computed(() => [
 
 <style scoped>
 .vp-host { position: absolute; inset: 0; width: 100%; height: 100%; }
+.btnrow { display: flex; gap: 10px; flex-wrap: wrap; }
 .ln b { color: var(--acc); font-weight: 400; }
 .ex-head { max-width: 60ch; }
 .ex-head p { color: var(--fg-dim); font-size: 16px; line-height: 1.7; }

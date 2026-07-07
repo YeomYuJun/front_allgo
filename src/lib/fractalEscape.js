@@ -306,6 +306,13 @@ export function createFractalLab(canvas, opts = {}) {
       schedule()
     },
     reset() { const h = HOME[st.type]; st.cx = h.cx; st.cy = h.cy; st.span = h.span; schedule() },
+    getView() { return { cx: st.cx, cy: st.cy, span: st.span } },
+    setView(cx, cy, span) {
+      if (Number.isFinite(cx)) st.cx = cx
+      if (Number.isFinite(cy)) st.cy = cy
+      if (Number.isFinite(span) && span > 0) st.span = span
+      schedule()
+    },
     onStat(cb) { st.onStat = cb },
     schemeName(k) { return SCHEME_NAMES[k] },
     dispose() {
