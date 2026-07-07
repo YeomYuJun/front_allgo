@@ -1,8 +1,10 @@
 :root{
   --bg:#0a0b0c; --bg-2:#0d0e10; --panel:#121316; --panel-2:#16181b;
   --line:rgba(255,255,255,.08); --line-2:rgba(255,255,255,.14);
-  --fg:#edeef0; --fg-dim:#9a9ea4; --fg-mute:#62666c;
+  --fg:#edeef0; --fg-dim:#9a9ea4; --fg-mute:#7d8288;
   --acc:#c8ff00; --acc-deep:#9bc400; --acc-ghost:rgba(200,255,0,.10);
+  --warn:#ffb224; --warn-ghost:rgba(255,178,36,.12);
+  --danger:#ff5c5c; --danger-ghost:rgba(255,92,92,.12);
   --sans:'Archivo',system-ui,sans-serif;
   --mono:'Space Mono',ui-monospace,monospace;
   --serif:'Newsreader',Georgia,serif;
