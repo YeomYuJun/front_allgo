@@ -1,9 +1,20 @@
 <script setup>
-import { computed } from 'vue'
+import { computed, ref, onMounted, onBeforeUnmount } from 'vue'
 import { useRoute } from 'vue-router'
 
 const route = useRoute()
 const isLanding = computed(() => route.path === '/')
+
+// 전역 API 오류 토스트 (services/api.js가 dispatch)
+const apiError = ref('')
+let toastTimer = null
+function onApiError(e) {
+  apiError.value = e.detail?.message || 'API error'
+  clearTimeout(toastTimer)
+  toastTimer = setTimeout(() => { apiError.value = '' }, 4000)
+}
+onMounted(() => window.addEventListener('agm:api-error', onApiError))
+onBeforeUnmount(() => { clearTimeout(toastTimer); window.removeEventListener('agm:api-error', onApiError) })
 
 const links = [
   { to: '/plotter', label: 'Plotter' },
@@ -37,6 +48,9 @@ const links = [
       </div>
     </nav>
     <slot />
+    <transition name="toastfade">
+      <div v-if="apiError" class="api-toast" role="alert">API error — {{ apiError }}</div>
+    </transition>
     <footer v-if="!isLanding">
       <div class="foot-bottom wrap">
         <span>AllGoMath</span>
@@ -58,5 +72,8 @@ nav{position:fixed;top:0;left:0;right:0;z-index:50;display:flex;align-items:cent
 .navlinks a.cta{color:var(--bg);background:var(--acc);padding:8px 16px;border-radius:6px;font-weight:700;}
 footer{border-top:1px solid var(--line);padding:60px 0 50px;margin-top:80px;position:relative;z-index:3;}
 .foot-bottom{display:flex;justify-content:space-between;flex-wrap:wrap;gap:14px;font-family:var(--mono);font-size:11px;color:var(--fg-mute);letter-spacing:.04em;max-width:1280px;margin:0 auto;padding:0 40px;}
+.api-toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);z-index:80;font-family:var(--mono);font-size:12px;letter-spacing:.03em;color:var(--fg);background:rgba(10,11,12,.92);border:1px solid var(--danger);border-radius:8px;padding:11px 18px;box-shadow:0 8px 30px rgba(0,0,0,.5);}
+.toastfade-enter-active,.toastfade-leave-active{transition:opacity .25s,transform .25s;}
+.toastfade-enter-from,.toastfade-leave-to{opacity:0;transform:translateX(-50%) translateY(8px);}
 @media (max-width:760px){ .navlinks a:not(.cta){display:none;} }
 </style>

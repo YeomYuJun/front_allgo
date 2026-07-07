@@ -10,6 +10,14 @@ apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
     console.error('API error:', error?.response?.status, error?.message)
+    // 페이지별 silent-catch에 묻히지 않도록 전역 토스트(MainLayout)에 알린다
+    if (typeof window !== 'undefined') {
+      const status = error?.response?.status
+      const path = error?.config?.url || ''
+      window.dispatchEvent(new CustomEvent('agm:api-error', {
+        detail: { message: status ? `${status} · ${path}` : `backend unreachable · ${path}` },
+      }))
+    }
     return Promise.reject(error)
   }
 )

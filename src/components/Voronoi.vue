@@ -11,6 +11,7 @@ import AppButton from './ui/AppButton.vue'
 import Readout from './ui/Readout.vue'
 import { useThreeViewport } from '../composables/useThreeViewport.js'
 import { useLabHotkeys } from '../composables/useLabHotkeys.js'
+import { accentHex } from '../lib/theme.js'
 import { compute } from '../services/voronoiApi.js'
 import { randomSites, siteColor } from '../lib/voronoi.js'
 
@@ -46,7 +47,7 @@ const { getSceneManager } = useThreeViewport(hostRef, {
     texture.minFilter = THREE.NearestFilter
     planeMesh = new THREE.Mesh(new THREE.PlaneGeometry(WORLD, WORLD), new THREE.MeshBasicMaterial({ map: texture }))
     sm.scene.add(planeMesh)
-    sitePoints = new THREE.Points(new THREE.BufferGeometry(), new THREE.PointsMaterial({ color: 0xc8ff00, size: 7, sizeAttenuation: false }))
+    sitePoints = new THREE.Points(new THREE.BufferGeometry(), new THREE.PointsMaterial({ color: accentHex(), size: 7, sizeAttenuation: false }))
     edgeLines = new THREE.LineSegments(new THREE.BufferGeometry(), new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.22 }))
     edgeLines.visible = false
     sm.scene.add(sitePoints, edgeLines)

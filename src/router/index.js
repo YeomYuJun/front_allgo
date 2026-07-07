@@ -1,23 +1,8 @@
 // src/router/index.js
 import { createRouter, createWebHistory } from 'vue-router';
 import Landing from '../components/Landing.vue';
-import Fractal from '../components/Fractal.vue';
-import MonteCarlo from '../components/MonteCarlo.vue';
-import Bezier from '../components/Bezier.vue';
-import CellularAutomata from '../components/CellularAutomata.vue';
-import DoublePendulum from '../components/DoublePendulum.vue';
-import Lissajous from '../components/Lissajous.vue';
-import Flow from '../components/Flow.vue';
-import Voronoi from '../components/Voronoi.vue';
-import Fourier from '../components/Fourier.vue';
-import Plotter from '../components/Plotter.vue';
-import BreadthFirstSearch from '../components/BreadthFirstSearch.vue';
-import DynamicProgramming from '../components/DynamicProgramming.vue';
-import DepthFirstSearch from '../components/DepthFirstSearch.vue';
-import Greedy from '../components/Greedy.vue';
-import FourierTransform from '../components/FourierTransform.vue';
-import Sorting from '../components/Sorting.vue';
 
+// 랜딩만 즉시 로드, 나머지는 라우트별 지연 로드(초기 번들 축소)
 const routes = [
   {
     path: '/',
@@ -27,82 +12,82 @@ const routes = [
   {
     path: '/fractal',
     name: 'Fractal',
-    component: Fractal,
+    component: () => import('../components/Fractal.vue'),
   },
   {
     path: '/monte-carlo',
     name: 'MonteCarlo',
-    component: MonteCarlo,
+    component: () => import('../components/MonteCarlo.vue'),
   },
   {
     path: '/bezier',
     name: 'Bezier',
-    component: Bezier,
+    component: () => import('../components/Bezier.vue'),
   },
   {
     path: '/cellular-automata',
     name: 'CellularAutomata',
-    component: CellularAutomata,
+    component: () => import('../components/CellularAutomata.vue'),
   },
   {
     path: '/double-pendulum',
     name: 'DoublePendulum',
-    component: DoublePendulum,
+    component: () => import('../components/DoublePendulum.vue'),
   },
   {
     path: '/lissajous',
     name: 'Lissajous',
-    component: Lissajous,
+    component: () => import('../components/Lissajous.vue'),
   },
   {
     path: '/flow',
     name: 'Flow',
-    component: Flow,
+    component: () => import('../components/Flow.vue'),
   },
   {
     path: '/voronoi',
     name: 'Voronoi',
-    component: Voronoi,
+    component: () => import('../components/Voronoi.vue'),
   },
   {
     path: '/fourier',
     name: 'Fourier',
-    component: Fourier,
+    component: () => import('../components/Fourier.vue'),
   },
   {
     path: '/plotter',
     name: 'Plotter',
-    component: Plotter,
+    component: () => import('../components/Plotter.vue'),
   },
   {
     path: '/breadth-first-search',
     name: 'BreadthFirstSearch',
-    component: BreadthFirstSearch,
+    component: () => import('../components/BreadthFirstSearch.vue'),
   },
   {
     path: '/dynamic-programming',
     name: 'DynamicProgramming',
-    component: DynamicProgramming,
+    component: () => import('../components/DynamicProgramming.vue'),
   },
   {
     path: '/depth-first-search',
     name: 'DepthFirstSearch',
-    component: DepthFirstSearch,
+    component: () => import('../components/DepthFirstSearch.vue'),
   },
   {
     path: '/greedy',
     name: 'Greedy',
-    component: Greedy,
+    component: () => import('../components/Greedy.vue'),
   },
   {
     path: '/fourier-transform',
     name: 'FourierTransform',
-    component: FourierTransform,
+    component: () => import('../components/FourierTransform.vue'),
   },
   {
     path: '/sorting',
     name: 'Sorting',
-    component: Sorting,
+    component: () => import('../components/Sorting.vue'),
   },
   // Catch-all route for undefined paths - must be at the end
   {
