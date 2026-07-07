@@ -29,19 +29,31 @@ export function createDfsLab(canvas, opts = {}) {
   let head = 0, phase = 'idle', playing = false, raf = null, alive = false
   let cell = 20, ox = 0, oy = 0
 
+  let everRan = false
+
   function clearTrace() {
     events = []; path = []
     found = false; deadEnds = 0; foundAt = -1
     head = 0; phase = 'idle'
     emit()
   }
-  function emitEdit() { if (onEdit) onEdit() }
+  // live=true -> 이미 실행된 적이 있어 컴포넌트가 즉시 재탐색해야 하는 편집
+  function emitEdit() { if (onEdit) onEdit(everRan) }
 
-  function setTrace(t) {
+  // preserve=true -> 라이브 재탐색: 탐색 애니메이션 중이면 진행 위치 유지, 아니면 새 결과 즉시 전체 표시
+  function setTrace(t, preserve = false) {
+    const prev = { phase, head, playing }
     events = t.events || []; path = t.path || []
     found = !!t.found; deadEnds = t.deadEnds || 0
     foundAt = found ? events.length - 1 : -1
-    head = 0; phase = 'idle'
+    everRan = true
+    if (!preserve) {
+      head = 0; phase = 'idle'
+    } else if (prev.phase === 'search') {
+      head = Math.min(prev.head, endHead()); phase = 'search'; playing = prev.playing
+    } else {
+      head = endHead(); phase = 'done'; playing = false
+    }
     emit()
   }
 
@@ -152,7 +164,8 @@ export function createDfsLab(canvas, opts = {}) {
     else if (st.tool === 'goal') { if (!wall[i] && i !== start) goal = i }
     else if (st.tool === 'wall') { if (i !== start && i !== goal) wall[i] = paintVal }
     else if (st.tool === 'erase') { wall[i] = false }
-    clearTrace(); emitEdit()
+    if (!everRan) clearTrace()
+    emitEdit()
   }
   function down(e) {
     const i = cellAt(e); if (i < 0) return
@@ -193,8 +206,8 @@ export function createDfsLab(canvas, opts = {}) {
     setSpeed(v) { st.speed = v },
     setTool(t) { st.tool = t },
     setSize(n) { st.cols = n; st.rows = Math.max(8, Math.round((n * 2) / 3)); reseed(); clearTrace(); emitEdit() },
-    clearWalls() { wall = emptyWalls(st.rows, st.cols); clearTrace(); emitEdit() },
-    randomMaze() { wall = randomMaze(st.rows, st.cols, 0.28, start, goal); clearTrace(); emitEdit() },
+    clearWalls() { wall = emptyWalls(st.rows, st.cols); if (!everRan) clearTrace(); emitEdit() },
+    randomMaze() { wall = randomMaze(st.rows, st.cols, 0.28, start, goal); if (!everRan) clearTrace(); emitEdit() },
     dispose() {
       alive = false
       if (raf) cancelAnimationFrame(raf)

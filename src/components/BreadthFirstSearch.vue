@@ -26,9 +26,11 @@ const diag = ref(false)
 const numbers = ref(false)
 const dirty = ref(true)
 const running = ref(false)
+const ranOnce = ref(false)
 const stat = ref({ visited: 0, total: 0, pathLen: '—', found: false, phase: 'idle' })
 
 let lab = null
+let liveTimer = null, liveToken = 0
 
 async function run() {
   if (!lab || running.value) return
@@ -37,6 +39,7 @@ async function run() {
     const trace = await search(lab.getState())
     lab.setTrace(trace)
     dirty.value = false
+    ranOnce.value = true
     lab.play()
   } catch (e) {
     console.error('BFS search failed:', e)
@@ -45,14 +48,30 @@ async function run() {
   }
 }
 
+// 실행 이후의 편집은 디바운스 재탐색으로 경로를 실시간 우회시킨다 (결과 리셋 없음)
+function scheduleLiveSearch() {
+  clearTimeout(liveTimer)
+  liveTimer = setTimeout(async () => {
+    const token = ++liveToken
+    try {
+      const trace = await search(lab.getState())
+      if (token !== liveToken || !lab) return
+      lab.setTrace(trace, true)
+      dirty.value = false
+    } catch (e) {
+      console.error('BFS live re-search failed:', e)
+    }
+  }, 130)
+}
+
 onMounted(() => {
   lab = createBfsLab(canvasRef.value, {
     onStat: (s) => { stat.value = s },
-    onEdit: () => { dirty.value = true },
+    onEdit: (live) => { if (live) scheduleLiveSearch(); else dirty.value = true },
   })
 })
 
-onBeforeUnmount(() => { if (lab) lab.dispose() })
+onBeforeUnmount(() => { liveToken++; clearTimeout(liveTimer); if (lab) lab.dispose(); lab = null })
 
 function onTool(v) { tool.value = v; lab && lab.setTool(v) }
 function onSpeed(v) { speed.value = v; lab && lab.setSpeed(v) }
@@ -93,6 +112,7 @@ const readoutItems = computed(() => [
         </div>
         <RangeField :model-value="speed" :min="1" :max="20" :step="1" label="Speed" @update:model-value="onSpeed" />
         <p v-if="dirty" class="hint">미로를 편집했습니다 — Run을 눌러 다시 탐색하세요.</p>
+        <p v-else-if="ranOnce" class="hint">이제 벽을 그리거나 지우면 즉시 재탐색되어 경로가 우회합니다.</p>
       </ControlPanel>
 
       <ControlPanel number="02" title="Maze">
