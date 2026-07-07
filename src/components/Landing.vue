@@ -1,8 +1,11 @@
 <script setup>
-import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, nextTick } from 'vue'
+import { useRoute } from 'vue-router'
 import { ALGOS } from '../lib/landingAlgorithms.js'
 import { makeSaddle, previews } from '../lib/landingViz.js'
 import { prefersReducedMotion } from '../lib/motion.js'
+
+const route = useRoute()
 
 const rootRef = ref(null)
 const algoSecRef = ref(null)
@@ -90,6 +93,8 @@ onMounted(() => {
     if (e.isIntersecting) current.start(); else current.stop()
   }), { threshold: 0.05 })
   if (algoSecRef.value) observer.observe(algoSecRef.value)
+
+  if (route.hash) nextTick(() => scrollToId(route.hash.slice(1)))
 })
 
 onBeforeUnmount(() => {
