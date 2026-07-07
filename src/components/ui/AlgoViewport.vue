@@ -5,6 +5,7 @@ import { useRoute } from 'vue-router'
 const props = defineProps({
   // 첫 방문 시 캔버스 위에 1회 보여줄 조작 힌트 (없으면 오버레이 없음)
   hint: { type: String, default: '' },
+  ariaLabel: { type: String, default: '인터랙티브 수학 시각화 캔버스' },
 })
 
 const canvasHost = ref(null)
@@ -35,7 +36,7 @@ defineExpose({ canvasHost })
       <div class="expr"><slot name="expr" /></div>
       <div class="right"><slot name="bar-right" /></div>
     </div>
-    <div ref="canvasHost" class="vp-canvas grab" @pointerdown.capture="dismissHint">
+    <div ref="canvasHost" class="vp-canvas grab" role="img" :aria-label="ariaLabel" @pointerdown.capture="dismissHint">
       <slot />
       <div class="vp-status"><slot name="status" /></div>
       <div class="vp-legend"><slot name="legend" /></div>

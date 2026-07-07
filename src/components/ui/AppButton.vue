@@ -6,7 +6,7 @@ defineProps({
 </script>
 
 <template>
-  <button class="btn" :class="variant === 'ghost' ? 'btn-ghost' : 'btn-primary'" :disabled="disabled">
+  <button type="button" class="btn" :class="variant === 'ghost' ? 'btn-ghost' : 'btn-primary'" :disabled="disabled">
     <slot />
   </button>
 </template>

@@ -7,9 +7,9 @@ defineEmits(['update:modelValue'])
 </script>
 
 <template>
-  <div class="seg">
-    <button v-for="o in options" :key="o.value"
-            :class="{ on: o.value === modelValue }"
+  <div class="seg" role="group">
+    <button v-for="o in options" :key="o.value" type="button"
+            :class="{ on: o.value === modelValue }" :aria-pressed="o.value === modelValue"
             @click="$emit('update:modelValue', o.value)">{{ o.label }}</button>
   </div>
 </template>

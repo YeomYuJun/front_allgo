@@ -1,4 +1,6 @@
 <script setup>
+import { useId } from 'vue'
+
 const props = defineProps({
   modelValue: { type: Number, required: true },
   min: { type: Number, default: 0 },
@@ -8,16 +10,17 @@ const props = defineProps({
   format: { type: Function, default: null },
 })
 const emit = defineEmits(['update:modelValue'])
+const id = useId()
 function onInput(e) { emit('update:modelValue', Number(e.target.value)) }
 </script>
 
 <template>
   <div class="field">
     <div class="top">
-      <label>{{ label }}</label>
+      <label :for="id">{{ label }}</label>
       <span class="val">{{ format ? format(modelValue) : modelValue }}</span>
     </div>
-    <input type="range" :min="min" :max="max" :step="step" :value="modelValue" @input="onInput" />
+    <input :id="id" type="range" :min="min" :max="max" :step="step" :value="modelValue" @input="onInput" />
   </div>
 </template>
 
@@ -29,4 +32,5 @@ function onInput(e) { emit('update:modelValue', Number(e.target.value)) }
 input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:3px;border-radius:3px;background:var(--line-2);outline:none;cursor:pointer;}
 input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:15px;height:15px;border-radius:50%;background:var(--acc);border:2px solid var(--bg);box-shadow:0 0 0 1px var(--acc);}
 input[type=range]::-moz-range-thumb{width:13px;height:13px;border-radius:50%;background:var(--acc);border:2px solid var(--bg);}
+input[type=range]:focus-visible{outline:2px solid var(--acc);outline-offset:4px;}
 </style>

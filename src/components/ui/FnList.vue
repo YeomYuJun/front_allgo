@@ -7,18 +7,19 @@ defineEmits(['update:modelValue'])
 </script>
 
 <template>
-  <div class="fnlist">
-    <div v-for="it in items" :key="it.key" class="fnrow" :class="{ on: it.key === modelValue }"
-         @click="$emit('update:modelValue', it.key)">
+  <div class="fnlist" role="group">
+    <button v-for="it in items" :key="it.key" type="button" class="fnrow"
+            :class="{ on: it.key === modelValue }" :aria-pressed="it.key === modelValue"
+            @click="$emit('update:modelValue', it.key)">
       <span class="nm">{{ it.label }}</span>
       <span v-if="it.eq" class="ex">{{ it.eq }}</span>
-    </div>
+    </button>
   </div>
 </template>
 
 <style scoped>
 .fnlist{display:flex;flex-direction:column;gap:2px;}
-.fnrow{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px 12px;border-radius:8px;cursor:pointer;border:1px solid transparent;transition:background .2s,border-color .2s;}
+.fnrow{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px 12px;border-radius:8px;cursor:pointer;border:1px solid transparent;transition:background .2s,border-color .2s;background:transparent;color:inherit;width:100%;text-align:left;}
 .fnrow:hover{background:var(--panel-2);}
 .fnrow.on{background:var(--acc-ghost);border-color:rgba(200,255,0,.3);}
 .nm{font-size:14px;font-weight:500;}

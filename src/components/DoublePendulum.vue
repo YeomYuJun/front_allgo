@@ -11,6 +11,7 @@ import Readout from './ui/Readout.vue'
 import { useThreeViewport } from '../composables/useThreeViewport.js'
 import { useSimulation } from '../composables/useSimulation.js'
 import { useLabHotkeys } from '../composables/useLabHotkeys.js'
+import { prefersReducedMotion } from '../lib/motion.js'
 import { simulate } from '../services/pendulumApi.js'
 import { degToRad, tip, divergence } from '../lib/pendulum.js'
 
@@ -141,7 +142,7 @@ useThreeViewport(hostRef, {
     pivotDot.position.set(0, PIVOT_Y, 0)
     sm.scene.add(armA, armB, trailLineA, trailLineB, bobA, bobB, jointA, pivotDot)
     resetSim()
-    sim.play()
+    if (!prefersReducedMotion()) sim.play()
   },
 })
 

@@ -10,6 +10,7 @@ import Readout from './ui/Readout.vue'
 import { useThreeViewport } from '../composables/useThreeViewport.js'
 import { useSimulation } from '../composables/useSimulation.js'
 import { useLabHotkeys } from '../composables/useLabHotkeys.js'
+import { prefersReducedMotion } from '../lib/motion.js'
 import { simulate } from '../services/lissajousApi.js'
 import { reduceRatio } from '../lib/lissajous.js'
 
@@ -96,7 +97,7 @@ function resetSim() {
   ratioVal.value = reduceRatio(a.value, b.value).join(':')
   deltaVal.value = degFmt(delta.value)
   sim.reset({ u: 0 })
-  sim.play()
+  if (!prefersReducedMotion()) sim.play()
 }
 
 useThreeViewport(hostRef, {

@@ -2,6 +2,7 @@
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
 import { ALGOS } from '../lib/landingAlgorithms.js'
 import { makeSaddle, previews } from '../lib/landingViz.js'
+import { prefersReducedMotion } from '../lib/motion.js'
 
 const rootRef = ref(null)
 const algoSecRef = ref(null)
@@ -62,7 +63,7 @@ function revealCheck() {
 
 onMounted(() => {
   hero = makeSaddle(heroCanvas.value, {
-    density: 30, autoSpin: 0.0015, rotX: -0.95, rotY: 0.4,
+    density: 30, autoSpin: prefersReducedMotion() ? 0 : 0.0015, rotX: -0.95, rotY: 0.4,
     scale: 1.16, alpha: 0.95, parallax: true, yShift: 0.02, xShift: 0.18, lineWidth: 1,
   })
   hero.start()
