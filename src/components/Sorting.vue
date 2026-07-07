@@ -9,6 +9,7 @@ import AppButton from './ui/AppButton.vue'
 import Readout from './ui/Readout.vue'
 import { createSortLab } from '../lib/sortLab.js'
 import { run as runSort } from '../services/sortApi.js'
+import { useLabHotkeys } from '../composables/useLabHotkeys.js'
 
 const ALGOS = [
   { value: 'bubble', label: 'Bubble', eq: 'O(n²)' },
@@ -96,6 +97,12 @@ onMounted(() => {
 })
 
 onBeforeUnmount(() => { rerunToken++; clearTimeout(rerunTimer); if (lab) lab.dispose(); lab = null })
+
+useLabHotkeys({
+  onPlayPause: () => { if (!lab) return; lab.isPlaying() ? lab.pause() : lab.play() },
+  onReset: () => lab && lab.reset(),
+  onStepForward: () => lab && lab.step(),
+})
 
 watch([size, preset], reseed)
 watch(algorithm, () => { if (ranOnce.value) scheduleRerun(); })

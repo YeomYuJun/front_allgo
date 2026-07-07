@@ -120,6 +120,7 @@ export function createSortLab(canvas, opts = {}) {
 
   return {
     setData, setTrace,
+    isPlaying() { return playing },
     getValues() { return base.slice() },
     play() { if (!events.length) return; if (phase === 'done') { head = 0; phase = 'idle'; resetState() } playing = true },
     pause() { playing = false },

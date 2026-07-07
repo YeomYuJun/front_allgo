@@ -10,6 +10,7 @@ import AppButton from './ui/AppButton.vue'
 import Readout from './ui/Readout.vue'
 import { useThreeViewport } from '../composables/useThreeViewport.js'
 import { useSimulation } from '../composables/useSimulation.js'
+import { useLabHotkeys } from '../composables/useLabHotkeys.js'
 import { simulate } from '../services/pendulumApi.js'
 import { degToRad, tip, divergence } from '../lib/pendulum.js'
 
@@ -152,6 +153,12 @@ const readoutItems = computed(() => [
   { k: 't (s)', v: timeVal.value, acc: true },
   { k: 'divergence', v: divVal.value },
 ])
+
+useLabHotkeys({
+  onPlayPause: () => (playing.value ? sim.pause() : sim.play()),
+  onReset: resetSim,
+  onStepForward: () => { if (!playing.value) sim.step() },
+})
 </script>
 
 <template>

@@ -9,6 +9,7 @@ import AppButton from './ui/AppButton.vue'
 import Readout from './ui/Readout.vue'
 import { createDpLab } from '../lib/dpLab.js'
 import { solve } from '../services/dpApi.js'
+import { useLabHotkeys } from '../composables/useLabHotkeys.js'
 
 const MODE_OPTIONS = [
   { value: 'max', label: 'Max' },
@@ -53,6 +54,12 @@ function onSpeed(v) { speed.value = v; lab && lab.setSpeed(v) }
 function onSize(v) { size.value = v; lab && lab.setSize(v) }
 function onMode(v) { mode.value = v; lab && lab.setMode(v) }
 
+useLabHotkeys({
+  onPlayPause: () => { if (!lab) return; lab.isPlaying() ? lab.pause() : lab.play() },
+  onReset: () => lab && lab.reset(),
+  onStepForward: () => lab && lab.step(),
+})
+
 const readoutItems = computed(() => [
   { k: 'filled', v: String(stat.value.filled), acc: true },
   { k: 'best', v: String(stat.value.best) },
@@ -66,7 +73,7 @@ const readoutItems = computed(() => [
     subtitle="격자를 셀 단위로 채워 최적 경로를 구하고, 역추적으로 경로를 복원한다. 셀을 클릭해 값을 바꾸고 Run."
     :tags="['DP', 'optimization', 'grid', 'interactive']" eq="dp[r][c] = a[r][c] + best(↑,←)">
     <template #viewport>
-      <AlgoViewport>
+      <AlgoViewport hint="셀을 클릭해 값을 바꿔 보세요">
         <template #expr>{{ stat.mode === 'max' ? 'maximize' : 'minimize' }}</template>
         <template #status>
           <div class="ln"><b>{{ stat.filled }}</b> filled · best <b>{{ stat.best }}</b></div>

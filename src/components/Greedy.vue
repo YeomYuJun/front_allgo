@@ -9,6 +9,7 @@ import AppButton from './ui/AppButton.vue'
 import Readout from './ui/Readout.vue'
 import { createGreedyLab } from '../lib/greedyLab.js'
 import { schedule } from '../services/greedyApi.js'
+import { useLabHotkeys } from '../composables/useLabHotkeys.js'
 
 const STRATEGIES = [
   { value: 'finish', label: 'Finish' },
@@ -54,6 +55,12 @@ function onCount(v) { count.value = v; lab && lab.setCount(v) }
 function onStrategy(v) { strategy.value = v; lab && lab.setStrategy(v) }
 function onSpeed(v) { speed.value = v; lab && lab.setSpeed(v) }
 
+useLabHotkeys({
+  onPlayPause: () => { if (!lab) return; lab.isPlaying() ? lab.pause() : lab.play() },
+  onReset: () => lab && lab.reset(),
+  onStepForward: () => lab && lab.step(),
+})
+
 const readoutItems = computed(() => [
   { k: 'selected', v: String(stat.value.selected), acc: true },
   { k: 'optimal', v: String(stat.value.optimal) },
@@ -68,7 +75,7 @@ const readoutItems = computed(() => [
     subtitle="타임라인 위 task를 전략 순서로 스캔하며 직전 선택과 안 겹치면 채택한다 — earliest-finish만이 최적. 전략을 바꿔 탐욕이 실패하는 걸 보라."
     :tags="['greedy', 'scheduling', 'optimization', 'interactive']" eq="keep if start ≥ last end">
     <template #viewport>
-      <AlgoViewport>
+      <AlgoViewport hint="일시정지 상태에서 캔버스를 클릭하면 한 스텝씩 진행합니다">
         <template #expr>{{ stat.strategy }}</template>
         <template #status>
           <div class="ln"><b>{{ stat.selected }}</b> selected · optimal <b>{{ stat.optimal }}</b></div>

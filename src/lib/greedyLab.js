@@ -172,6 +172,7 @@ export function createGreedyLab(canvas, opts = {}) {
   const api = {
     getState,
     setTrace,
+    isPlaying() { return playing },
     play() { if (phase === 'done') resetAnim(); playing = true },
     pause() { playing = false },
     step() {

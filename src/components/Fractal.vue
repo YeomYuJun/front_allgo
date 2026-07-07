@@ -61,6 +61,10 @@ function onAutoQ(v)  { autoQ.value = v;   lab && lab.toggle('autoQ', v) }
 
 const isJulia = computed(() => type.value === 'julia')
 
+useLabHotkeys({
+  onReset: () => lab && lab.reset(),
+})
+
 const readoutItems = computed(() => [
   { k: 'zoom',   v: stat.value.zoom != null ? `${stat.value.zoom.toFixed(2)}x` : '1.00x', acc: true },
   { k: 'type',   v: stat.value.type || type.value },
@@ -76,7 +80,7 @@ const readoutItems = computed(() => [
     subtitle="이스케이프 타임 탐험기 - Mandelbrot / Julia / Burning Ship. 스크롤로 확대, 드래그로 이동, 더블클릭으로 줌인, Shift+클릭으로 줌아웃."
     :tags="['fractal', 'escape-time', 'complex', 'interactive']" eq="z -> z^2 + c">
     <template #viewport>
-      <AlgoViewport>
+      <AlgoViewport hint="드래그로 이동 · 스크롤로 딥 줌 · 더블클릭 줌인">
         <template #expr>{{ type }} · {{ maxIter }} iter</template>
         <template #status>
           <div class="ln">zoom <b>{{ stat.zoom != null ? stat.zoom.toFixed(2) : '1.00' }}x</b> · {{ stat.ms != null ? `${stat.ms}ms` : '-' }}</div>

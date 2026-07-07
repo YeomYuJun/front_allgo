@@ -9,6 +9,7 @@ import ToggleControl from './ui/ToggleControl.vue'
 import Readout from './ui/Readout.vue'
 import { useThreeViewport } from '../composables/useThreeViewport.js'
 import { useSimulation } from '../composables/useSimulation.js'
+import { useLabHotkeys } from '../composables/useLabHotkeys.js'
 import { simulate } from '../services/flowApi.js'
 import { spawn, outOfBounds } from '../lib/flowField.js'
 
@@ -77,6 +78,11 @@ function updateScene(step) {
   }
   rebuildLineSegments(ps.length)
 }
+
+useLabHotkeys({
+  onPlayPause: () => (sim.playing.value ? sim.pause() : sim.play()),
+  onReset: () => resetField(),
+})
 
 function resetField() {
   const n = count.value

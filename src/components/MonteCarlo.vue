@@ -9,6 +9,7 @@ import RangeField from './ui/RangeField.vue'
 import AppButton from './ui/AppButton.vue'
 import Readout from './ui/Readout.vue'
 import { useThreeViewport } from '../composables/useThreeViewport.js'
+import { useLabHotkeys } from '../composables/useLabHotkeys.js'
 import { integrate } from '../services/monteCarloApi.js'
 
 const ACC = 0xc8ff00
@@ -139,6 +140,11 @@ watch(selectedFunction, (fn) => {
   Object.assign(bounds, DEFAULT_BOUNDS[fn] || DEFAULT_BOUNDS.square)
   const sm = getSceneManager()
   if (sm) drawCurve(sm.scene)
+})
+
+useLabHotkeys({
+  onPlayPause: () => { if (!running.value) run() },
+  onReset: reset,
 })
 
 const readoutItems = computed(() => {

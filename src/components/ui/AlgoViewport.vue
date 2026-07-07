@@ -1,6 +1,31 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
+
+const props = defineProps({
+  // 첫 방문 시 캔버스 위에 1회 보여줄 조작 힌트 (없으면 오버레이 없음)
+  hint: { type: String, default: '' },
+})
+
 const canvasHost = ref(null)
+const showHint = ref(false)
+const route = useRoute()
+
+const hintKey = () => `agm-hint:${route.path}`
+
+onMounted(() => {
+  if (!props.hint) return
+  try {
+    if (!localStorage.getItem(hintKey())) showHint.value = true
+  } catch { /* storage unavailable: skip hint */ }
+})
+
+function dismissHint() {
+  if (!showHint.value) return
+  showHint.value = false
+  try { localStorage.setItem(hintKey(), '1') } catch { /* ignore */ }
+}
+
 defineExpose({ canvasHost })
 </script>
 
@@ -10,10 +35,15 @@ defineExpose({ canvasHost })
       <div class="expr"><slot name="expr" /></div>
       <div class="right"><slot name="bar-right" /></div>
     </div>
-    <div ref="canvasHost" class="vp-canvas grab">
+    <div ref="canvasHost" class="vp-canvas grab" @pointerdown.capture="dismissHint">
       <slot />
       <div class="vp-status"><slot name="status" /></div>
       <div class="vp-legend"><slot name="legend" /></div>
+      <transition name="hintfade">
+        <div v-if="showHint" class="vp-hint-overlay" aria-hidden="true">
+          <span class="pill">{{ hint }}</span>
+        </div>
+      </transition>
     </div>
   </div>
 </template>
@@ -28,5 +58,9 @@ defineExpose({ canvasHost })
 .vp-canvas :deep(canvas){position:absolute;inset:0;width:100%;height:100%;}
 .vp-status{position:absolute;left:16px;bottom:14px;z-index:2;font-family:var(--mono);font-size:11.5px;color:var(--fg-dim);letter-spacing:.03em;display:grid;gap:4px;pointer-events:none;}
 .vp-legend{position:absolute;right:16px;bottom:14px;z-index:2;display:flex;flex-direction:column;gap:7px;align-items:flex-end;pointer-events:none;}
+.vp-hint-overlay{position:absolute;inset:0;z-index:3;display:grid;place-items:center;pointer-events:none;}
+.vp-hint-overlay .pill{font-family:var(--mono);font-size:12px;letter-spacing:.04em;color:var(--fg);background:rgba(10,11,12,.82);border:1px solid rgba(200,255,0,.35);border-radius:30px;padding:11px 20px;backdrop-filter:blur(6px);box-shadow:0 8px 30px rgba(0,0,0,.4);}
+.hintfade-enter-active,.hintfade-leave-active{transition:opacity .35s;}
+.hintfade-enter-from,.hintfade-leave-to{opacity:0;}
 @media (max-width:760px){ .vp-canvas{height:420px;} }
 </style>

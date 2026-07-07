@@ -9,6 +9,7 @@ import AppButton from './ui/AppButton.vue'
 import Readout from './ui/Readout.vue'
 import { createFourierLab } from '../lib/fourierLab.js'
 import { transform } from '../services/fourierApi.js'
+import { useLabHotkeys } from '../composables/useLabHotkeys.js'
 
 const canvasRef = ref(null)
 const comps = ref([])
@@ -44,6 +45,11 @@ onMounted(() => {
 onBeforeUnmount(() => {
   clearTimeout(timer)
   if (lab) lab.dispose()
+})
+
+useLabHotkeys({
+  onPlayPause: () => lab && lab.sweep(),
+  onReset: () => lab && lab.reset(),
 })
 
 const readoutItems = computed(() => [

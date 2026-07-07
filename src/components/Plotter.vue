@@ -10,6 +10,7 @@ import ToggleControl from './ui/ToggleControl.vue'
 import AppButton from './ui/AppButton.vue'
 import Readout from './ui/Readout.vue'
 import { useThreeViewport } from '../composables/useThreeViewport.js'
+import { useLabHotkeys } from '../composables/useLabHotkeys.js'
 import { surface as fetchSurface, descend as fetchDescent } from '../services/plotterApi.js'
 import { FUNCTIONS, normalize, heightColor } from '../lib/plotter.js'
 
@@ -269,6 +270,11 @@ watch(axesOn, (v) => { if (axesGroup) axesGroup.visible = v })
 watch(criticalOn, (v) => { if (critMarker) critMarker.visible = v })
 watch(heightColorOn, () => { if (surfaceData) rebuildSurface() })
 
+useLabHotkeys({
+  onPlayPause: animateDescent,
+  onReset: resetDescent,
+})
+
 const resFmt = (v) => `${v} × ${v}`
 const rangeFmt = (v) => `± ${v.toFixed(1)}`
 const lrFmt = (v) => v.toFixed(3)
@@ -286,7 +292,7 @@ const readoutItems = computed(() => [
     subtitle="수학 곡면을 3차원으로 그리고, 카메라를 돌리며, 표면을 따라 경사하강을 실시간으로 달려 보라."
     :tags="['3D', 'real-time', 'gradient descent']" eq="xₖ₊₁ = xₖ − α∇ƒ(xₖ)">
     <template #viewport>
-      <AlgoViewport>
+      <AlgoViewport hint="표면을 클릭하면 경사하강 시작점이 이동합니다 · 드래그로 회전">
         <template #expr>{{ fnMeta(fn).expr }}</template>
         <template #bar-right><span class="hint">click surface to set start · drag to orbit</span></template>
         <template #status>

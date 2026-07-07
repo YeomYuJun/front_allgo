@@ -194,6 +194,7 @@ export function createDfsLab(canvas, opts = {}) {
 
   return {
     getState, setTrace,
+    isPlaying() { return playing },
     play() { if (phase === 'done') { head = 0; phase = 'idle' } playing = true },
     pause() { playing = false },
     step() {

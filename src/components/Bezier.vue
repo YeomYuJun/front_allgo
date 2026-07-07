@@ -9,6 +9,7 @@ import SegControl from './ui/SegControl.vue'
 import ToggleControl from './ui/ToggleControl.vue'
 import Readout from './ui/Readout.vue'
 import { useThreeViewport } from '../composables/useThreeViewport.js'
+import { useLabHotkeys } from '../composables/useLabHotkeys.js'
 import { compute } from '../services/bezierApi.js'
 import { PRESETS, deCasteljau } from '../lib/bezier.js'
 
@@ -203,6 +204,10 @@ const readoutItems = computed(() => [
   { k: 'degree', v: degreeText.value },
   { k: 'length', v: lengthText.value },
 ])
+
+useLabHotkeys({
+  onPlayPause: () => { animate.value = !animate.value },
+})
 </script>
 
 <template>
@@ -211,7 +216,7 @@ const readoutItems = computed(() => [
     subtitle="폰트와 벡터 드로잉 뒤의 매끄러운 곡선. 제어점을 끌어 de Casteljau 작도가 매개변수 t의 점을 그리는 것을 보라."
     :tags="['parametric', 'spline', 'de Casteljau', 'interactive']" eq="B(t) = Σ bᵢ,ₙ(t) Pᵢ">
     <template #viewport>
-      <AlgoViewport>
+      <AlgoViewport hint="제어점을 드래그해 곡선을 바꿔 보세요">
         <template #expr>degree {{ degreeText }}</template>
         <template #status>
           <div class="ln">t = <b>{{ tText }}</b> · degree <b>{{ degreeText }}</b></div>

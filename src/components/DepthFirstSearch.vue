@@ -9,6 +9,7 @@ import AppButton from './ui/AppButton.vue'
 import Readout from './ui/Readout.vue'
 import { createDfsLab } from '../lib/dfsLab.js'
 import { search } from '../services/dfsApi.js'
+import { useLabHotkeys } from '../composables/useLabHotkeys.js'
 
 const TOOLS = [
   { value: 'wall', label: 'Wall' },
@@ -70,6 +71,12 @@ onMounted(() => {
 
 onBeforeUnmount(() => { liveToken++; clearTimeout(liveTimer); if (lab) lab.dispose(); lab = null })
 
+useLabHotkeys({
+  onPlayPause: () => { if (!lab) return; lab.isPlaying() ? lab.pause() : lab.play() },
+  onReset: () => lab && lab.reset(),
+  onStepForward: () => lab && lab.step(),
+})
+
 function onTool(v) { tool.value = v; lab && lab.setTool(v) }
 function onSpeed(v) { speed.value = v; lab && lab.setSpeed(v) }
 function onSize(v) { size.value = v; lab && lab.setSize(v) }
@@ -87,7 +94,7 @@ const readoutItems = computed(() => [
     subtitle="스택을 따라 한 방향으로 깊이 파고들다 막다른 길에서 되돌아온다 — 찾은 경로가 최단은 아니다. 벽·S·G 편집 후 Run."
     :tags="['DFS', 'backtracking', 'graph', 'interactive']" eq="explore deep · backtrack on dead end">
     <template #viewport>
-      <AlgoViewport>
+      <AlgoViewport hint="드래그로 벽을 그리고, Start/Goal 툴로 끝점을 옮겨 보세요">
         <template #expr>stack-based DFS</template>
         <template #status>
           <div class="ln"><b>{{ stat.visited }}</b> visited · depth <b>{{ stat.depth }}</b></div>

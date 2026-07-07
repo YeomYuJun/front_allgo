@@ -10,6 +10,7 @@ import AppButton from './ui/AppButton.vue'
 import Readout from './ui/Readout.vue'
 import { createBfsLab } from '../lib/bfsLab.js'
 import { search } from '../services/bfsApi.js'
+import { useLabHotkeys } from '../composables/useLabHotkeys.js'
 
 const TOOLS = [
   { value: 'wall', label: 'Wall' },
@@ -73,6 +74,12 @@ onMounted(() => {
 
 onBeforeUnmount(() => { liveToken++; clearTimeout(liveTimer); if (lab) lab.dispose(); lab = null })
 
+useLabHotkeys({
+  onPlayPause: () => { if (!lab) return; lab.isPlaying() ? lab.pause() : lab.play() },
+  onReset: () => lab && lab.reset(),
+  onStepForward: () => lab && lab.step(),
+})
+
 function onTool(v) { tool.value = v; lab && lab.setTool(v) }
 function onSpeed(v) { speed.value = v; lab && lab.setSpeed(v) }
 function onSize(v) { size.value = v; lab && lab.setSize(v) }
@@ -92,7 +99,7 @@ const readoutItems = computed(() => [
     subtitle="격자 미로 최단경로 — frontier가 파동처럼 번지고, goal에 닿으면 최단경로를 역추적한다. 벽을 칠하고 S·G를 옮긴 뒤 Run."
     :tags="['graph', 'pathfinding', 'BFS', 'interactive']" eq="dist(v) = dist(u) + 1">
     <template #viewport>
-      <AlgoViewport>
+      <AlgoViewport hint="드래그로 벽을 그리고, Start/Goal 툴로 끝점을 옮겨 보세요">
         <template #expr>{{ diag ? '8-neighbour' : '4-neighbour' }}</template>
         <template #status>
           <div class="ln"><b>{{ stat.visited }}</b> visited · path <b>{{ stat.found ? stat.pathLen : '∅' }}</b></div>

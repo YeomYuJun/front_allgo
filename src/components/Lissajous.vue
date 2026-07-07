@@ -9,6 +9,7 @@ import ToggleControl from './ui/ToggleControl.vue'
 import Readout from './ui/Readout.vue'
 import { useThreeViewport } from '../composables/useThreeViewport.js'
 import { useSimulation } from '../composables/useSimulation.js'
+import { useLabHotkeys } from '../composables/useLabHotkeys.js'
 import { simulate } from '../services/lissajousApi.js'
 import { reduceRatio } from '../lib/lissajous.js'
 
@@ -83,6 +84,11 @@ function updateScene(pt) {
   ratioVal.value = reduceRatio(a.value, b.value).join(':')
   deltaVal.value = degFmt(delta.value)
 }
+
+useLabHotkeys({
+  onPlayPause: () => (sim.playing.value ? sim.pause() : sim.play()),
+  onReset: () => resetSim(),
+})
 
 function resetSim() {
   trailData = []

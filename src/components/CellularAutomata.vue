@@ -10,6 +10,7 @@ import AppButton from './ui/AppButton.vue'
 import Readout from './ui/Readout.vue'
 import { useThreeViewport } from '../composables/useThreeViewport.js'
 import { useSimulation } from '../composables/useSimulation.js'
+import { useLabHotkeys } from '../composables/useLabHotkeys.js'
 import { simulate } from '../services/automataApi.js'
 import { createEmpty, randomGrid, countPopulation, placeGlider } from '../lib/lifeGrid.js'
 
@@ -172,6 +173,12 @@ const readoutItems = computed(() => [
   { k: 'generation', v: generation.value, acc: true },
   { k: 'population', v: population.value },
 ])
+
+useLabHotkeys({
+  onPlayPause: () => (playing.value ? sim.pause() : sim.play()),
+  onReset: applyPattern,
+  onStepForward: () => { if (!playing.value) sim.step() },
+})
 </script>
 
 <template>
@@ -180,7 +187,7 @@ const readoutItems = computed(() => [
     subtitle="단순한 국소 규칙에서 복잡한 패턴이 창발한다 — B/S 규칙을 직접 편집하며 다른 우주를 실험하라."
     :tags="['automata', 'emergence', 'rule editor']" :eq="ruleString">
     <template #viewport>
-      <AlgoViewport>
+      <AlgoViewport hint="클릭/드래그로 셀을 그려 보세요">
         <template #expr>{{ currentPreset === 'life' ? "Conway's Game of Life" : ruleString }}</template>
         <template #status>
           <div class="ln">gen <b>{{ generation }}</b> · rule <b>{{ ruleString }}</b></div>
