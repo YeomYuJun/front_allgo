@@ -201,6 +201,7 @@ export function createDfsLab(canvas, opts = {}) {
     pause() { playing = false },
     step() {
       playing = false
+      if (phase === 'done') { head = 0; phase = 'idle' }
       if (phase === 'idle') phase = 'search'
       if (phase === 'search') { head = Math.min(endHead(), head + Math.max(1, Math.round(st.speed / 2))); if (head >= endHead()) phase = 'done' }
       emit()

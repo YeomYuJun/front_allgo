@@ -179,6 +179,7 @@ export function createGreedyLab(canvas, opts = {}) {
     pause() { playing = false },
     step() {
       playing = false
+      if (phase === 'done') resetAnim()
       if (phase === 'idle') phase = 'scan'
       if (phase === 'scan') {
         head = Math.min(decided.length, head + 1)

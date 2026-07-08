@@ -206,6 +206,7 @@ export function createBfsLab(canvas, opts = {}) {
     pause() { playing = false },
     step() {
       playing = false
+      if (phase === 'done') { head = 0; pathHead = 0; phase = 'idle' }
       if (phase === 'idle') phase = 'search'
       const stopAt = reachedAt >= 0 ? reachedAt + 1 : order.length
       if (phase === 'search') { head = Math.min(stopAt, head + Math.max(1, Math.round(st.speed))); if (head >= stopAt) phase = found ? 'path' : 'done' }

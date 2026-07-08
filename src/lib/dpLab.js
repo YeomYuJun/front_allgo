@@ -155,6 +155,7 @@ export function createDpLab(canvas, opts = {}) {
     pause() { playing = false },
     step() {
       playing = false
+      if (phase === 'done') { head = 0; pathHead = 0; phase = 'idle' }
       if (phase === 'idle') phase = 'fill'
       if (phase === 'fill') { head = Math.min(fillOrder.length, head + 1); if (head >= fillOrder.length) phase = 'path' }
       else if (phase === 'path') { pathHead = Math.min(path.length, pathHead + 1); if (pathHead >= path.length) phase = 'done' }

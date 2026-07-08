@@ -10,6 +10,7 @@ import Readout from './ui/Readout.vue'
 import { createDpLab } from '../lib/dpLab.js'
 import { solve } from '../services/dpApi.js'
 import { useLabHotkeys } from '../composables/useLabHotkeys.js'
+import { useTraceRunner } from '../composables/useTraceRunner.js'
 
 const MODE_OPTIONS = [
   { value: 'max', label: 'Max' },
@@ -20,31 +21,20 @@ const canvasRef = ref(null)
 const speed = ref(3)
 const size = ref(6)
 const mode = ref('max')
-const dirty = ref(true)
-const running = ref(false)
 const stat = ref({ filled: 0, total: 0, best: '—', pathLen: 0, phase: 'idle', mode: 'max' })
 
 let lab = null
 
-async function run() {
-  if (!lab || running.value) return
-  running.value = true
-  try {
-    const trace = await solve(lab.getState())
-    lab.setTrace(trace)
-    dirty.value = false
-    lab.play()
-  } catch (e) {
-    console.error('DP solve failed:', e)
-  } finally {
-    running.value = false
-  }
-}
+const runner = useTraceRunner({
+  getLab: () => lab,
+  solve: (l) => solve(l.getState()),
+})
+const { dirty, running, run, play, pause, step, reset } = runner
 
 onMounted(() => {
   lab = createDpLab(canvasRef.value, {
     onStat: (s) => { stat.value = s },
-    onEdit: () => { dirty.value = true },
+    onEdit: () => runner.markDirty(),
   })
 })
 
@@ -55,9 +45,9 @@ function onSize(v) { size.value = v; lab && lab.setSize(v) }
 function onMode(v) { mode.value = v; lab && lab.setMode(v) }
 
 useLabHotkeys({
-  onPlayPause: () => { if (!lab) return; lab.isPlaying() ? lab.pause() : lab.play() },
-  onReset: () => lab && lab.reset(),
-  onStepForward: () => lab && lab.step(),
+  onPlayPause: () => { if (!lab) return; lab.isPlaying() ? pause() : play() },
+  onReset: () => reset(),
+  onStepForward: () => step(),
 })
 
 const readoutItems = computed(() => [
@@ -86,10 +76,10 @@ const readoutItems = computed(() => [
       <ControlPanel number="01" title="Run">
         <div class="btnrow">
           <AppButton :variant="dirty ? 'solid' : 'ghost'" :disabled="running" @click="run">Run</AppButton>
-          <AppButton variant="ghost" @click="lab && lab.play()">Play</AppButton>
-          <AppButton variant="ghost" @click="lab && lab.pause()">Pause</AppButton>
-          <AppButton variant="ghost" @click="lab && lab.step()">Step</AppButton>
-          <AppButton variant="ghost" @click="lab && lab.reset()">Reset</AppButton>
+          <AppButton variant="ghost" @click="play">Play</AppButton>
+          <AppButton variant="ghost" @click="pause">Pause</AppButton>
+          <AppButton variant="ghost" @click="step">Step</AppButton>
+          <AppButton variant="ghost" @click="reset">Reset</AppButton>
         </div>
         <RangeField :model-value="speed" :min="1" :max="10" :step="1" label="Speed" @update:model-value="onSpeed" />
         <p v-if="dirty" class="hint">그리드를 편집했습니다 — Run을 눌러 다시 계산하세요.</p>

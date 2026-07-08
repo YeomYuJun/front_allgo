@@ -129,6 +129,7 @@ export function createSortLab(canvas, opts = {}) {
     step() {
       if (!events.length) return
       playing = false
+      if (phase === 'done') { head = 0; phase = 'idle'; resetState() }
       if (phase === 'idle') phase = 'run'
       seekTo(head + 1)
       if (head >= events.length) phase = 'done'

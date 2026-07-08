@@ -11,6 +11,7 @@ import Readout from './ui/Readout.vue'
 import { createBfsLab } from '../lib/bfsLab.js'
 import { search } from '../services/bfsApi.js'
 import { useLabHotkeys } from '../composables/useLabHotkeys.js'
+import { useTraceRunner } from '../composables/useTraceRunner.js'
 
 const TOOLS = [
   { value: 'wall', label: 'Wall' },
@@ -25,29 +26,21 @@ const speed = ref(6)
 const size = ref(24)
 const diag = ref(false)
 const numbers = ref(false)
-const dirty = ref(true)
-const running = ref(false)
 const ranOnce = ref(false)
 const stat = ref({ visited: 0, total: 0, pathLen: '—', found: false, phase: 'idle' })
 
 let lab = null
 let liveTimer = null, liveToken = 0
 
-async function run() {
-  if (!lab || running.value) return
-  running.value = true
-  try {
-    const trace = await search(lab.getState())
-    lab.setTrace(trace)
-    dirty.value = false
+const runner = useTraceRunner({
+  getLab: () => lab,
+  solve: async (l) => {
+    const trace = await search(l.getState())
     ranOnce.value = true
-    lab.play()
-  } catch (e) {
-    console.error('BFS search failed:', e)
-  } finally {
-    running.value = false
-  }
-}
+    return trace
+  },
+})
+const { dirty, running, run, play, pause, step, reset } = runner
 
 // 실행 이후의 편집은 디바운스 재탐색으로 경로를 실시간 우회시킨다 (결과 리셋 없음)
 function scheduleLiveSearch() {
@@ -58,7 +51,7 @@ function scheduleLiveSearch() {
       const trace = await search(lab.getState())
       if (token !== liveToken || !lab) return
       lab.setTrace(trace, true)
-      dirty.value = false
+      runner.markClean()
     } catch (e) {
       console.error('BFS live re-search failed:', e)
     }
@@ -68,16 +61,16 @@ function scheduleLiveSearch() {
 onMounted(() => {
   lab = createBfsLab(canvasRef.value, {
     onStat: (s) => { stat.value = s },
-    onEdit: (live) => { if (live) scheduleLiveSearch(); else dirty.value = true },
+    onEdit: (live) => { if (live) scheduleLiveSearch(); else runner.markDirty() },
   })
 })
 
 onBeforeUnmount(() => { liveToken++; clearTimeout(liveTimer); if (lab) lab.dispose(); lab = null })
 
 useLabHotkeys({
-  onPlayPause: () => { if (!lab) return; lab.isPlaying() ? lab.pause() : lab.play() },
-  onReset: () => lab && lab.reset(),
-  onStepForward: () => lab && lab.step(),
+  onPlayPause: () => { if (!lab) return; lab.isPlaying() ? pause() : play() },
+  onReset: () => reset(),
+  onStepForward: () => step(),
 })
 
 function onTool(v) { tool.value = v; lab && lab.setTool(v) }
@@ -112,10 +105,10 @@ const readoutItems = computed(() => [
       <ControlPanel number="01" title="Run">
         <div class="btnrow">
           <AppButton :variant="dirty ? 'solid' : 'ghost'" :disabled="running" @click="run">Run</AppButton>
-          <AppButton variant="ghost" @click="lab && lab.play()">Play</AppButton>
-          <AppButton variant="ghost" @click="lab && lab.pause()">Pause</AppButton>
-          <AppButton variant="ghost" @click="lab && lab.step()">Step</AppButton>
-          <AppButton variant="ghost" @click="lab && lab.reset()">Reset</AppButton>
+          <AppButton variant="ghost" @click="play">Play</AppButton>
+          <AppButton variant="ghost" @click="pause">Pause</AppButton>
+          <AppButton variant="ghost" @click="step">Step</AppButton>
+          <AppButton variant="ghost" @click="reset">Reset</AppButton>
         </div>
         <RangeField :model-value="speed" :min="1" :max="20" :step="1" label="Speed" @update:model-value="onSpeed" />
         <p v-if="dirty" class="hint">미로를 편집했습니다 — Run을 눌러 다시 탐색하세요.</p>
