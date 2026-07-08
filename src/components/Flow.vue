@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onBeforeUnmount } from 'vue'
 import * as THREE from 'three'
 import AlgorithmLayout from './ui/AlgorithmLayout.vue'
 import AlgoViewport from './ui/AlgoViewport.vue'
@@ -7,9 +7,11 @@ import ControlPanel from './ui/ControlPanel.vue'
 import RangeField from './ui/RangeField.vue'
 import ToggleControl from './ui/ToggleControl.vue'
 import Readout from './ui/Readout.vue'
+import ApplicationCards from './ui/ApplicationCards.vue'
 import { useThreeViewport } from '../composables/useThreeViewport.js'
 import { useSimulation } from '../composables/useSimulation.js'
 import { useLabHotkeys } from '../composables/useLabHotkeys.js'
+import APP_CARDS from '../content/applications/flow.js'
 import { prefersReducedMotion } from '../lib/motion.js'
 import { simulate } from '../services/flowApi.js'
 import { spawn, outOfBounds } from '../lib/flowField.js'
@@ -93,10 +95,13 @@ function resetField() {
   if (!prefersReducedMotion()) sim.play()
 }
 
+let smRef = null
+
 useThreeViewport(hostRef, {
   background: '#0a0b0c',
   cameraPosition: [0, 0, 8],
   onReady: (sm) => {
+    smRef = sm
     sm.controls.enabled = false
     lineSeg = new THREE.LineSegments(
       new THREE.BufferGeometry(),
@@ -104,11 +109,83 @@ useThreeViewport(hostRef, {
     )
     sm.scene.add(lineSeg)
     resetField()
+    const el = hostRef.value
+    el.addEventListener('pointerdown', onWindDown)
+    window.addEventListener('pointermove', onWindMove)
+    window.addEventListener('pointerup', onWindUp)
   },
+})
+
+// 포인터 바람: 카메라 unprojection으로 z=0 평면 교점을 구해 필드 좌표로 역변환
+function pointerToField(ev) {
+  if (!smRef || !hostRef.value) return null
+  const rect = hostRef.value.getBoundingClientRect()
+  const p = new THREE.Vector3(
+    ((ev.clientX - rect.left) / rect.width) * 2 - 1,
+    -((ev.clientY - rect.top) / rect.height) * 2 + 1,
+    0.5,
+  ).unproject(smRef.camera)
+  const dir = p.sub(smRef.camera.position).normalize()
+  if (Math.abs(dir.z) < 1e-6) return null
+  const t = -smRef.camera.position.z / dir.z
+  const wx = smRef.camera.position.x + dir.x * t
+  const wy = smRef.camera.position.y + dir.y * t
+  return [((wx + S) / (2 * S)) * FIELD, ((S - wy) / (2 * S)) * FIELD]
+}
+
+const WIND_R = 14
+let windOn = false, lastF = null, lastInv = 0
+
+function onWindDown(ev) {
+  const f = pointerToField(ev)
+  if (!f) return
+  windOn = true; lastF = f
+}
+
+function onWindMove(ev) {
+  if (!windOn) return
+  const f = pointerToField(ev)
+  if (!f || !lastF) return
+  const dx = f[0] - lastF[0], dy = f[1] - lastF[1]
+  lastF = f
+  const cur = sim.current
+  if ((!dx && !dy) || !cur || !cur.particles) return
+  const ps = cur.particles
+  for (let i = 0; i < ps.length; i++) {
+    const d = Math.hypot(ps[i][0] - f[0], ps[i][1] - f[1])
+    if (d > WIND_R) continue
+    const k = 1 - d / WIND_R
+    const g = k * k * 1.6
+    ps[i][0] = Math.min(FIELD, Math.max(0, ps[i][0] + dx * g))
+    ps[i][1] = Math.min(FIELD, Math.max(0, ps[i][1] + dy * g))
+  }
+  updateScene(cur)
+  // 밀린 위치에서 다음 배치가 이어지도록 버퍼 폐기(스로틀)
+  const now = performance.now()
+  if (now - lastInv > 90) { lastInv = now; sim.invalidate() }
+}
+
+function onWindUp() {
+  if (!windOn) return
+  windOn = false; lastF = null
+  sim.invalidate()
+}
+
+onBeforeUnmount(() => {
+  const el = hostRef.value
+  if (el) el.removeEventListener('pointerdown', onWindDown)
+  window.removeEventListener('pointermove', onWindMove)
+  window.removeEventListener('pointerup', onWindUp)
 })
 
 watch(count, () => resetField())
 watch(scale, () => sim.invalidate())
+
+function applyPreset(p) {
+  if (p.scale != null) scale.value = p.scale
+  if (p.count != null) count.value = p.count
+  window.scrollTo({ top: 0, behavior: 'smooth' })
+}
 
 const readoutItems = computed(() => [{ k: 'particles', v: count.value, acc: true }])
 </script>
@@ -119,7 +196,7 @@ const readoutItems = computed(() => [{ k: 'particles', v: count.value, acc: true
     subtitle="부드러운 의사난수 노이즈가 방향의 장이 되고, 수많은 입자가 유기적인 흐름을 만든다."
     :tags="['noise', 'procedural', 'vector field', 'particles']" eq="θ(x,y) = noise(x,y)·2π">
     <template #viewport>
-      <AlgoViewport size="tall">
+      <AlgoViewport size="tall" hint="드래그로 바람을 일으켜 입자를 밀어 보세요">
         <template #expr>flow field · {{ count }} particles</template>
         <template #status>
           <div class="ln"><b>{{ count }}</b> particles in field</div>
@@ -146,8 +223,9 @@ const readoutItems = computed(() => [{ k: 'particles', v: count.value, acc: true
 
     <template #explain>
       <div class="ex-head">
-        <p>펄린 노이즈는 무작위이면서도 부드럽다 — 가까운 점은 가까운 값을 가져 급격한 도약이 없다. 그 값을 각도로 읽으면 평면이 벡터장이 되고, 입자는 발밑의 방향으로 한 걸음씩 나아가며 유선을 그린다. 게임과 영화가 연기·물·바람을 값싸게 흉내 내는 방법이다.</p>
+        <p>펄린 노이즈는 무작위이면서도 부드럽다 — 가까운 점은 가까운 값을 가져 급격한 도약이 없다. 그 값을 각도로 읽으면 평면이 벡터장이 되고, 입자는 발밑의 방향으로 한 걸음씩 나아가며 유선을 그린다. 게임과 영화가 연기·물·바람을 값싸게 흉내 내는 방법이다. 캔버스를 드래그하면 바람을 일으켜 입자를 밀어낼 수 있다.</p>
       </div>
+      <ApplicationCards :cards="APP_CARDS" @apply="applyPreset" />
     </template>
   </AlgorithmLayout>
 </template>

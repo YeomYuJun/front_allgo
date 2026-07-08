@@ -9,8 +9,10 @@ import SegControl from './ui/SegControl.vue'
 import ToggleControl from './ui/ToggleControl.vue'
 import AppButton from './ui/AppButton.vue'
 import Readout from './ui/Readout.vue'
+import ApplicationCards from './ui/ApplicationCards.vue'
 import { useThreeViewport } from '../composables/useThreeViewport.js'
 import { useLabHotkeys } from '../composables/useLabHotkeys.js'
+import APP_CARDS from '../content/applications/voronoi.js'
 import { accentHex } from '../lib/theme.js'
 import { compute } from '../services/voronoiApi.js'
 import { randomSites, siteColor } from '../lib/voronoi.js'
@@ -165,6 +167,14 @@ function onUp() { dragIdx = -1 }
 function randomize() { sites = randomSites(count.value); recompute() }
 function clearSites() { sites = []; recompute() }
 
+function applyPreset(p) {
+  if (p.metric) metric.value = p.metric
+  if (p.delaunay != null) delaunay.value = p.delaunay
+  if (p.count != null) { count.value = p.count; sites = randomSites(p.count) }
+  recompute()
+  window.scrollTo({ top: 0, behavior: 'smooth' })
+}
+
 watch(count, (n) => {
   if (n === sites.length) return
   if (n > sites.length) { while (sites.length < n) sites.push([Math.random(), Math.random()]) }
@@ -232,6 +242,7 @@ useLabHotkeys({
       <div class="ex-head">
         <p>사이트를 흩뿌리면 평면의 모든 위치가 가장 가까운 사이트로 칠해져 볼록한 셀로 분할된다. 경계는 두 사이트로부터 등거리인 점들이다. 인접한 셀의 사이트를 이으면 Delaunay 삼각분할 — 메시 생성·최근접 탐색·자연스러운 지도를 떠받치는 기하학적 듀얼 — 이 드러난다.</p>
       </div>
+      <ApplicationCards :cards="APP_CARDS" @apply="applyPreset" />
     </template>
   </AlgorithmLayout>
 </template>
