@@ -142,7 +142,7 @@ const readoutItems = computed(() => [
     subtitle="수직으로 결합된 두 진동이 하나의 곡선을 그린다 — 주파수비와 위상이 모양을 결정한다."
     :tags="['parametric', 'harmonic', 'oscilloscope']" eq="x = sin(at+δ), y = sin(bt)">
     <template #viewport>
-      <AlgoViewport>
+      <AlgoViewport size="tall">
         <template #expr>x-osc × y-osc</template>
         <template #status>
           <div class="ln">a:b = <b>{{ ratioVal }}</b> · δ = <b>{{ deltaVal }}</b></div>
