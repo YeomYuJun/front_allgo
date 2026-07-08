@@ -7,9 +7,11 @@ import RangeField from './ui/RangeField.vue'
 import ToggleControl from './ui/ToggleControl.vue'
 import AppButton from './ui/AppButton.vue'
 import Readout from './ui/Readout.vue'
+import ApplicationCards from './ui/ApplicationCards.vue'
 import { createFourierLab } from '../lib/fourierLab.js'
 import { transform } from '../services/fourierApi.js'
 import { useLabHotkeys } from '../composables/useLabHotkeys.js'
+import APP_CARDS from '../content/applications/fouriertransform.js'
 
 const canvasRef = ref(null)
 const comps = ref([])
@@ -57,6 +59,14 @@ const readoutItems = computed(() => [
   { k: 'peaks', v: stat.value.peaks.length ? stat.value.peaks.map(p => p.toFixed(1)).join(', ') : '-' },
   { k: 'COM mag', v: stat.value.mag.toFixed(3) },
 ])
+function applyPreset(p) {
+  if (!lab) return
+  if (p.reset) lab.reset()
+  if (p.set) for (const c of p.set) { if (c.f != null) lab.setFreq(c.i, c.f); if (c.a != null) lab.setAmp(c.i, c.a) }
+  if (p.windF != null) lab.setWindF(p.windF)
+  if (p.sweep) lab.sweep()
+  window.scrollTo({ top: 0, behavior: 'smooth' })
+}
 </script>
 
 <template>
@@ -112,6 +122,7 @@ const readoutItems = computed(() => [
       <div class="ex-head">
         <p>신호를 원점 주위로 감으면 중심 질량이 진짜 성분 주파수에서 급등한다. 이 시각적 직관이 푸리에 변환의 본질이다. 성분 목록을 편집하면 백엔드 DFT가 권위있는 스펙트럼을 계산해 반환하고, 와인딩/COM 패널은 FE에서 기하학적으로 일러스트레이션한다.</p>
       </div>
+      <ApplicationCards :cards="APP_CARDS" @apply="applyPreset" />
     </template>
   </AlgorithmLayout>
 </template>

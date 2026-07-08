@@ -8,8 +8,10 @@ import SegControl from './ui/SegControl.vue'
 import ToggleControl from './ui/ToggleControl.vue'
 import AppButton from './ui/AppButton.vue'
 import Readout from './ui/Readout.vue'
+import ApplicationCards from './ui/ApplicationCards.vue'
 import { createBfsLab } from '../lib/bfsLab.js'
 import { search } from '../services/bfsApi.js'
+import APP_CARDS from '../content/applications/bfs.js'
 import { useLabHotkeys } from '../composables/useLabHotkeys.js'
 import { useTraceRunner } from '../composables/useTraceRunner.js'
 
@@ -84,6 +86,16 @@ const readoutItems = computed(() => [
   { k: 'path', v: stat.value.found ? String(stat.value.pathLen) : 'unreachable' },
   { k: 'phase', v: stat.value.phase },
 ])
+
+function applyPreset(p) {
+  if (!lab) return
+  if (p.size != null) onSize(p.size)
+  if (p.diag != null) onDiag(p.diag)
+  if (p.numbers != null) onNumbers(p.numbers)
+  if (p.maze === 'random') lab.randomMaze()
+  run()
+  window.scrollTo({ top: 0, behavior: 'smooth' })
+}
 </script>
 
 <template>
@@ -138,6 +150,7 @@ const readoutItems = computed(() => [
       <div class="ex-head">
         <p>너비 우선 탐색은 시작점에서 같은 거리의 셀을 한 겹씩 동심원처럼 확장한다. 가중치 없는 격자에서 goal에 처음 닿는 순간이 곧 최단경로이며, 부모 링크를 거꾸로 따라가면 그 경로가 복원된다. 연산은 백엔드가 한 번에 수행하고, 화면은 그 결과(방문 순서·거리·경로)를 재생할 뿐이다.</p>
       </div>
+      <ApplicationCards :cards="APP_CARDS" @apply="applyPreset" />
     </template>
   </AlgorithmLayout>
 </template>

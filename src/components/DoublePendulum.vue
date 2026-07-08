@@ -14,8 +14,10 @@ import { useThreeViewport } from '../composables/useThreeViewport.js'
 import { useSimulation } from '../composables/useSimulation.js'
 import { useLabHotkeys } from '../composables/useLabHotkeys.js'
 import { prefersReducedMotion } from '../lib/motion.js'
+import ApplicationCards from './ui/ApplicationCards.vue'
 import { simulate } from '../services/pendulumApi.js'
 import { degToRad, tip, divergence } from '../lib/pendulum.js'
+import APP_CARDS from '../content/applications/pendulum.js'
 
 const SCALE = 1.5
 const PIVOT_Y = 2.2
@@ -188,6 +190,16 @@ useLabHotkeys({
   onReset: resetSim,
   onStepForward: () => { if (!playing.value) sim.step() },
 })
+function applyPreset(p) {
+  if (p.gravity != null) gravity.value = p.gravity
+  if (p.armRatio != null) armRatio.value = p.armRatio
+  if (p.damping != null) damping.value = p.damping
+  if (p.twin != null) twin.value = p.twin
+  if (p.trail != null) trail.value = p.trail
+  if (p.theta1Deg != null) theta1Deg.value = p.theta1Deg
+  if (p.theta2Deg != null) theta2Deg.value = p.theta2Deg
+  window.scrollTo({ top: 0, behavior: 'smooth' })
+}
 </script>
 
 <template>
@@ -235,6 +247,7 @@ useLabHotkeys({
       <div class="ex-head">
         <p>이중진자는 정확한 운동방정식을 따르지만, 1000분의 1도 차이의 두 출발이 몇 초 만에 완전히 다른 궤적으로 갈라진다. 무작위가 아니라 초기조건에 대한 극단적 민감성이 만드는 결정론적 카오스다. 댐핑이 없으면 총 에너지는 보존된다.</p>
       </div>
+      <ApplicationCards :cards="APP_CARDS" @apply="applyPreset" />
     </template>
   </AlgorithmLayout>
 </template>

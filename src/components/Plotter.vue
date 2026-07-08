@@ -10,10 +10,12 @@ import SegControl from './ui/SegControl.vue'
 import ToggleControl from './ui/ToggleControl.vue'
 import AppButton from './ui/AppButton.vue'
 import Readout from './ui/Readout.vue'
+import ApplicationCards from './ui/ApplicationCards.vue'
 import { useThreeViewport } from '../composables/useThreeViewport.js'
 import { useLabHotkeys } from '../composables/useLabHotkeys.js'
 import { surface as fetchSurface, descend as fetchDescent } from '../services/plotterApi.js'
 import { FUNCTIONS, normalize, heightColor } from '../lib/plotter.js'
+import APP_CARDS from '../content/applications/plotter.js'
 
 const S = 3
 const HY = 1.4
@@ -276,6 +278,18 @@ useLabHotkeys({
   onReset: resetDescent,
 })
 
+function applyPreset(p) {
+  if (p.fn != null) fn.value = p.fn
+  if (p.resolution != null) resolution.value = p.resolution
+  if (p.heightColorOn != null) heightColorOn.value = p.heightColorOn
+  if (p.criticalOn != null) criticalOn.value = p.criticalOn
+  if (p.startX != null) startX.value = p.startX
+  if (p.startY != null) startY.value = p.startY
+  if (p.learningRate != null) learningRate.value = p.learningRate
+  if (p.maxIterations != null) maxIterations.value = p.maxIterations
+  window.scrollTo({ top: 0, behavior: 'smooth' })
+}
+
 const resFmt = (v) => `${v} × ${v}`
 const rangeFmt = (v) => `± ${v.toFixed(1)}`
 const lrFmt = (v) => v.toFixed(3)
@@ -337,6 +351,7 @@ const readoutItems = computed(() => [
       <div class="ex-head">
         <p>경사하강법은 함수 표면을 내리막으로 걷는다. 매 스텝마다 가장 가파른 증가 방향인 그래디언트를 재고, 그 반대로 학습률만큼 이동한다. 반복하면 점은 골짜기에 정착한다 — 현대 머신러닝 대부분의 엔진이다. 학습률이 너무 크면 발산하고 너무 작으면 기어간다. 그래디언트가 0으로 줄면 임계점에 도달한 것이며, 시작 위치에 따라 전역이 아닌 지역 최소에 갇힐 수 있다.</p>
       </div>
+      <ApplicationCards :cards="APP_CARDS" @apply="applyPreset" />
     </template>
   </AlgorithmLayout>
 </template>

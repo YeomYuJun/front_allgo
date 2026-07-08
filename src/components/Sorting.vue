@@ -1,5 +1,7 @@
 <script setup>
-import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
+import ApplicationCards from './ui/ApplicationCards.vue'
+import APP_CARDS from '../content/applications/sorting.js'
 import AlgorithmLayout from './ui/AlgorithmLayout.vue'
 import AlgoViewport from './ui/AlgoViewport.vue'
 import ControlPanel from './ui/ControlPanel.vue'
@@ -101,6 +103,16 @@ watch([size, preset], reseed)
 watch(algorithm, () => { if (ranOnce.value) scheduleRerun(); })
 watch(speed, (v) => { lab && lab.setSpeed(v) })
 
+async function applyPreset(p) {
+  if (p.algorithm) algorithm.value = p.algorithm
+  if (p.preset) preset.value = p.preset
+  if (p.size != null) size.value = p.size
+  // size/preset watcher의 reseed가 먼저 반영되도록 한 틱 대기
+  await nextTick()
+  await run()
+  window.scrollTo({ top: 0, behavior: 'smooth' })
+}
+
 const algoMeta = computed(() => ALGOS.find((a) => a.value === algorithm.value) || ALGOS[0])
 const readoutItems = computed(() => [
   { k: 'comparisons', v: String(stat.value.comparisons), acc: true },
@@ -160,6 +172,7 @@ const readoutItems = computed(() => [
       <div class="ex-head">
         <p>버블 정렬은 이웃한 두 값을 끝없이 비교하며 큰 값을 뒤로 밀어낸다 — 단순하지만 비교 횟수가 n²으로 폭발한다. 병합 정렬은 배열을 반으로 쪼개 정렬된 두 조각을 합치는 일을 재귀적으로 반복해 어떤 입력에서도 n log n을 보장한다. 퀵 정렬은 피벗을 기준으로 작은 값과 큰 값을 가르는 분할을 반복하며, 평균적으로 가장 빠르지만 피벗 운이 나쁘면 n²로 무너진다. 연산은 백엔드가 한 번에 수행하고, 화면은 비교·교환 이벤트 스트림을 재생하며 카운트를 센다.</p>
       </div>
+      <ApplicationCards :cards="APP_CARDS" @apply="applyPreset" />
     </template>
   </AlgorithmLayout>
 </template>

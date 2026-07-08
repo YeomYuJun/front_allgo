@@ -7,8 +7,10 @@ import RangeField from './ui/RangeField.vue'
 import SegControl from './ui/SegControl.vue'
 import AppButton from './ui/AppButton.vue'
 import Readout from './ui/Readout.vue'
+import ApplicationCards from './ui/ApplicationCards.vue'
 import { createDfsLab } from '../lib/dfsLab.js'
 import { search } from '../services/dfsApi.js'
+import APP_CARDS from '../content/applications/dfs.js'
 import { useLabHotkeys } from '../composables/useLabHotkeys.js'
 import { useTraceRunner } from '../composables/useTraceRunner.js'
 
@@ -79,6 +81,14 @@ const readoutItems = computed(() => [
   { k: 'visited', v: String(stat.value.visited) },
   { k: 'phase', v: stat.value.phase },
 ])
+
+function applyPreset(p) {
+  if (!lab) return
+  if (p.size != null) onSize(p.size)
+  if (p.maze === 'random') lab.randomMaze()
+  run()
+  window.scrollTo({ top: 0, behavior: 'smooth' })
+}
 </script>
 
 <template>
@@ -129,6 +139,7 @@ const readoutItems = computed(() => [
       <div class="ex-head">
         <p>깊이 우선 탐색은 스택에서 꺼낸 셀에서 갈 수 있는 방향을 하나씩 밀어 넣으며 끝까지 파고든다. 막다른 길에 닿으면 스택을 되감아 다른 분기를 탐색한다. 연산은 백엔드가 한 번에 수행하고, 화면은 그 결과(push/pop 이벤트·경로)를 재생할 뿐이다.</p>
       </div>
+      <ApplicationCards :cards="APP_CARDS" @apply="applyPreset" />
     </template>
   </AlgorithmLayout>
 </template>

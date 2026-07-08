@@ -11,8 +11,10 @@ import ToggleControl from './ui/ToggleControl.vue'
 import Readout from './ui/Readout.vue'
 import { useThreeViewport } from '../composables/useThreeViewport.js'
 import { useLabHotkeys } from '../composables/useLabHotkeys.js'
+import ApplicationCards from './ui/ApplicationCards.vue'
 import { compute } from '../services/bezierApi.js'
 import { PRESETS, deCasteljau } from '../lib/bezier.js'
+import APP_CARDS from '../content/applications/bezier.js'
 
 const SC = 3
 const SAMPLES = 80
@@ -209,6 +211,14 @@ const readoutItems = computed(() => [
 useLabHotkeys({
   onPlayPause: () => { animate.value = !animate.value },
 })
+function applyPreset(p) {
+  if (p.degree != null) degree.value = p.degree
+  if (p.animate != null) animate.value = p.animate
+  if (p.showPoly != null) showPoly.value = p.showPoly
+  if (p.showCast != null) showCast.value = p.showCast
+  if (p.t != null) { animate.value = false; t.value = p.t }
+  window.scrollTo({ top: 0, behavior: 'smooth' })
+}
 </script>
 
 <template>
@@ -249,6 +259,7 @@ useLabHotkeys({
       <div class="ex-head">
         <p>베지어 곡선은 제어점들의 가중 블렌드다. 가중치는 t가 0에서 1로 흐르며 매끄럽게 옮겨가는 베른슈타인 다항식이며, 그 합은 항상 1이다. de Casteljau 알고리즘은 이웃끼리 선형보간하고 다시 그 결과끼리 보간하기를 한 점이 남을 때까지 반복해 곡선 위의 점을 찾는다 — 수치적으로 안정적이며 모든 벡터 그래픽 도구의 기반이다. 곡선은 제어점이 이루는 볼록 껍질을 결코 벗어나지 않는다.</p>
       </div>
+      <ApplicationCards :cards="APP_CARDS" @apply="applyPreset" />
     </template>
   </AlgorithmLayout>
 </template>

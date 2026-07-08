@@ -11,8 +11,10 @@ import Readout from './ui/Readout.vue'
 import { useThreeViewport } from '../composables/useThreeViewport.js'
 import { useSimulation } from '../composables/useSimulation.js'
 import { useLabHotkeys } from '../composables/useLabHotkeys.js'
+import ApplicationCards from './ui/ApplicationCards.vue'
 import { simulate } from '../services/automataApi.js'
 import { createEmpty, randomGrid, countPopulation, placeGlider } from '../lib/lifeGrid.js'
+import APP_CARDS from '../content/applications/automata.js'
 
 const GRID = 50
 const WORLD = 6
@@ -179,6 +181,12 @@ useLabHotkeys({
   onReset: applyPattern,
   onStepForward: () => { if (!playing.value) sim.step() },
 })
+function applyPreset(p) {
+  if (p.rule) applyRulePreset(p.rule)
+  if (p.pattern) { pattern.value = p.pattern; applyPattern() }
+  sim.play()
+  window.scrollTo({ top: 0, behavior: 'smooth' })
+}
 </script>
 
 <template>
@@ -237,6 +245,7 @@ useLabHotkeys({
       <div class="ex-head">
         <p>각 셀은 무어 이웃(8개) 중 살아있는 수에 따라 갱신된다. Conway의 B3/S23에서는 글라이더가 기어다니고, HighLife(B36/S23)는 자기복제자를 낳고, Seeds(B2/S–)는 모든 세포가 매 세대 죽으면서도 폭발적으로 번지고, Day&Night(B3678/S34678)는 흑백이 대칭인 기묘한 우주다. 규칙 두 줄이 우주의 물리 법칙이다.</p>
       </div>
+      <ApplicationCards :cards="APP_CARDS" @apply="applyPreset" />
     </template>
   </AlgorithmLayout>
 </template>
