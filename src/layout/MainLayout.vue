@@ -1,6 +1,7 @@
 <script setup>
 import { computed, ref, watch, onMounted, onBeforeUnmount } from 'vue'
 import { useRoute } from 'vue-router'
+import { ALGOS } from '../lib/landingAlgorithms.js'
 
 const route = useRoute()
 const isLanding = computed(() => route.path === '/')
@@ -14,23 +15,14 @@ function onApiError(e) {
   toastTimer = setTimeout(() => { apiError.value = '' }, 4000)
 }
 
-const links = [
-  { to: '/plotter', label: 'Plotter' },
-  { to: '/fractal', label: 'Fractal' },
-  { to: '/bezier', label: 'Bezier' },
-  { to: '/fourier', label: 'Fourier' },
-  { to: '/cellular-automata', label: 'Life' },
-  { to: '/double-pendulum', label: 'Pendulum' },
-  { to: '/lissajous', label: 'Lissajous' },
-  { to: '/flow', label: 'Flow' },
-  { to: '/voronoi', label: 'Voronoi' },
-  { to: '/breadth-first-search', label: 'BFS' },
-  { to: '/dynamic-programming', label: 'DP' },
-  { to: '/depth-first-search', label: 'DFS' },
-  { to: '/greedy', label: 'Greedy' },
-  { to: '/fourier-transform', label: 'FFT' },
-  { to: '/sorting', label: 'Sorting' },
-]
+// 항목·순서·번호·경로는 ALGOS 정본에서 파생하고, 드롭다운 라벨만 짧은 표기로 바꾼다
+const SHORT_LABELS = {
+  plotter: 'Plotter', fourier: 'Fourier', fractal: 'Fractal', montecarlo: 'Monte Carlo',
+  bezier: 'Bezier', flowfield: 'Flow', life: 'Life', lissajous: 'Lissajous',
+  pendulum: 'Pendulum', voronoi: 'Voronoi', bfs: 'BFS', dp: 'DP', dfs: 'DFS',
+  greedy: 'Greedy', fouriertransform: 'FFT', sorting: 'Sorting',
+}
+const links = ALGOS.map((a) => ({ to: a.route, label: SHORT_LABELS[a.key] || a.name, idx: a.idx }))
 
 const menuOpen = ref(false)
 const menuRef = ref(null)
@@ -77,13 +69,13 @@ onBeforeUnmount(() => {
           <transition name="menufade">
             <div v-if="menuOpen" class="algopanel">
               <RouterLink
-                v-for="(l, i) in links"
+                v-for="l in links"
                 :key="l.to"
                 :to="l.to"
                 active-class="on"
                 @click="menuOpen = false"
               >
-                <span class="num">{{ String(i + 1).padStart(2, '0') }}</span>{{ l.label }}
+                <span class="num">{{ l.idx }}</span>{{ l.label }}
               </RouterLink>
             </div>
           </transition>
