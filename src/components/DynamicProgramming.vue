@@ -102,6 +102,7 @@ const readoutItems = computed(() => [
     <template #explain>
       <div class="ex-head">
         <p>동적 프로그래밍은 왼쪽 위에서 출발해 오른쪽·아래로만 이동할 수 있는 로봇 경로를 최적화한다. 각 셀의 값은 grid[r][c]에 위 또는 왼쪽 중 더 좋은 값을 더해 확정되고, 역추적으로 최적 경로를 복원한다. 연산은 백엔드가 수행하고, 화면은 dp 테이블 채우기와 경로 복원을 재생할 뿐이다.</p>
+        <p class="morelink"><RouterLink to="/problems/knapsack">실전 문제로: 평범한 배낭 (백준 12865) →</RouterLink></p>
       </div>
     </template>
   </AlgorithmLayout>
@@ -114,4 +115,6 @@ const readoutItems = computed(() => [
 .ln b{color:var(--acc);font-weight:400;}
 .ex-head{max-width:60ch;}
 .ex-head p{color:var(--fg-dim);font-size:16px;line-height:1.7;}
+.morelink{font-family:var(--mono);font-size:12px;}
+.morelink a{color:var(--acc);}
 </style>

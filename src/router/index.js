@@ -89,6 +89,12 @@ const routes = [
     name: 'Sorting',
     component: () => import('../components/Sorting.vue'),
   },
+  {
+    path: '/problems/:problemId',
+    name: 'ProblemLab',
+    component: () => import('../components/ProblemLab.vue'),
+    props: true,
+  },
   // Catch-all route for undefined paths - must be at the end
   {
     path: '/:pathMatch(.*)*',
