@@ -103,6 +103,7 @@ const readoutItems = computed(() => [
     <template #explain>
       <div class="ex-head">
         <p>탐욕 구간 스케줄링은 task를 어떤 순서로 정렬하느냐에 따라 결과가 달라진다. Earliest-Finish 전략만이 항상 최대 개수를 선택한다는 것이 수학적으로 증명되어 있다. Start나 Shortest 전략으로 바꾸면 탐욕이 실패하는 반례를 직접 볼 수 있다. 연산은 백엔드가 한 번에 수행하고, 화면은 그 결정 순서를 재생할 뿐이다.</p>
+        <p class="morelink"><RouterLink to="/problems/classroom">실전 문제로: 강의실 배정 (백준 11000) →</RouterLink></p>
       </div>
     </template>
   </AlgorithmLayout>
@@ -115,4 +116,6 @@ const readoutItems = computed(() => [
 .ln b{color:var(--acc);font-weight:400;}
 .ex-head{max-width:60ch;}
 .ex-head p{color:var(--fg-dim);font-size:16px;line-height:1.7;}
+.morelink{font-family:var(--mono);font-size:12px;}
+.morelink a{color:var(--acc);}
 </style>
