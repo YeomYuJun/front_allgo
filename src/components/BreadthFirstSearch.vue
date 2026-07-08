@@ -22,7 +22,7 @@ const TOOLS = [
 
 const canvasRef = ref(null)
 const tool = ref('wall')
-const speed = ref(6)
+const speed = ref(8)
 const size = ref(24)
 const diag = ref(false)
 const numbers = ref(false)
@@ -110,7 +110,7 @@ const readoutItems = computed(() => [
           <AppButton variant="ghost" @click="step">Step</AppButton>
           <AppButton variant="ghost" @click="reset">Reset</AppButton>
         </div>
-        <RangeField :model-value="speed" :min="1" :max="20" :step="1" label="Speed" @update:model-value="onSpeed" />
+        <RangeField :model-value="speed" :min="1" :max="30" :step="1" label="Speed (step/s)" @update:model-value="onSpeed" />
         <p v-if="dirty" class="hint">미로를 편집했습니다 — Run을 눌러 다시 탐색하세요.</p>
         <p v-else-if="ranOnce" class="hint">이제 벽을 그리거나 지우면 즉시 재탐색되어 경로가 우회합니다.</p>
       </ControlPanel>

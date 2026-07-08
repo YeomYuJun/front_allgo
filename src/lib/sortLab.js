@@ -3,6 +3,7 @@
    (compare/swap/write/pivot/lock). */
 
 import { accent, warn } from './theme.js'
+import { makeTicker } from './clock.js'
 
 const ACC = accent()
 const WARN = warn()
@@ -19,7 +20,8 @@ export function createSortLab(canvas, opts = {}) {
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
   }
 
-  const st = { speed: 6 }
+  const st = { speed: 10 }
+  const ticker = makeTicker()
   let base = [], cur = []
   let events = [], head = 0, phase = 'idle', playing = false, raf = null, alive = false
   let locked = null, pivot = -1, hotA = -1, hotB = -1, hotType = ''
@@ -107,10 +109,12 @@ export function createSortLab(canvas, opts = {}) {
   }
 
   function tick() {
-    if (!playing) return
+    if (!playing) { ticker.reset(); return }
+    const n = ticker.advance(st.speed)
+    if (!n) return
     if (phase === 'idle') phase = 'run'
     if (phase === 'run') {
-      seekTo(head + st.speed)
+      seekTo(head + n)
       if (head >= events.length) { phase = 'done'; playing = false }
     }
     emit()

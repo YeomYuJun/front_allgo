@@ -21,7 +21,7 @@ const STRATEGIES = [
 const canvasRef = ref(null)
 const count = ref(9)
 const strategy = ref('finish')
-const speed = ref(1)
+const speed = ref(2)
 const stat = ref({ considered: 0, total: 0, selected: 0, optimal: 0, strategy: 'finish', phase: 'idle' })
 
 let lab = null
@@ -83,7 +83,7 @@ const readoutItems = computed(() => [
           <AppButton variant="ghost" @click="step">Step</AppButton>
           <AppButton variant="ghost" @click="reset">Reset</AppButton>
         </div>
-        <RangeField :model-value="speed" :min="1" :max="4" :step="1" label="Speed" @update:model-value="onSpeed" />
+        <RangeField :model-value="speed" :min="1" :max="10" :step="1" label="Speed (step/s)" @update:model-value="onSpeed" />
         <p v-if="dirty" class="hint">task를 편집했습니다 — Run을 눌러 다시 스케줄링하세요.</p>
       </ControlPanel>
 

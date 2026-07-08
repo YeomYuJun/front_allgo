@@ -156,7 +156,7 @@ const readoutItems = computed(() => [
         <RangeField v-model="a" :min="1" :max="9" :step="1" label="a · horizontal" />
         <RangeField v-model="b" :min="1" :max="9" :step="1" label="b · vertical" />
         <RangeField v-model="delta" :min="0" :max="3.14159" :step="0.0175" label="Phase · δ" :format="degFmt" />
-        <RangeField v-model="speed" :min="10" :max="120" :step="1" label="Speed (step/s)" />
+        <RangeField v-model="speed" :min="1" :max="120" :step="1" label="Speed (step/s)" />
       </ControlPanel>
       <ControlPanel number="02" title="Display">
         <div class="toggles">

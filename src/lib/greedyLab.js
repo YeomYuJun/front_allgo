@@ -3,6 +3,7 @@
    Ported from Allgomath-publish/greedy-lab.js. */
 
 import { accent } from './theme.js'
+import { makeTicker } from './clock.js'
 
 const ACC = accent()
 const T = 100
@@ -20,12 +21,13 @@ export function createGreedyLab(canvas, opts = {}) {
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
   }
 
-  const st = { count: 9, strategy: 'finish', speed: 1 }
+  const st = { count: 9, strategy: 'finish', speed: 2 }
+  const ticker = makeTicker()
   let tasks = []
 
   // injected trace (empty until setTrace)
   let order = [], decided = [], optimalCount = 0
-  let head = 0, phase = 'idle', playing = false, raf = null, alive = false, frameC = 0
+  let head = 0, phase = 'idle', playing = false, raf = null, alive = false
 
   const padX = 54, padTop = 26, padBot = 40
 
@@ -150,13 +152,12 @@ export function createGreedyLab(canvas, opts = {}) {
   }
 
   function tick() {
-    if (!playing) return
-    frameC++
-    const every = Math.max(1, 9 - st.speed * 2)
-    if (frameC % every !== 0) return
+    if (!playing) { ticker.reset(); return }
+    const n = ticker.advance(st.speed)
+    if (!n) return
     if (phase === 'idle') phase = 'scan'
     if (phase === 'scan') {
-      head++
+      head += n
       if (head >= decided.length) { head = decided.length; phase = 'done'; playing = false }
     }
     emit()

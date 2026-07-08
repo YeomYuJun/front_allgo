@@ -18,7 +18,7 @@ const MODE_OPTIONS = [
 ]
 
 const canvasRef = ref(null)
-const speed = ref(3)
+const speed = ref(4)
 const size = ref(6)
 const mode = ref('max')
 const stat = ref({ filled: 0, total: 0, best: '—', pathLen: 0, phase: 'idle', mode: 'max' })
@@ -81,7 +81,7 @@ const readoutItems = computed(() => [
           <AppButton variant="ghost" @click="step">Step</AppButton>
           <AppButton variant="ghost" @click="reset">Reset</AppButton>
         </div>
-        <RangeField :model-value="speed" :min="1" :max="10" :step="1" label="Speed" @update:model-value="onSpeed" />
+        <RangeField :model-value="speed" :min="1" :max="20" :step="1" label="Speed (step/s)" @update:model-value="onSpeed" />
         <p v-if="dirty" class="hint">그리드를 편집했습니다 — Run을 눌러 다시 계산하세요.</p>
       </ControlPanel>
 

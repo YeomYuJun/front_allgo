@@ -28,7 +28,7 @@ const canvasRef = ref(null)
 const algorithm = ref('bubble')
 const preset = ref('random')
 const size = ref(28)
-const speed = ref(6)
+const speed = ref(10)
 const ranOnce = ref(false)
 const stat = ref({ comparisons: 0, swaps: 0, writes: 0, progress: 0, total: 0, phase: 'idle', n: 0 })
 const totals = ref(null)
@@ -134,7 +134,7 @@ const readoutItems = computed(() => [
           <AppButton variant="ghost" @click="step">Step</AppButton>
           <AppButton variant="ghost" @click="reset">Reset</AppButton>
         </div>
-        <RangeField v-model="speed" :min="1" :max="40" :step="1" label="Speed" />
+        <RangeField v-model="speed" :min="1" :max="60" :step="1" label="Speed (step/s)" />
         <p v-if="dirty" class="hint">Run을 눌러 정렬 트레이스를 받아 재생하세요.</p>
         <p v-else class="hint">알고리즘·데이터를 바꾸면 자동으로 다시 실행됩니다.</p>
       </ControlPanel>
