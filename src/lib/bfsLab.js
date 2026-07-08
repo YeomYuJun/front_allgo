@@ -2,6 +2,7 @@
    this module only edits the maze locally and replays an injected trace.
    Ported from Allgomath-publish/bfs-lab.js. */
 import { idx, inBounds, emptyWalls, randomMaze } from './bfsGrid.js'
+import { makeTicker } from './clock.js'
 
 import { accent } from './theme.js'
 
@@ -20,7 +21,8 @@ export function createBfsLab(canvas, opts = {}) {
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
   }
 
-  const st = { cols: 24, rows: 16, tool: 'wall', speed: 6, numbers: false, diag: false }
+  const st = { cols: 24, rows: 16, tool: 'wall', speed: 8, numbers: false, diag: false }
+  const ticker = makeTicker()
   let wall = emptyWalls(st.rows, st.cols)
   let start = idx(Math.floor(st.rows / 2), 2, st.cols)
   let goal = idx(Math.floor(st.rows / 2), st.cols - 3, st.cols)
@@ -144,14 +146,16 @@ export function createBfsLab(canvas, opts = {}) {
   }
 
   function tick() {
-    if (!playing) return
+    if (!playing) { ticker.reset(); return }
+    const n = ticker.advance(st.speed)
+    if (!n) return
     if (phase === 'idle') phase = 'search'
     if (phase === 'search') {
-      head += st.speed
+      head += n
       const stopAt = reachedAt >= 0 ? reachedAt + 1 : order.length
       if (head >= stopAt) { head = stopAt; phase = found ? 'path' : 'done'; if (phase === 'done') playing = false }
     } else if (phase === 'path') {
-      pathHead += Math.max(1, Math.round(st.speed / 2))
+      pathHead += n
       if (pathHead >= path.length) { pathHead = path.length; phase = 'done'; playing = false }
     }
     emit()
@@ -206,10 +210,11 @@ export function createBfsLab(canvas, opts = {}) {
     pause() { playing = false },
     step() {
       playing = false
+      if (phase === 'done') { head = 0; pathHead = 0; phase = 'idle' }
       if (phase === 'idle') phase = 'search'
       const stopAt = reachedAt >= 0 ? reachedAt + 1 : order.length
-      if (phase === 'search') { head = Math.min(stopAt, head + Math.max(1, Math.round(st.speed))); if (head >= stopAt) phase = found ? 'path' : 'done' }
-      else if (phase === 'path') { pathHead = Math.min(path.length, pathHead + 2); if (pathHead >= path.length) phase = 'done' }
+      if (phase === 'search') { head = Math.min(stopAt, head + 1); if (head >= stopAt) phase = found ? 'path' : 'done' }
+      else if (phase === 'path') { pathHead = Math.min(path.length, pathHead + 1); if (pathHead >= path.length) phase = 'done' }
       emit()
     },
     reset() { playing = false; head = 0; pathHead = 0; phase = 'idle'; emit() },

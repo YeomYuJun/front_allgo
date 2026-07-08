@@ -119,7 +119,7 @@ const readoutItems = computed(() => [{ k: 'particles', v: count.value, acc: true
     subtitle="부드러운 의사난수 노이즈가 방향의 장이 되고, 수많은 입자가 유기적인 흐름을 만든다."
     :tags="['noise', 'procedural', 'vector field', 'particles']" eq="θ(x,y) = noise(x,y)·2π">
     <template #viewport>
-      <AlgoViewport>
+      <AlgoViewport size="tall">
         <template #expr>flow field · {{ count }} particles</template>
         <template #status>
           <div class="ln"><b>{{ count }}</b> particles in field</div>
@@ -132,7 +132,7 @@ const readoutItems = computed(() => [{ k: 'particles', v: count.value, acc: true
       <ControlPanel number="01" title="Field">
         <RangeField v-model="scale" :min="0.4" :max="4" :step="0.1" label="Noise scale" />
         <RangeField v-model="count" :min="100" :max="1200" :step="50" label="Particles" />
-        <RangeField v-model="speed" :min="10" :max="120" :step="1" label="Speed (step/s)" />
+        <RangeField v-model="speed" :min="1" :max="120" :step="1" label="Speed (step/s)" />
       </ControlPanel>
       <ControlPanel number="02" title="Display">
         <div class="toggles">

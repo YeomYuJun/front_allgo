@@ -10,6 +10,7 @@ import Readout from './ui/Readout.vue'
 import { createGreedyLab } from '../lib/greedyLab.js'
 import { schedule } from '../services/greedyApi.js'
 import { useLabHotkeys } from '../composables/useLabHotkeys.js'
+import { useTraceRunner } from '../composables/useTraceRunner.js'
 
 const STRATEGIES = [
   { value: 'finish', label: 'Finish' },
@@ -20,32 +21,21 @@ const STRATEGIES = [
 const canvasRef = ref(null)
 const count = ref(9)
 const strategy = ref('finish')
-const speed = ref(1)
-const dirty = ref(true)
-const running = ref(false)
+const speed = ref(2)
 const stat = ref({ considered: 0, total: 0, selected: 0, optimal: 0, strategy: 'finish', phase: 'idle' })
 
 let lab = null
 
-async function run() {
-  if (!lab || running.value) return
-  running.value = true
-  try {
-    const trace = await schedule(lab.getState())
-    lab.setTrace(trace)
-    dirty.value = false
-    lab.play()
-  } catch (e) {
-    console.error('Greedy schedule failed:', e)
-  } finally {
-    running.value = false
-  }
-}
+const runner = useTraceRunner({
+  getLab: () => lab,
+  solve: (l) => schedule(l.getState()),
+})
+const { dirty, running, run, play, pause, step, reset } = runner
 
 onMounted(() => {
   lab = createGreedyLab(canvasRef.value, {
     onStat: (s) => { stat.value = s },
-    onEdit: () => { dirty.value = true },
+    onEdit: () => runner.markDirty(),
   })
 })
 
@@ -56,9 +46,9 @@ function onStrategy(v) { strategy.value = v; lab && lab.setStrategy(v) }
 function onSpeed(v) { speed.value = v; lab && lab.setSpeed(v) }
 
 useLabHotkeys({
-  onPlayPause: () => { if (!lab) return; lab.isPlaying() ? lab.pause() : lab.play() },
-  onReset: () => lab && lab.reset(),
-  onStepForward: () => lab && lab.step(),
+  onPlayPause: () => { if (!lab) return; lab.isPlaying() ? pause() : play() },
+  onReset: () => reset(),
+  onStepForward: () => step(),
 })
 
 const readoutItems = computed(() => [
@@ -88,12 +78,12 @@ const readoutItems = computed(() => [
       <ControlPanel number="01" title="Run">
         <div class="btnrow">
           <AppButton :variant="dirty ? 'solid' : 'ghost'" :disabled="running" @click="run">Run</AppButton>
-          <AppButton variant="ghost" @click="lab && lab.play()">Play</AppButton>
-          <AppButton variant="ghost" @click="lab && lab.pause()">Pause</AppButton>
-          <AppButton variant="ghost" @click="lab && lab.step()">Step</AppButton>
-          <AppButton variant="ghost" @click="lab && lab.reset()">Reset</AppButton>
+          <AppButton variant="ghost" @click="play">Play</AppButton>
+          <AppButton variant="ghost" @click="pause">Pause</AppButton>
+          <AppButton variant="ghost" @click="step">Step</AppButton>
+          <AppButton variant="ghost" @click="reset">Reset</AppButton>
         </div>
-        <RangeField :model-value="speed" :min="1" :max="4" :step="1" label="Speed" @update:model-value="onSpeed" />
+        <RangeField :model-value="speed" :min="1" :max="10" :step="1" label="Speed (step/s)" @update:model-value="onSpeed" />
         <p v-if="dirty" class="hint">task를 편집했습니다 — Run을 눌러 다시 스케줄링하세요.</p>
       </ControlPanel>
 

@@ -6,6 +6,8 @@ const props = defineProps({
   // 첫 방문 시 캔버스 위에 1회 보여줄 조작 힌트 (없으면 오버레이 없음)
   hint: { type: String, default: '' },
   ariaLabel: { type: String, default: '인터랙티브 수학 시각화 캔버스' },
+  // 'default'(540px) | 'tall'(뷰포트 높이 기반 확대)
+  size: { type: String, default: 'default' },
 })
 
 const canvasHost = ref(null)
@@ -36,7 +38,7 @@ defineExpose({ canvasHost })
       <div class="expr"><slot name="expr" /></div>
       <div class="right"><slot name="bar-right" /></div>
     </div>
-    <div ref="canvasHost" class="vp-canvas grab" role="img" :aria-label="ariaLabel" @pointerdown.capture="dismissHint">
+    <div ref="canvasHost" class="vp-canvas grab" :class="{ tall: size === 'tall' }" role="img" :aria-label="ariaLabel" @pointerdown.capture="dismissHint">
       <slot />
       <div class="vp-status"><slot name="status" /></div>
       <div class="vp-legend"><slot name="legend" /></div>
@@ -54,6 +56,7 @@ defineExpose({ canvasHost })
 .expr{font-family:var(--serif);font-style:italic;font-size:18px;color:var(--fg);}
 .right{display:flex;align-items:center;gap:14px;}
 .vp-canvas{position:relative;height:540px;background:radial-gradient(circle at 50% 42%,rgba(200,255,0,.045),transparent 62%),var(--bg);}
+.vp-canvas.tall{height:min(72vh,760px);}
 .vp-canvas.grab{cursor:grab;}
 .vp-canvas.grab:active{cursor:grabbing;}
 .vp-canvas :deep(canvas){position:absolute;inset:0;width:100%;height:100%;}

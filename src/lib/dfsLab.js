@@ -2,6 +2,7 @@
    this module only edits the maze locally and replays an injected trace.
    Ported from Allgomath-publish/dfs-lab.js. */
 import { idx, inBounds, emptyWalls, randomMaze } from './bfsGrid.js'
+import { makeTicker } from './clock.js'
 
 import { accent } from './theme.js'
 
@@ -20,7 +21,8 @@ export function createDfsLab(canvas, opts = {}) {
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
   }
 
-  const st = { cols: 24, rows: 16, tool: 'wall', speed: 4 }
+  const st = { cols: 24, rows: 16, tool: 'wall', speed: 8 }
+  const ticker = makeTicker()
   let wall = emptyWalls(st.rows, st.cols)
   let start = idx(Math.floor(st.rows / 2), 2, st.cols)
   let goal = idx(Math.floor(st.rows / 2), st.cols - 3, st.cols)
@@ -143,10 +145,12 @@ export function createDfsLab(canvas, opts = {}) {
   function endHead() { return foundAt >= 0 ? foundAt + 1 : events.length }
 
   function tick() {
-    if (!playing) return
+    if (!playing) { ticker.reset(); return }
+    const n = ticker.advance(st.speed)
+    if (!n) return
     if (phase === 'idle') phase = 'search'
     if (phase === 'search') {
-      head += st.speed
+      head += n
       if (head >= endHead()) { head = endHead(); phase = 'done'; playing = false }
     }
     emit()
@@ -201,8 +205,9 @@ export function createDfsLab(canvas, opts = {}) {
     pause() { playing = false },
     step() {
       playing = false
+      if (phase === 'done') { head = 0; phase = 'idle' }
       if (phase === 'idle') phase = 'search'
-      if (phase === 'search') { head = Math.min(endHead(), head + Math.max(1, Math.round(st.speed / 2))); if (head >= endHead()) phase = 'done' }
+      if (phase === 'search') { head = Math.min(endHead(), head + 1); if (head >= endHead()) phase = 'done' }
       emit()
     },
     reset() { playing = false; head = 0; phase = 'idle'; emit() },

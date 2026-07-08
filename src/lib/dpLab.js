@@ -2,6 +2,7 @@
    this module only edits the grid locally and replays an injected trace.
    Ported from Allgomath-publish/dp-lab.js. */
 import { randomGrid, cycleValue } from './dpGrid.js'
+import { makeTicker } from './clock.js'
 
 import { accent } from './theme.js'
 
@@ -20,7 +21,8 @@ export function createDpLab(canvas, opts = {}) {
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
   }
 
-  const st = { n: 6, mode: 'max', speed: 3 }
+  const st = { n: 6, mode: 'max', speed: 4 }
+  const ticker = makeTicker()
   let grid = randomGrid(st.n)
 
   // injected trace (empty until setTrace)
@@ -116,13 +118,15 @@ export function createDpLab(canvas, opts = {}) {
   }
 
   function tick() {
-    if (!playing) return
+    if (!playing) { ticker.reset(); return }
+    const n = ticker.advance(st.speed)
+    if (!n) return
     if (phase === 'idle') phase = 'fill'
     if (phase === 'fill') {
-      head += st.speed
+      head += n
       if (head >= fillOrder.length) { head = fillOrder.length; phase = 'path' }
     } else if (phase === 'path') {
-      pathHead += 1
+      pathHead += n
       if (pathHead >= path.length) { pathHead = path.length; phase = 'done'; playing = false }
     }
     emit()
@@ -155,6 +159,7 @@ export function createDpLab(canvas, opts = {}) {
     pause() { playing = false },
     step() {
       playing = false
+      if (phase === 'done') { head = 0; pathHead = 0; phase = 'idle' }
       if (phase === 'idle') phase = 'fill'
       if (phase === 'fill') { head = Math.min(fillOrder.length, head + 1); if (head >= fillOrder.length) phase = 'path' }
       else if (phase === 'path') { pathHead = Math.min(path.length, pathHead + 1); if (pathHead >= path.length) phase = 'done' }

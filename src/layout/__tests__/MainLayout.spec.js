@@ -3,6 +3,7 @@ import { nextTick } from 'vue'
 import { describe, it, expect, afterEach } from 'vitest'
 import { createRouter, createMemoryHistory } from 'vue-router'
 import MainLayout from '../MainLayout.vue'
+import { ALGOS } from '../../lib/landingAlgorithms.js'
 
 const Stub = { template: '<div />' }
 
@@ -40,15 +41,16 @@ describe('MainLayout detail header', () => {
     expect(wrapper.get('.algotrigger').attributes('aria-expanded')).toBe('false')
   })
 
-  it('opens dropdown with 15 numbered algorithm links on trigger click', async () => {
+  it('opens dropdown with all ALGOS entries numbered by their landing idx', async () => {
     await mountAt('/bezier')
     await wrapper.get('.algotrigger').trigger('click')
     const items = wrapper.findAll('.algopanel a')
-    expect(items).toHaveLength(15)
-    expect(items[0].text()).toContain('01')
-    expect(items[0].text()).toContain('Plotter')
-    expect(items[14].text()).toContain('15')
-    expect(items[14].text()).toContain('Sorting')
+    expect(items).toHaveLength(ALGOS.length)
+    items.forEach((item, i) => {
+      expect(item.text()).toContain(ALGOS[i].idx)
+      expect(item.attributes('href')).toBe(ALGOS[i].route)
+    })
+    expect(items[3].text()).toContain('Monte Carlo')
     expect(wrapper.get('.algotrigger').attributes('aria-expanded')).toBe('true')
   })
 

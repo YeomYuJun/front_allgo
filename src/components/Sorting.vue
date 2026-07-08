@@ -10,6 +10,7 @@ import Readout from './ui/Readout.vue'
 import { createSortLab } from '../lib/sortLab.js'
 import { run as runSort } from '../services/sortApi.js'
 import { useLabHotkeys } from '../composables/useLabHotkeys.js'
+import { useTraceRunner } from '../composables/useTraceRunner.js'
 
 const ALGOS = [
   { value: 'bubble', label: 'Bubble', eq: 'O(n²)' },
@@ -27,9 +28,7 @@ const canvasRef = ref(null)
 const algorithm = ref('bubble')
 const preset = ref('random')
 const size = ref(28)
-const speed = ref(6)
-const dirty = ref(true)
-const running = ref(false)
+const speed = ref(10)
 const ranOnce = ref(false)
 const stat = ref({ comparisons: 0, swaps: 0, writes: 0, progress: 0, total: 0, phase: 'idle', n: 0 })
 const totals = ref(null)
@@ -55,29 +54,23 @@ function generate() {
   return v
 }
 
+const runner = useTraceRunner({
+  getLab: () => lab,
+  solve: async (l) => {
+    const res = await runSort({ algorithm: algorithm.value, values: l.getValues() })
+    totals.value = { comparisons: res.comparisons, swaps: res.swaps, writes: res.writes }
+    ranOnce.value = true
+    return res
+  },
+})
+const { dirty, running, run, play, pause, step, reset } = runner
+
 function reseed() {
   if (!lab) return
   lab.setData(generate())
   totals.value = null
-  dirty.value = true
+  runner.markDirty()
   if (ranOnce.value) scheduleRerun()
-}
-
-async function doRun() {
-  if (!lab || running.value) return
-  running.value = true
-  try {
-    const res = await runSort({ algorithm: algorithm.value, values: lab.getValues() })
-    lab.setTrace(res)
-    totals.value = { comparisons: res.comparisons, swaps: res.swaps, writes: res.writes }
-    dirty.value = false
-    ranOnce.value = true
-    lab.play()
-  } catch (e) {
-    console.error('Sort run failed:', e)
-  } finally {
-    running.value = false
-  }
 }
 
 // 실행 이후 데이터/알고리즘 변경은 자동으로 재실행해 즉시 반응하게 한다
@@ -86,7 +79,7 @@ function scheduleRerun() {
   const token = ++rerunToken
   rerunTimer = setTimeout(async () => {
     if (token !== rerunToken || !lab) return
-    await doRun()
+    await run()
   }, 160)
 }
 
@@ -99,9 +92,9 @@ onMounted(() => {
 onBeforeUnmount(() => { rerunToken++; clearTimeout(rerunTimer); if (lab) lab.dispose(); lab = null })
 
 useLabHotkeys({
-  onPlayPause: () => { if (!lab) return; lab.isPlaying() ? lab.pause() : lab.play() },
-  onReset: () => lab && lab.reset(),
-  onStepForward: () => lab && lab.step(),
+  onPlayPause: () => { if (!lab) return; lab.isPlaying() ? pause() : play() },
+  onReset: () => reset(),
+  onStepForward: () => step(),
 })
 
 watch([size, preset], reseed)
@@ -135,13 +128,13 @@ const readoutItems = computed(() => [
     <template #controls>
       <ControlPanel number="01" title="Run">
         <div class="btnrow">
-          <AppButton :variant="dirty ? 'solid' : 'ghost'" :disabled="running" @click="doRun">Run</AppButton>
-          <AppButton variant="ghost" @click="lab && lab.play()">Play</AppButton>
-          <AppButton variant="ghost" @click="lab && lab.pause()">Pause</AppButton>
-          <AppButton variant="ghost" @click="lab && lab.step()">Step</AppButton>
-          <AppButton variant="ghost" @click="lab && lab.reset()">Reset</AppButton>
+          <AppButton :variant="dirty ? 'solid' : 'ghost'" :disabled="running" @click="run">Run</AppButton>
+          <AppButton variant="ghost" @click="play">Play</AppButton>
+          <AppButton variant="ghost" @click="pause">Pause</AppButton>
+          <AppButton variant="ghost" @click="step">Step</AppButton>
+          <AppButton variant="ghost" @click="reset">Reset</AppButton>
         </div>
-        <RangeField v-model="speed" :min="1" :max="40" :step="1" label="Speed" />
+        <RangeField v-model="speed" :min="1" :max="60" :step="1" label="Speed (step/s)" />
         <p v-if="dirty" class="hint">Run을 눌러 정렬 트레이스를 받아 재생하세요.</p>
         <p v-else class="hint">알고리즘·데이터를 바꾸면 자동으로 다시 실행됩니다.</p>
       </ControlPanel>

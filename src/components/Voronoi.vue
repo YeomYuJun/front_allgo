@@ -199,7 +199,7 @@ useLabHotkeys({
     subtitle="평면을 영역으로 가른다 — 모든 점은 가장 가까운 사이트에 속한다. 사이트를 더하고 끌어 보라."
     :tags="['geometry', 'spatial', 'Delaunay', 'interactive']" eq="V(pᵢ) = { x : |x−pᵢ| ≤ |x−pⱼ| }">
     <template #viewport>
-      <AlgoViewport hint="빈 곳을 클릭해 사이트를 추가하고, 드래그로 옮겨 보세요">
+      <AlgoViewport size="tall" hint="빈 곳을 클릭해 사이트를 추가하고, 드래그로 옮겨 보세요">
         <template #expr>{{ metric === 'euclid' ? 'Euclidean' : 'Manhattan' }} · {{ siteCountText }} sites</template>
         <template #status>
           <div class="ln"><b>{{ siteCountText }}</b> sites · <b>{{ metric }}</b></div>
