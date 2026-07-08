@@ -1,6 +1,8 @@
 <script setup>
 import { accentHex } from '../lib/theme.js'
-import { ref, reactive, computed, watch } from 'vue'
+import { ref, reactive, computed, watch, nextTick } from 'vue'
+import ApplicationCards from './ui/ApplicationCards.vue'
+import APP_CARDS from '../content/applications/montecarlo.js'
 import * as THREE from 'three'
 import AlgorithmLayout from './ui/AlgorithmLayout.vue'
 import AlgoViewport from './ui/AlgoViewport.vue'
@@ -148,6 +150,15 @@ useLabHotkeys({
   onReset: reset,
 })
 
+async function applyPreset(p) {
+  if (p.functionType) selectedFunction.value = p.functionType
+  if (p.iterations != null) iterations.value = p.iterations
+  // selectedFunction watcher가 bounds 기본값을 먼저 적용하도록 한 틱 대기
+  await nextTick()
+  run()
+  window.scrollTo({ top: 0, behavior: 'smooth' })
+}
+
 const readoutItems = computed(() => {
   const r = result.value
   if (!r) return [{ k: 'estimate', v: '—' }, { k: 'samples', v: iterations.value }]
@@ -196,6 +207,7 @@ const readoutItems = computed(() => {
       <div class="ex-head">
         <p>곡선/영역 아래에 균등분포 난수를 뿌려, 영역 내부에 떨어진 비율로 적분값을 추정한다. 표본 수 N이 커질수록 O(1/√N)로 참값에 수렴한다.</p>
       </div>
+      <ApplicationCards :cards="APP_CARDS" @apply="applyPreset" />
     </template>
   </AlgorithmLayout>
 </template>

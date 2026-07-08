@@ -9,9 +9,11 @@ import RangeField from './ui/RangeField.vue'
 import SegControl from './ui/SegControl.vue'
 import ToggleControl from './ui/ToggleControl.vue'
 import Readout from './ui/Readout.vue'
+import ApplicationCards from './ui/ApplicationCards.vue'
 import { useThreeViewport } from '../composables/useThreeViewport.js'
 import { series } from '../services/fourierApi.js'
 import { idealWave } from '../lib/fourier.js'
+import APP_CARDS from '../content/applications/fourier.js'
 
 const EPI_X = -1.9
 const SCALE = 0.95
@@ -148,6 +150,13 @@ const readoutItems = computed(() => [
   { k: 'terms', v: termsText.value, acc: true },
   { k: 'top harmonic', v: topText.value },
 ])
+
+function applyPreset(p) {
+  if (p.wave != null) wave.value = p.wave
+  if (p.N != null) N.value = p.N
+  if (p.speed != null) speed.value = p.speed
+  window.scrollTo({ top: 0, behavior: 'smooth' })
+}
 </script>
 
 <template>
@@ -186,6 +195,7 @@ const readoutItems = computed(() => [
       <div class="ex-head">
         <p>푸리에는 아무리 들쭉날쭉한 주기 신호도 기본 주파수의 정수배 사인파들의 합으로 쓸 수 있음을 보였다. 각 항은 자기 속도로 도는 원이며, 꼬리에 꼬리를 물고 이어진 끝점이 신호를 그린다. 항을 더할수록 근사가 날카로워지지만, 급격한 도약은 영원히 살짝 넘어선다 — 깁스 현상이다.</p>
       </div>
+      <ApplicationCards :cards="APP_CARDS" @apply="applyPreset" />
     </template>
   </AlgorithmLayout>
 </template>

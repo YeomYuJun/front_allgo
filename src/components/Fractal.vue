@@ -9,8 +9,10 @@ import SegControl from './ui/SegControl.vue'
 import ToggleControl from './ui/ToggleControl.vue'
 import AppButton from './ui/AppButton.vue'
 import Readout from './ui/Readout.vue'
+import ApplicationCards from './ui/ApplicationCards.vue'
 import { createFractalLab } from '../lib/fractalEscape.js'
 import { useLabHotkeys } from '../composables/useLabHotkeys.js'
+import APP_CARDS from '../content/applications/fractal.js'
 
 const TYPES = [
   { value: 'mandelbrot', label: 'Mandelbrot' },
@@ -110,6 +112,18 @@ function onAutoQ(v)  { autoQ.value = v;   lab && lab.toggle('autoQ', v) }
 
 const isJulia = computed(() => type.value === 'julia')
 
+function applyPreset(p) {
+  if (!lab) return
+  if (p.type) onType(p.type)
+  if (p.scheme) onScheme(p.scheme)
+  if (p.maxIter != null) onIter(p.maxIter)
+  if (p.jRe != null) onJRe(p.jRe)
+  if (p.jIm != null) onJIm(p.jIm)
+  if (p.view) lab.setView(p.view.cx ?? null, p.view.cy ?? null, p.view.span ?? null)
+  else lab.reset()
+  window.scrollTo({ top: 0, behavior: 'smooth' })
+}
+
 useLabHotkeys({
   onReset: () => lab && lab.reset(),
 })
@@ -172,6 +186,7 @@ const readoutItems = computed(() => [
       <div class="ex-head">
         <p>이스케이프 타임 프랙탈은 복소평면의 각 점 c에서 z -> z^2 + c 를 반복해 발산 여부와 속도를 측정하고, 그 속도로 색을 칠한다. 집합의 경계는 한없이 들쭉날쭉해 아무리 확대해도 새로운 세부가 나타난다. 만델브로는 c를 평면 위에서 훑으며 z0=0에서 시작하고, 줄리아는 c를 고정한 채 시작점 z0를 평면으로 삼는다. Burning Ship은 각 반복에서 실수부와 허수부의 절댓값을 취해 독특한 배 모양의 프랙탈을 만든다.</p>
       </div>
+      <ApplicationCards :cards="APP_CARDS" @apply="applyPreset" />
     </template>
   </AlgorithmLayout>
 </template>
